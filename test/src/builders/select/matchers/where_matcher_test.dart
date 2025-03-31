@@ -49,12 +49,5 @@ void main() {
           true);
       expect(matcher.containsWhereSentence('SELECT * FROM table'), false);
     });
-
-    test('addCote formats values correctly', () {
-      final matcher = Equals('value');
-      expect(matcher.addCote('value'), '\'value\'');
-      expect(matcher.addCote(123), '123');
-      expect(matcher.addCote('NOW()'), 'NOW()');
-    });
   });
 }

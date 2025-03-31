@@ -15,25 +15,8 @@ abstract class WhereMatcher implements BaseMatcher {
   final key = 'WHERE';
 
   String get not => isNot ? 'NOT ' : '';
-
-  @override
-  String compose(String current);
   bool containsWhereSentence(String current) {
     return current.contains(key);
-  }
-
-  String addCote(dynamic value) {
-    if (value is String) {
-      bool isFunction = value.contains('()');
-      if (isFunction) {
-        return value;
-      }
-      return "'$value'";
-    }
-    if (value is num) {
-      return value.toString();
-    }
-    return value;
   }
 }
 
@@ -42,11 +25,18 @@ class Equals extends WhereMatcher {
   Equals(this.value);
 
   @override
-  String compose(String current) {
+  MatchResult compose(String current) {
+    List params = [value];
     if (containsWhereSentence(current)) {
-      return '$current ${type.value} $not$field = ${addCote(value)}';
+      return MatchResult(
+        '$current ${type.value} $not$field = ?',
+        params,
+      );
     } else {
-      return '$current $key $not$field = ${addCote(value)}';
+      return MatchResult(
+        '$current $key $not$field = ?',
+        params,
+      );
     }
   }
 }
@@ -56,26 +46,37 @@ class WhereRaw extends WhereMatcher {
   WhereRaw(this.value);
 
   @override
-  String compose(String current) {
+  MatchResult compose(String current) {
     if (containsWhereSentence(current)) {
-      return '$current ${type.value} $not $value';
+      return MatchResult(
+        '$current ${type.value} $not $value',
+      );
     } else {
-      return '$current $key $not$value';
+      return MatchResult(
+        '$current $key $not$value',
+      );
     }
   }
 }
 
 class Between extends WhereMatcher {
-  final String start;
-  final String end;
+  final dynamic start;
+  final dynamic end;
   Between(this.start, this.end);
 
   @override
-  String compose(String current) {
+  MatchResult compose(String current) {
+    List params = [start, end];
     if (containsWhereSentence(current)) {
-      return '$current ${type.value} $not$field BETWEEN $start AND $end';
+      return MatchResult(
+        '$current ${type.value} $not$field BETWEEN ? AND ?',
+        params,
+      );
     } else {
-      return '$current $key $not$field BETWEEN $start AND $end';
+      return MatchResult(
+        '$current $key $not$field BETWEEN ? AND ?',
+        params,
+      );
     }
   }
 }
@@ -86,14 +87,21 @@ class BetweenDate extends WhereMatcher {
   BetweenDate(this.start, this.end);
 
   @override
-  String compose(String current) {
+  MatchResult compose(String current) {
     final dateStart = start.toIso8601String().split('T').first;
     final dateEnd = end.toIso8601String().split('T').first;
+    List params = [dateStart, dateEnd];
 
     if (containsWhereSentence(current)) {
-      return "$current ${type.value} $not$field BETWEEN  ${addCote(dateStart)} AND  ${addCote(dateEnd)}";
+      return MatchResult(
+        "$current ${type.value} $not$field BETWEEN  ? AND ?",
+        params,
+      );
     } else {
-      return "$current $key $not$field BETWEEN ${addCote(dateStart)} AND ${addCote(dateEnd)}";
+      return MatchResult(
+        "$current $key $not$field BETWEEN ? AND ?",
+        params,
+      );
     }
   }
 }
@@ -103,12 +111,19 @@ class EqualsDate extends WhereMatcher {
   EqualsDate(this.value);
 
   @override
-  String compose(String current) {
+  MatchResult compose(String current) {
     final date = value.toIso8601String().split('T').first;
+    List params = [date];
     if (containsWhereSentence(current)) {
-      return "$current ${type.value} ${not}DATE($field) = ${addCote(date)}";
+      return MatchResult(
+        "$current ${type.value} ${not}DATE($field) = ?",
+        params,
+      );
     } else {
-      return "$current $key ${not}DATE($field) = ${addCote(date)}";
+      return MatchResult(
+        "$current $key ${not}DATE($field) = ?",
+        params,
+      );
     }
   }
 }
@@ -118,11 +133,12 @@ class Like extends WhereMatcher {
   Like(this.value);
 
   @override
-  String compose(String current) {
+  MatchResult compose(String current) {
+    final params = [value];
     if (containsWhereSentence(current)) {
-      return '$current ${type.value} $not$field like ${addCote(value)}';
+      return MatchResult('$current ${type.value} $not$field like ?', params);
     } else {
-      return '$current $key $not$field like ${addCote(value)}';
+      return MatchResult('$current $key $not$field like ?', params);
     }
   }
 }
@@ -132,11 +148,12 @@ class GreaterThan extends WhereMatcher {
   GreaterThan(this.value);
 
   @override
-  String compose(String current) {
+  MatchResult compose(String current) {
+    final params = [value];
     if (containsWhereSentence(current)) {
-      return '$current ${type.value} $not$field > ${addCote(value)}';
+      return MatchResult('$current ${type.value} $not$field > ?', params);
     } else {
-      return '$current $key $not$field > ${addCote(value)}';
+      return MatchResult('$current $key $not$field > ?', params);
     }
   }
 }
@@ -146,11 +163,12 @@ class LessThan extends WhereMatcher {
   LessThan(this.value);
 
   @override
-  String compose(String current) {
+  MatchResult compose(String current) {
+    final params = [value];
     if (containsWhereSentence(current)) {
-      return '$current ${type.value} $not$field < ${addCote(value)}';
+      return MatchResult('$current ${type.value} $not$field < ?', params);
     } else {
-      return '$current $key $not$field < ${addCote(value)}';
+      return MatchResult('$current $key $not$field < ?', params);
     }
   }
 }

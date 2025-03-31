@@ -26,6 +26,8 @@ class SelectBuilderImpl extends SelectBuilderBase
     super.fields = const [],
   });
 
+  final List _params = [];
+
   @override
   String toSql({
     bool isCount = false,
@@ -35,6 +37,7 @@ class SelectBuilderImpl extends SelectBuilderBase
     bool isAvg = false,
   }) {
     String fieldsP = '*';
+    _params.clear();
     if (fields.isNotEmpty) {
       fieldsP = fields.join(', ');
     }
@@ -65,55 +68,65 @@ class SelectBuilderImpl extends SelectBuilderBase
     final andMatchers = matchers.whereType<EndMatcher>().toList();
 
     for (final join in joinMatchers) {
-      query = join.compose(query);
+      final j = join.compose(query);
+      query = j.query;
+      _params.addAll(j.params);
     }
 
     for (final where in whereMatchers) {
-      query = where.compose(query);
+      final w = where.compose(query);
+      query = w.query;
+      _params.addAll(w.params);
     }
 
     for (final end in andMatchers) {
-      query = end.compose(query);
+      final e = end.compose(query);
+      query = e.query;
+      _params.addAll(e.params);
     }
     return query;
   }
 
   @override
   Future<List<Map<String, dynamic>>> fetch() {
-    return executor.execute(toSql());
+    final query = toSql();
+    return executor.executePrepared(query, _params);
   }
 
   @override
   Future<int> count() async {
-    final result = await executor.execute(toSql(isCount: true));
+    final result = await executor.executePrepared(
+      toSql(isCount: true),
+      _params,
+    );
     return result[0]['numerOf'] ?? 0;
   }
 
   @override
   Future<num> max() async {
     _sumValidation();
-    final result = await executor.execute(toSql(isMax: true));
+    final result = await executor.executePrepared(toSql(isMax: true), _params);
     return num.tryParse(result[0]['numerOf'].toString()) ?? 0;
   }
 
   @override
   Future<num> min() async {
     _sumValidation();
-    final result = await executor.execute(toSql(isMin: true));
+    final result = await executor.executePrepared(toSql(isMin: true), _params);
     return num.tryParse(result[0]['numerOf'].toString()) ?? 0;
   }
 
   @override
   Future<num> sum() async {
     _sumValidation();
-    final result = await executor.execute(toSql(isSum: true));
+    final result = await executor.executePrepared(toSql(isSum: true), _params);
     return num.tryParse(result[0]['numerOf'].toString()) ?? 0;
   }
 
   @override
   Future<num> avg() async {
     _sumValidation();
-    final result = await executor.execute(toSql(isAvg: true));
+    final result = await executor.executePrepared(toSql(isAvg: true), _params);
     return num.tryParse(result[0]['numerOf'].toString()) ?? 0;
   }
 

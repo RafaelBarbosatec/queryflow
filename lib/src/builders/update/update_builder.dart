@@ -21,21 +21,31 @@ class UpdateBuilderImpl extends UpdateBuilder with UpdateWhereMixin {
     Map<String, dynamic> fields,
   ) : super(table, fields);
 
+  final List _params = [];
+
   @override
   Future<void> execute() async {
     final sql = toSql();
-    await executor.execute(sql);
+    await executor.executePrepared(sql, _params);
   }
 
   @override
   String toSql() {
+    _params.clear();
     final whereList = matchers.whereType<WhereMatcher>();
-    final setClause = fields.entries
-        .map((entry) => '${entry.key} = ${entry.value}')
-        .join(', ');
-    String query = 'UPDATE $table SET $setClause';
+
+    _params.addAll(fields.values);
+    List<String> values = [];
+    fields.forEach(
+      (key, value) {
+        values.add('$key = ?');
+      },
+    );
+    String query = 'UPDATE $table SET ${values.join(', ')}';
     for (final w in whereList) {
-      query = w.compose(query);
+      final result = w.compose(query);
+      query = result.query;
+      _params.addAll(result.params);
     }
     return query;
   }

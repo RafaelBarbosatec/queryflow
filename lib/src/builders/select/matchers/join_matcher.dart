@@ -23,9 +23,11 @@ abstract class JoinMatcher implements BaseMatcher {
   });
 
   @override
-  String compose(String current) {
+  MatchResult compose(String current) {
     String prefix = '${type.value} JOIN';
-    return '$current $prefix $table ON $selectTable.$firstField = $table.$secondField';
+    return MatchResult(
+      '$current $prefix $table ON $selectTable.$firstField = $table.$secondField',
+    );
   }
 }
 
@@ -75,7 +77,7 @@ class JoinRaw extends JoinMatcher {
         );
 
   @override
-  String compose(String current) {
-    return '$current $value';
+  MatchResult compose(String current) {
+    return MatchResult('$current $value');
   }
 }

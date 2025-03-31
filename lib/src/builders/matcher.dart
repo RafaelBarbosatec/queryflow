@@ -1,9 +1,9 @@
 class MatchResult {
   final String query;
-  final List<String> params;
-  MatchResult(this.query, this.params);
+  final List<dynamic> params;
+  MatchResult(this.query, [this.params = const []]);
 }
 
 abstract class BaseMatcher {
-  String compose(String current);
+  MatchResult compose(String current);
 }

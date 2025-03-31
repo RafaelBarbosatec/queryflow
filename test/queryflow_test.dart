@@ -34,7 +34,7 @@ void main() {
         'table_01',
         {
           'name': 'Ana',
-          'date': dateInsert.add(Duration(minutes: 1)).toIso8601String(),
+          'date': dateInsert.add(Duration(days: 1)).toIso8601String(),
         },
       ).execute();
 
@@ -65,18 +65,94 @@ void main() {
   });
 
   group('select', () {
-    test('Simple Select', () async {
+    test('Select all', () async {
       var query = await queryflow.select('table_01').fetch();
 
       expect(query.length, 2);
       expect(query[0]['id'], 1);
       expect(query[0]['name'], 'Rafael');
       expect(query[0]['date'], isNotNull);
-      final date = DateTime.parse(query[0]['date']);
+      DateTime date = query[0]['date'];
       expect(date.year, dateInsert.year);
       expect(date.month, dateInsert.month);
       expect(date.day, dateInsert.day);
       expect(date.hour, dateInsert.hour);
+    });
+
+    test('Select Equals', () async {
+      var query =
+          await queryflow.select('table_01').where('id', Equals(2)).fetch();
+
+      expect(query.length, 1);
+      expect(query[0]['id'], 2);
+      expect(query[0]['name'], 'Ana');
+    });
+
+    test('Select Equals string', () async {
+      var query = await queryflow
+          .select('table_01')
+          .where('name', Equals('Ana'))
+          .fetch();
+
+      expect(query.length, 1);
+      expect(query[0]['id'], 2);
+      expect(query[0]['name'], 'Ana');
+    });
+
+    test('Select EqualsDate', () async {
+      var query = await queryflow
+          .select('table_01')
+          .where('date', EqualsDate(dateInsert))
+          .fetch();
+
+      expect(query.length, 1);
+      expect(query[0]['id'], 1);
+      expect(query[0]['name'], 'Rafael');
+    });
+
+    test('Select Between', () async {
+      var query = await queryflow
+          .select('table_01')
+          .join('table_02', InnerJoin('id', 'table_01_id'))
+          .where('age', Between(29, 31))
+          .fetch();
+
+      expect(query.length, 1);
+      expect(query[0]['id'], 1);
+      expect(query[0]['name'], 'Rafael');
+    });
+
+    test('Select Like', () async {
+      var query =
+          await queryflow.select('table_01').where('name', Like('A%')).fetch();
+
+      expect(query.length, 1);
+      expect(query[0]['id'], 2);
+      expect(query[0]['name'], 'Ana');
+    });
+
+    test('Select GreaterThan', () async {
+      var query = await queryflow
+          .select('table_01')
+          .join('table_02', InnerJoin('id', 'table_01_id'))
+          .where('age', GreaterThan(31))
+          .fetch();
+
+      expect(query.length, 1);
+      expect(query[0]['id'], 2);
+      expect(query[0]['name'], 'Ana');
+    });
+
+    test('Select GreaterThan', () async {
+      var query = await queryflow
+          .select('table_01')
+          .join('table_02', InnerJoin('id', 'table_01_id'))
+          .where('age', LessThan(31))
+          .fetch();
+
+      expect(query.length, 1);
+      expect(query[0]['id'], 1);
+      expect(query[0]['name'], 'Rafael');
     });
 
     test('Select with orderBy', () async {
@@ -104,7 +180,7 @@ void main() {
 
     test('Select with Inner Join', () async {
       var query = await queryflow
-          .select('table_01', ['*'])
+          .select('table_01')
           .join('table_02', InnerJoin('id', 'table_01_id'))
           .fetch();
 
@@ -113,7 +189,7 @@ void main() {
       expect(query[0]['name'], 'Rafael');
       expect(query[0]['age'], 30);
       expect(query[0]['ocupation'], 'developer');
-      final date = DateTime.parse(query[0]['date']);
+      DateTime date = query[0]['date'];
       expect(date.year, dateInsert.year);
       expect(date.month, dateInsert.month);
       expect(date.day, dateInsert.day);

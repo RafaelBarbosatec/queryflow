@@ -7,7 +7,7 @@ class EndMatcher implements BaseMatcher {
   });
 
   @override
-  String compose(String current) {
-    return '$current $raw';
+  MatchResult compose(String current) {
+    return MatchResult('$current $raw');
   }
 }
