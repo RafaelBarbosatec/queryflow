@@ -1,4 +1,5 @@
 import 'package:queryflow/src/builders/builders.dart';
+import 'package:queryflow/src/builders/insert/insert_contracts.dart';
 import 'package:queryflow/src/executor/executor.dart';
 import 'package:queryflow/src/executor/my_sql_executor.dart';
 
@@ -42,7 +43,7 @@ class Queryflow {
     return SelectBuilderImpl(_executor, table, fields: fields);
   }
 
-  InsertBuilder insert(
+  InsertBuilderExecute insert(
     String table,
     Map<String, dynamic> fields,
   ) {
