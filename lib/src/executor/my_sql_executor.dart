@@ -51,4 +51,32 @@ class MySqlExecutor implements Executor {
   Future<void> close() {
     return _conn?.close() ?? Future.value();
   }
+
+  @override
+  Future<List<Map<String, dynamic>>> executeTransation(
+    Future<List<Map<String, dynamic>>> Function(ExecutorOnly executor)
+        transaction,
+  ) async {
+    if (_conn != null) {
+      return await _conn!.transactional((conn) async {
+        return transaction(_MySqlExecutorTransation(conn));
+      });
+    } else {
+      throw Exception("Connection is not initialized.");
+    }
+  }
+}
+
+class _MySqlExecutorTransation implements ExecutorOnly {
+  final MySQLConnection conn;
+
+  _MySqlExecutorTransation(this.conn);
+
+  @override
+  Future<List<Map<String, dynamic>>> execute(String query) async {
+    final result = await conn.execute(query);
+    return result.rows.map((e) {
+      return e.typedAssoc();
+    }).toList();
+  }
 }

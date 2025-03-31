@@ -1,5 +1,4 @@
 import 'package:queryflow/src/builders/builders.dart';
-import 'package:queryflow/src/builders/select/select_contracts.dart';
 import 'package:queryflow/src/executor/executor.dart';
 import 'package:queryflow/src/executor/my_sql_executor.dart';
 
@@ -15,7 +14,7 @@ class Queryflow {
   final bool secure;
   final String? databaseName;
   final String collation;
-  late Executor executor;
+  late Executor _executor;
 
   Queryflow({
     required this.host,
@@ -27,7 +26,7 @@ class Queryflow {
     this.collation = 'utf8mb4_general_ci',
     Executor? executor,
   }) {
-    this.executor = executor ??
+    _executor = executor ??
         MySqlExecutor(
           host: host,
           port: port,
@@ -40,10 +39,17 @@ class Queryflow {
   }
 
   SelectBuilder select(String table, [List<String> fields = const []]) {
-    return SelectBuilderImpl(executor, table, fields: fields);
+    return SelectBuilderImpl(_executor, table, fields: fields);
   }
 
-  Future<List<Map<String,dynamic>>> execute(String query){
-    return executor.execute(query);
+  InsertBuilder insert(
+    String table,
+    Map<String, dynamic> fields,
+  ) {
+    return InsertBuilderImpl(_executor, table, fields);
+  }
+
+  Future<List<Map<String, dynamic>>> execute(String query) {
+    return _executor.execute(query);
   }
 }
