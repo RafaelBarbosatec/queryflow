@@ -1,5 +1,6 @@
 import 'package:queryflow/src/builders/builders.dart';
 import 'package:queryflow/src/builders/insert/insert_contracts.dart';
+import 'package:queryflow/src/builders/update/update_builder.dart';
 import 'package:queryflow/src/executor/executor.dart';
 import 'package:queryflow/src/executor/my_sql_executor.dart';
 
@@ -48,6 +49,17 @@ class Queryflow {
     Map<String, dynamic> fields,
   ) {
     return InsertBuilderImpl(_executor, table, fields);
+  }
+
+  UpdateBuilder update(
+    String table,
+    Map<String, dynamic> fields,
+  ) {
+    return UpdateBuilderImpl(
+      _executor,
+      table,
+      fields,
+    );
   }
 
   Future<List<Map<String, dynamic>>> execute(String query) {
