@@ -1,0 +1,16 @@
+name: queryflow
+description: "A new Flutter package project."
+version: 0.0.1
+homepage:
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+
+dependencies:
+  mysql_client: ^0.0.27
+  
+
+dev_dependencies:
+  test: any
+  flutter_lints: ^5.0.0
+
