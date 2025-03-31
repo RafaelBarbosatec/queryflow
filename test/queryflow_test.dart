@@ -196,6 +196,17 @@ void main() {
       expect(date.hour, dateInsert.hour);
     });
   });
+
+  test('Update', () async {
+    await queryflow
+        .update('table_01', {'name': 'Davi'})
+        .where('id', Equals(1))
+        .execute();
+    final result =
+        await queryflow.select('table_01').where('id', Equals(1)).fetch();
+    expect(result.length, 1);
+    expect(result[0]['name'], 'Davi');
+  });
 }
 
 Future<void> _createTables(Queryflow queryflow) async {

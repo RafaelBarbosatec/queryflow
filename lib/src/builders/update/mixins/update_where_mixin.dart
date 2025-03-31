@@ -1,7 +1,7 @@
 import 'package:queryflow/queryflow.dart';
 import 'package:queryflow/src/builders/update/update_builder.dart';
 
-mixin UpdateWhereMixin on UpdateBuilder {
+mixin UpdateWhereMixin on UpdateBuilderBase {
   @override
   UpdateBuilder where(
     String field,

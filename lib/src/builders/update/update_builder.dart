@@ -5,14 +5,16 @@ import 'package:queryflow/src/builders/update/update_contracts.dart';
 import 'package:queryflow/src/executor/executor.dart';
 
 abstract class UpdateBuilder
-    implements UpdateBuilderExecute, UpdateBuilderWhere {
+    implements UpdateBuilderExecute, UpdateBuilderWhere {}
+
+abstract class UpdateBuilderBase extends UpdateBuilder {
   final String table;
   final Map<String, dynamic> fields;
   final List<BaseMatcher> matchers = [];
-  UpdateBuilder(this.table, this.fields);
+  UpdateBuilderBase(this.table, this.fields);
 }
 
-class UpdateBuilderImpl extends UpdateBuilder with UpdateWhereMixin {
+class UpdateBuilderImpl extends UpdateBuilderBase with UpdateWhereMixin {
   final Executor executor;
 
   UpdateBuilderImpl(
