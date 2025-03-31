@@ -106,8 +106,21 @@ final sumAge = await queryflow.select('users', ['age']).sum();
 
 ```dart
 final usersWithOrders = await queryflow.select('users', ['users.id', 'users.name', 'orders.total'])
-    .join('orders', JoinMatcher('id', 'user_id'))
+    .join('orders', InnerJoin('id', 'user_id'))
     .fetch();
+
+final usersWithOrders = await queryflow.select('users', ['users.id', 'users.name', 'orders.total'])
+    .join('orders', LeftJoin('id', 'user_id'))
+    .fetch();
+
+final usersWithOrders = await queryflow.select('users', ['users.id', 'users.name', 'orders.total'])
+    .join('orders', RightJoin('id', 'user_id'))
+    .fetch();
+
+final usersWithOrders = await queryflow.select('users', ['users.id', 'users.name', 'orders.total'])
+    .join('orders', FullOuterJoin('id', 'user_id'))
+    .fetch();
+
 ```
 
 #### Order By Clause
