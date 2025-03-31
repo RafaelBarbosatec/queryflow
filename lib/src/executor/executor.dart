@@ -9,4 +9,8 @@ abstract class Executor implements ExecutorOnly {
 
 abstract class ExecutorOnly {
   Future<List<Map<String, dynamic>>> execute(String query);
+  Future<List<Map<String, dynamic>>> executePrepared(
+    String query,
+    List<dynamic> params,
+  );
 }

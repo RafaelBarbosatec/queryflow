@@ -1,26 +1,37 @@
-import 'package:mysql_client/mysql_client.dart';
+import 'dart:io';
+
+import 'package:mysql_dart/mysql_dart.dart';
 import 'package:queryflow/src/executor/executor.dart';
 
 class MySqlExecutor implements Executor {
-  final dynamic host;
-  final int port;
-  final String userName;
-  final String password;
-  final bool secure;
-  final String? databaseName;
-  final String collation;
+  final dynamic _host;
+  final int _port;
+  final String _userName;
+  final String _password;
+  final bool _secure;
+  final String? _databaseName;
+  final String _collation;
+  final SecurityContext? _securityContext;
 
   MySQLConnection? _conn;
 
   MySqlExecutor({
-    required this.host,
-    required this.port,
-    required this.userName,
-    required this.password,
-    required this.secure,
-    required this.databaseName,
-    required this.collation,
-  });
+    required dynamic host,
+    required int port,
+    required String userName,
+    required String password,
+    String? databaseName,
+    String collation = 'utf8mb4_general_ci',
+    bool secure = true,
+    SecurityContext? securityContext,
+  })  : _host = host,
+        _port = port,
+        _userName = userName,
+        _password = password,
+        _databaseName = databaseName,
+        _collation = collation,
+        _securityContext = securityContext,
+        _secure = secure;
 
   @override
   Future<List<Map<String, dynamic>>> execute(String query) async {
@@ -33,13 +44,27 @@ class MySqlExecutor implements Executor {
   }
 
   @override
+  Future<List<Map<String, dynamic>>> executePrepared(
+      String query, List<dynamic> params) async {
+    await connect();
+    final prepare = await _conn!.prepare(query);
+    final result = await prepare.execute(params);
+    return result.rows.map((e) {
+      return e.typedAssoc();
+    }).toList();
+  }
+
+  @override
   Future<void> connect() async {
     _conn ??= await MySQLConnection.createConnection(
-      host: "127.0.0.1",
-      port: 3306,
-      userName: "admin",
-      password: "12345678",
-      databaseName: "boleiro", // optional
+      host: _host,
+      port: _port,
+      userName: _userName,
+      password: _password,
+      databaseName: _databaseName,
+      collation: _collation,
+      secure: _secure,
+      securityContext: _securityContext,
     );
 
     if (!_conn!.connected) {
@@ -75,6 +100,18 @@ class _MySqlExecutorTransation implements ExecutorOnly {
   @override
   Future<List<Map<String, dynamic>>> execute(String query) async {
     final result = await conn.execute(query);
+    return result.rows.map((e) {
+      return e.typedAssoc();
+    }).toList();
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> executePrepared(
+    String query,
+    List params,
+  ) async {
+    final prepare = await conn.prepare(query);
+    final result = await prepare.execute(params);
     return result.rows.map((e) {
       return e.typedAssoc();
     }).toList();
