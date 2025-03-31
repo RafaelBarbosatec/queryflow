@@ -69,6 +69,27 @@ final users = await queryflow.select('users', ['id', 'name']).fetch();
 final adults = await queryflow.select('users', ['id', 'name'])
     .where('age', GreaterThan(18))
     .fetch();
+
+final kids = await queryflow.select('users', ['id', 'name'])
+    .where('age', LessThan(18))
+    .fetch();
+
+final with18 = await queryflow.select('users', ['id', 'name'])
+    .where('age', Equals(18))
+    .fetch();
+
+final nameStartR = await queryflow.select('users', ['id', 'name'])
+    .where('name', Like('R%'))
+    .fetch();
+
+final bornIn18011992 = await queryflow.select('users', ['id', 'name'])
+    .where('birthday', EqualsDate(DateTime(1992,1,18)))
+    .fetch();
+
+final bornBetween1992and2000 = await queryflow.select('users', ['id', 'name'])
+    .where('birthday', BetweenDate(DateTime(1992),DateTime(2000)))
+    .fetch();
+
 ```
 
 #### Aggregate Functions
