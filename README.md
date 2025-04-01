@@ -4,10 +4,16 @@ Queryflow is a lightweight and flexible Dart package designed to simplify the pr
 
 ## Features
 
-- Fluent API for building SQL queries.
-- Support for common SQL operations like `SELECT`, `WHERE`, `JOIN`, `LIMIT`, `ORDER BY`.
-- Built-in methods for aggregate functions like `COUNT`, `SUM`, `MAX`, `MIN`, and `AVG`.
-- Easy integration with MySQL databases.
+- Fluent API for building SQL queries with method chaining
+- Complete CRUD operations: SELECT, INSERT, UPDATE support
+- Advanced WHERE conditions with various matchers (Equals, GreaterThan, LessThan, Like, Between, etc.)
+- Date-specific operations with EqualsDate and BetweenDate matchers
+- Flexible JOIN operations (Inner, Left, Right, Full Outer)
+- ORDER BY functionality with both ascending and descending options
+- Aggregate functions: COUNT, SUM, MAX, MIN, and AVG
+- Raw SQL query execution for complex scenarios
+- Clean integration with MySQL databases
+- Type-safe query building to minimize SQL syntax errors
 
 ## Getting started
 
