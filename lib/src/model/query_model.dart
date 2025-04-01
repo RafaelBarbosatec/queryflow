@@ -4,7 +4,6 @@ abstract class QueryModel<T> {
   String get primaryKeyColumn => config.primaryKeyColumn;
 
   Map<String, dynamic> toMap();
-  T fromMap(Map<String, dynamic> map);
 }
 
 class QueryModelConfig {
