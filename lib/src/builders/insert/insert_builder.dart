@@ -1,14 +1,19 @@
-import 'package:queryflow/src/builders/insert/insert_contracts.dart';
 import 'package:queryflow/src/executor/executor.dart';
 
-abstract class InsertBuilder implements InsertBuilderExecute {
+abstract class InsertBuilder {
+  /// Execute the insert statement and return the number of affected rows.
+  Future<int> execute();
+  String toSql();
+}
+
+abstract class InsertBuilderBase implements InsertBuilder {
   final String table;
   final Map<String, dynamic> fields;
 
-  InsertBuilder(this.table, this.fields);
+  InsertBuilderBase(this.table, this.fields);
 }
 
-class InsertBuilderImpl extends InsertBuilder {
+class InsertBuilderImpl extends InsertBuilderBase {
   final Executor executor;
   InsertBuilderImpl(
     this.executor,

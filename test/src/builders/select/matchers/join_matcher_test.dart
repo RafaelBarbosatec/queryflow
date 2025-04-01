@@ -10,7 +10,7 @@ void main() {
 
       final result = join.compose('SELECT * FROM orders');
       expect(
-        result,
+        result.query,
         'SELECT * FROM orders INNER JOIN users ON orders.id = users.user_id',
       );
     });
@@ -21,8 +21,8 @@ void main() {
       join.selectTable = 'orders';
 
       final result = join.compose('SELECT * FROM orders');
-      expect(result,
-          'SELECT * FROM orders LEFT JOIN users ON orders.id = users.user_id');
+      expect(result.query,
+          'SELECT * FROM orders LEFT JOIN users ON orders.id = users.user_id',);
     });
 
     test('RightJoin composes correct SQL', () {
@@ -31,8 +31,8 @@ void main() {
       join.selectTable = 'orders';
 
       final result = join.compose('SELECT * FROM orders');
-      expect(result,
-          'SELECT * FROM orders RIGHT JOIN users ON orders.id = users.user_id');
+      expect(result.query,
+          'SELECT * FROM orders RIGHT JOIN users ON orders.id = users.user_id',);
     });
 
     test('FullOuterJoin composes correct SQL', () {
@@ -41,14 +41,14 @@ void main() {
       join.selectTable = 'orders';
 
       final result = join.compose('SELECT * FROM orders');
-      expect(result,
-          'SELECT * FROM orders FULL OUTER JOIN users ON orders.id = users.user_id');
+      expect(result.query,
+          'SELECT * FROM orders FULL OUTER JOIN users ON orders.id = users.user_id',);
     });
 
     test('JoinRaw composes correct SQL', () {
       final join = JoinRaw('CROSS JOIN users');
       final result = join.compose('SELECT * FROM orders');
-      expect(result, 'SELECT * FROM orders CROSS JOIN users');
+      expect(result.query, 'SELECT * FROM orders CROSS JOIN users');
     });
   });
 }

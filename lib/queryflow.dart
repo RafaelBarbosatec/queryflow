@@ -1,13 +1,16 @@
 import 'dart:io';
 
 import 'package:queryflow/src/builders/builders.dart';
-import 'package:queryflow/src/builders/insert/insert_contracts.dart';
 import 'package:queryflow/src/builders/update/update_builder.dart';
 import 'package:queryflow/src/executor/executor.dart';
 import 'package:queryflow/src/executor/my_sql_executor.dart';
+import 'package:queryflow/src/model/query_model.dart';
+
+import 'src/builders/select/matchers/where_matchers.dart';
 
 export 'package:queryflow/src/builders/builders.dart';
 export 'package:queryflow/src/builders/select/matchers/where_matchers.dart';
+export 'package:queryflow/src/model/query_model.dart';
 
 /// A fluent SQL query builder and executor for MySQL databases.
 ///
@@ -32,7 +35,7 @@ export 'package:queryflow/src/builders/select/matchers/where_matchers.dart';
 ///   .limit(10)
 ///   .fetch();
 /// ```
-class Queryflow {
+class Queryflow implements QueryflowMethods, QueryflowExecuteTransation {
   late Executor _executor;
 
   /// Creates a new Queryflow instance for database operations.
@@ -87,6 +90,7 @@ class Queryflow {
   ///   .orderBy(['created_at'], OrderByType.asc)
   ///   .Equals();
   /// ```
+  @override
   SelectBuilder select(String table, [List<String> fields = const []]) {
     return SelectBuilderImpl(_executor, table, fields: fields);
   }
@@ -97,7 +101,7 @@ class Queryflow {
   /// - [table]: Name of the table to insert into
   /// - [fields]: Map of column names to values for insertion
   ///
-  /// Returns an [InsertBuilderExecute] that can be used to execute the query.
+  /// Returns an [InsertBuilder] that can be used to execute the query.
   ///
   /// Example:
   /// ```dart
@@ -107,7 +111,8 @@ class Queryflow {
   ///   'created_at': DateTime.now()
   /// }).execute();
   /// ```
-  InsertBuilderExecute insert(String table, Map<String, dynamic> fields) {
+  @override
+  InsertBuilder insert(String table, Map<String, dynamic> fields) {
     return InsertBuilderImpl(_executor, table, fields);
   }
 
@@ -128,6 +133,7 @@ class Queryflow {
   /// .where('id', Equals(1))
   /// .execute();
   /// ```
+  @override
   UpdateBuilder update(String table, Map<String, dynamic> fields) {
     return UpdateBuilderImpl(
       _executor,
@@ -151,10 +157,12 @@ class Queryflow {
   ///   'SELECT * FROM users WHERE last_login > DATE_SUB(NOW(), INTERVAL 7 DAY)'
   /// );
   /// ```
+  @override
   Future<List<Map<String, dynamic>>> execute(String query) {
     return _executor.execute(query);
   }
 
+  @override
   Future<List<Map<String, dynamic>>> executePrepared(
     String query, [
     List<dynamic> params = const [],
@@ -188,8 +196,9 @@ class Queryflow {
   ///     .fetch();
   /// });
   /// ```
+  @override
   Future<List<Map<String, dynamic>>> executeTransation(
-    Future<List<Map<String, dynamic>>> Function(Queryflow) queryflow,
+    Future<List<Map<String, dynamic>>> Function(QueryflowMethods) queryflow,
   ) {
     return _executor.executeTransation(
       (executor) => queryflow(
@@ -203,4 +212,116 @@ class Queryflow {
       ),
     );
   }
+
+  @override
+  Future<int> putSingle(QueryModel model) {
+    return insert(model.config.table, model.toMap()).execute();
+  }
+
+  @override
+  Future<void> updateSingle(QueryModel model) {
+    final data = model.toMap();
+    final dataToUpdate = model.toMap()..remove(model.config.primaryKeyColumn);
+    return update(
+      model.config.table,
+      dataToUpdate,
+    )
+        .where(
+          model.config.primaryKeyColumn,
+          Equals(data[model.config.primaryKeyColumn]),
+        )
+        .execute();
+  }
+}
+
+abstract class QueryflowExecuteTransation {
+  /// Executes multiple database operations within a single transaction.
+  ///
+  /// This method allows you to perform multiple database operations that will
+  /// be committed together if all succeed, or rolled back if any fail. This
+  /// ensures data consistency across related operations.
+  ///
+  /// Parameters:
+  /// - [queryflow]: A function that receives a Queryflow instance and returns
+  ///   a Future with the result of the transaction operations.
+  ///
+  /// Returns a Future that resolves to the result of the executed transaction.
+  Future<List<Map<String, dynamic>>> executeTransation(
+    Future<List<Map<String, dynamic>>> Function(QueryflowMethods) queryflow,
+  );
+}
+
+abstract class QueryflowMethods {
+  /// Creates a SELECT query builder for the specified table.
+  ///
+  /// Parameters:
+  /// - [table]: Name of the table to select from
+  /// - [fields]: Optional list of column names to select. If empty, selects all columns
+  ///
+  /// Returns a [SelectBuilder] for chaining additional query conditions.
+  ///
+  /// Example:
+  /// ```dart
+  /// final users = await db
+  ///   .select('users', ['id', 'name', 'email'])
+  ///   .where('status', isEqualTo: 'active')
+  ///   .orderBy(['created_at'], OrderByType.asc)
+  ///   .Equals();
+  /// ```
+  SelectBuilder select(String table, [List<String> fields = const []]);
+
+  /// Creates an UPDATE query builder for the specified table.
+  ///
+  /// Parameters:
+  /// - [table]: Name of the table to update
+  /// - [fields]: Map of column names to new values for updating
+  ///
+  /// Returns an [UpdateBuilder] for chaining additional query conditions.
+  ///
+  /// Example:
+  /// ```dart
+  /// await db.update('users', {
+  ///   'last_login': DateTime.now(),
+  ///   'status': 'active'
+  /// })
+  /// .where('id', Equals(1))
+  /// .execute();
+  /// ```
+  UpdateBuilder update(String table, Map<String, dynamic> fields);
+
+  /// Creates an INSERT query builder for the specified table.
+  ///
+  /// Parameters:
+  /// - [table]: Name of the table to insert into
+  /// - [fields]: Map of column names to values for insertion
+  ///
+  /// Returns an [InsertBuilder] that can be used to execute the query.
+  ///
+  /// Example:
+  /// ```dart
+  /// await db.insert('users', {
+  ///   'name': 'John Doe',
+  ///   'email': 'john@example.com',
+  ///   'created_at': DateTime.now()
+  /// }).execute();
+  /// ```
+  InsertBuilder insert(String table, Map<String, dynamic> fields);
+
+  Future<int> putSingle(QueryModel model);
+  Future<void> updateSingle(QueryModel model);
+
+  /// Executes a raw SQL query string.
+  ///
+  /// This is useful for complex queries that cannot be easily built with the fluent API.
+  ///
+  /// Parameters:
+  /// - [query]: The raw SQL query string to execute
+  ///
+  /// Returns a Future that resolves to a list of maps representing the query results.
+  Future<List<Map<String, dynamic>>> execute(String query);
+
+  Future<List<Map<String, dynamic>>> executePrepared(
+    String query, [
+    List<dynamic> params = const [],
+  ]);
 }

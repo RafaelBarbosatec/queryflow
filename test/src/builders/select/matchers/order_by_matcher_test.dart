@@ -9,7 +9,7 @@ void main() {
         type: OrderByType.asc,
       );
       final result = matcher.compose('SELECT * FROM table');
-      expect(result, 'SELECT * FROM table ORDER BY column1 ASC');
+      expect(result.query, 'SELECT * FROM table ORDER BY column1 ASC');
     });
 
     test('compose generates correct SQL for multiple fields', () {
@@ -18,7 +18,7 @@ void main() {
         type: OrderByType.desc,
       );
       final result = matcher.compose('SELECT * FROM table');
-      expect(result, 'SELECT * FROM table ORDER BY column1, column2 DESC');
+      expect(result.query, 'SELECT * FROM table ORDER BY column1, column2 DESC');
     });
 
     test('compose works with empty current string', () {
@@ -27,7 +27,7 @@ void main() {
         type: OrderByType.asc,
       );
       final result = matcher.compose('');
-      expect(result, ' ORDER BY column1 ASC');
+      expect(result.query, ' ORDER BY column1 ASC');
     });
   });
 }
