@@ -79,8 +79,7 @@ class MySqlExecutor implements Executor {
 
   @override
   Future<List<Map<String, dynamic>>> executeTransation(
-    Future<List<Map<String, dynamic>>> Function(ExecutorOnly executor)
-        transaction,
+    Future<List<Map<String, dynamic>>> Function(Executor executor) transaction,
   ) async {
     if (_conn != null) {
       return await _conn!.transactional((conn) async {
@@ -92,7 +91,7 @@ class MySqlExecutor implements Executor {
   }
 }
 
-class _MySqlExecutorTransation implements ExecutorOnly {
+class _MySqlExecutorTransation implements Executor {
   final MySQLConnection conn;
 
   _MySqlExecutorTransation(this.conn);
@@ -115,5 +114,22 @@ class _MySqlExecutorTransation implements ExecutorOnly {
     return result.rows.map((e) {
       return e.typedAssoc();
     }).toList();
+  }
+
+  @override
+  Future<void> close() {
+    return Future.value();
+  }
+
+  @override
+  Future<void> connect() {
+    return Future.value();
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> executeTransation(
+    Future<List<Map<String, dynamic>>> Function(Executor executor) transaction,
+  ) {
+    return Future.value([]);
   }
 }

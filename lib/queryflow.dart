@@ -154,4 +154,53 @@ class Queryflow {
   Future<List<Map<String, dynamic>>> execute(String query) {
     return _executor.execute(query);
   }
+
+  Future<List<Map<String, dynamic>>> executePrepared(
+    String query, [
+    List<dynamic> params = const [],
+  ]) {
+    return _executor.executePrepared(query, params);
+  }
+
+  /// Executes multiple database operations within a single transaction.
+  ///
+  /// This method allows you to perform multiple database operations that will
+  /// be committed together if all succeed, or rolled back if any fail. This
+  /// ensures data consistency across related operations.
+  ///
+  /// Parameters:
+  /// - [queryflow]: A function that receives a Queryflow instance and returns
+  ///   a Future with the result of the transaction operations.
+  ///
+  /// Returns a Future that resolves to the result of the executed transaction.
+  ///
+  /// Example:
+  /// ```dart
+  /// final results = await db.executeTransation((tx) async {
+  ///   final userId = await tx.insert('users', {'name': 'John'}).execute();
+  ///   await tx.insert('user_profiles', {
+  ///     'user_id': userId,
+  ///     'bio': 'New user'
+  ///   }).execute();
+  ///   return tx.select('users')
+  ///     .join('user_profiles', InnerJoin('id', 'user_id'))
+  ///     .where('users.id', Equals(userId))
+  ///     .fetch();
+  /// });
+  /// ```
+  Future<List<Map<String, dynamic>>> executeTransation(
+    Future<List<Map<String, dynamic>>> Function(Queryflow) queryflow,
+  ) {
+    return _executor.executeTransation(
+      (executor) => queryflow(
+        Queryflow(
+          executor: executor,
+          host: 'null',
+          port: 0,
+          userName: '',
+          password: '',
+        ),
+      ),
+    );
+  }
 }
