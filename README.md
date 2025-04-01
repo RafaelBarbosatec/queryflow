@@ -1,4 +1,4 @@
-# Queryflow [UNDER DEVELOPMENT]
+# Queryflow
 
 Queryflow is a lightweight and flexible Dart package designed to simplify the process of building and executing SQL queries. It provides a fluent API for constructing queries. Queryflow is particularly useful for Dart and Flutter developers working with MySQL databases.
 
@@ -21,7 +21,7 @@ Add the following dependency to your `pubspec.yaml` file:
 ```yaml
 dependencies:
   queryflow:
-    path: .
+    path: latest
 ```
 
 Run `dart pub get` to fetch the dependencies.
@@ -129,6 +129,29 @@ final usersWithOrders = await queryflow.select('users', ['users.id', 'users.name
 final orderedUsers = await queryflow.select('users', ['id', 'name'])
     .orderBy(['name'], OrderByType.asc)
     .fetch();
+```
+
+#### Insert
+
+```dart
+final id = await queryflow.insert(
+        'table_01',
+        {
+          'id': 1,
+          'name': 'Rafael',
+          'age': 35,
+          'ocupation': 'developr',
+        },
+      ).execute();
+```
+
+#### Update
+
+```dart
+await queryflow
+        .update('table_01', {'name': 'Davi'})
+        .where('id', Equals(1))
+        .execute();
 ```
 
 #### Custom Queries
