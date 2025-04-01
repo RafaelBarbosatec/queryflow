@@ -4,6 +4,10 @@ import 'package:queryflow/src/builders/builders.dart';
 import 'package:queryflow/src/builders/update/update_builder.dart';
 import 'package:queryflow/src/executor/executor.dart';
 import 'package:queryflow/src/executor/my_sql_executor.dart';
+import 'package:queryflow/src/type/query_type_adapter.dart';
+import 'package:queryflow/src/type/query_type_retriver.dart';
+
+import 'src/builders/select/matchers/where_matchers.dart';
 
 export 'package:queryflow/src/builders/builders.dart';
 export 'package:queryflow/src/builders/select/matchers/where_matchers.dart';
@@ -35,6 +39,8 @@ export 'package:queryflow/src/type/query_type_adapter.dart';
 class Queryflow implements QueryflowMethods, QueryflowExecuteTransation {
   late Executor _executor;
 
+  late QueryTypeRetriver _queryTypeRetriver;
+
   /// Creates a new Queryflow instance for database operations.
   ///
   /// Parameters:
@@ -57,7 +63,9 @@ class Queryflow implements QueryflowMethods, QueryflowExecuteTransation {
     bool secure = true,
     SecurityContext? securityContext,
     Executor? executor,
+    List<QueryTypeAdapter>? typeAdapters,
   }) {
+    _queryTypeRetriver = QueryTypeRetriver(typeAdapters ?? []);
     _executor = executor ??
         MySqlExecutor(
           host: host,
@@ -89,7 +97,12 @@ class Queryflow implements QueryflowMethods, QueryflowExecuteTransation {
   /// ```
   @override
   SelectBuilder select(String table, [List<String> fields = const []]) {
-    return SelectBuilderImpl(_executor, table, fields: fields);
+    return SelectBuilderImpl(
+      _executor,
+      table,
+      _queryTypeRetriver,
+      fields: fields,
+    );
   }
 
   /// Creates an INSERT query builder for the specified table.
@@ -212,24 +225,22 @@ class Queryflow implements QueryflowMethods, QueryflowExecuteTransation {
 
   @override
   Future<int> putSingle<T>(T model) {
-    return Future.value(0);
-    // return insert(model.config.table, model.toMap()).execute();
+    final adapter = _queryTypeRetriver.getAdapter<T>();
+    return insert(adapter.table, adapter.toMap(model)).execute();
   }
 
   @override
   Future<void> updateSingle<T>(T model) {
-    return Future.value();
-    // final data = model.toMap();
-    // final dataToUpdate = model.toMap()..remove(model.config.primaryKeyColumn);
-    // return update(
-    //   model.config.table,
-    //   dataToUpdate,
-    // )
-    //     .where(
-    //       model.config.primaryKeyColumn,
-    //       Equals(data[model.config.primaryKeyColumn]),
-    //     )
-    //     .execute();
+    final adapter = _queryTypeRetriver.getAdapter<T>();
+    final data = adapter.toMap(model);
+
+    final dataToUpdate = adapter.toMap(model)..remove(adapter.primaryKeyColumn);
+    return update(adapter.table, dataToUpdate)
+        .where(
+          adapter.primaryKeyColumn,
+          Equals(data[adapter.primaryKeyColumn]),
+        )
+        .execute();
   }
 }
 

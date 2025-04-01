@@ -14,6 +14,7 @@ abstract class SelectBuilderFetch {
     bool isSum = false,
     bool isAvg = false,
   });
+  Future<List<T>> fetchAs<T>();
 }
 
 abstract class SelectBuilderLimit {

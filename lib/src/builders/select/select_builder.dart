@@ -6,6 +6,7 @@ import 'package:queryflow/src/builders/select/mixins/order_by_mixin.dart';
 import 'package:queryflow/src/builders/select/mixins/where_mixin.dart';
 import 'package:queryflow/src/builders/select/select_contracts.dart';
 import 'package:queryflow/src/executor/executor.dart';
+import 'package:queryflow/src/type/query_type_retriver.dart';
 
 export 'select_contracts.dart';
 
@@ -20,9 +21,11 @@ abstract class SelectBuilderBase implements SelectBuilder {
 class SelectBuilderImpl extends SelectBuilderBase
     with WhereMixin, LimitMixin, JoinMixin, OrderByMixin {
   final Executor executor;
+  final QueryTypeRetriver queryTypeRetriver;
   SelectBuilderImpl(
     this.executor,
-    super.table, {
+    super.table,
+    this.queryTypeRetriver, {
     super.fields = const [],
   });
 
@@ -91,6 +94,15 @@ class SelectBuilderImpl extends SelectBuilderBase
   Future<List<Map<String, dynamic>>> fetch() {
     final query = toSql();
     return executor.executePrepared(query, _params);
+  }
+
+  @override
+  Future<List<T>> fetchAs<T>() async {
+    final result = await fetch();
+    return result.map((e) {
+      final adapter = queryTypeRetriver.getAdapter<T>();
+      return adapter.fromMap(e);
+    }).toList();
   }
 
   @override
