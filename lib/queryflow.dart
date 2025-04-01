@@ -4,13 +4,10 @@ import 'package:queryflow/src/builders/builders.dart';
 import 'package:queryflow/src/builders/update/update_builder.dart';
 import 'package:queryflow/src/executor/executor.dart';
 import 'package:queryflow/src/executor/my_sql_executor.dart';
-import 'package:queryflow/src/model/query_model.dart';
-
-import 'src/builders/select/matchers/where_matchers.dart';
 
 export 'package:queryflow/src/builders/builders.dart';
 export 'package:queryflow/src/builders/select/matchers/where_matchers.dart';
-export 'package:queryflow/src/model/query_model.dart';
+export 'package:queryflow/src/type/query_type_adapter.dart';
 
 /// A fluent SQL query builder and executor for MySQL databases.
 ///
@@ -214,23 +211,25 @@ class Queryflow implements QueryflowMethods, QueryflowExecuteTransation {
   }
 
   @override
-  Future<int> putSingle(QueryModel model) {
-    return insert(model.config.table, model.toMap()).execute();
+  Future<int> putSingle<T>(T model) {
+    return Future.value(0);
+    // return insert(model.config.table, model.toMap()).execute();
   }
 
   @override
-  Future<void> updateSingle(QueryModel model) {
-    final data = model.toMap();
-    final dataToUpdate = model.toMap()..remove(model.config.primaryKeyColumn);
-    return update(
-      model.config.table,
-      dataToUpdate,
-    )
-        .where(
-          model.config.primaryKeyColumn,
-          Equals(data[model.config.primaryKeyColumn]),
-        )
-        .execute();
+  Future<void> updateSingle<T>(T model) {
+    return Future.value();
+    // final data = model.toMap();
+    // final dataToUpdate = model.toMap()..remove(model.config.primaryKeyColumn);
+    // return update(
+    //   model.config.table,
+    //   dataToUpdate,
+    // )
+    //     .where(
+    //       model.config.primaryKeyColumn,
+    //       Equals(data[model.config.primaryKeyColumn]),
+    //     )
+    //     .execute();
   }
 }
 
@@ -307,8 +306,8 @@ abstract class QueryflowMethods {
   /// ```
   InsertBuilder insert(String table, Map<String, dynamic> fields);
 
-  Future<int> putSingle(QueryModel model);
-  Future<void> updateSingle(QueryModel model);
+  Future<int> putSingle<T>(T model);
+  Future<void> updateSingle<T>(T model);
 
   /// Executes a raw SQL query string.
   ///
