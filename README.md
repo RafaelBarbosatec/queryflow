@@ -84,6 +84,10 @@ final with18 = await queryflow.select('users', ['id', 'name'])
     .where('age', Equals(18))
     .fetch();
 
+final different18 = await queryflow.select('users', ['id', 'name'])
+    .where('age', Different(18))
+    .fetch();
+
 final nameStartR = await queryflow.select('users', ['id', 'name'])
     .where('name', Like('R%'))
     .fetch();
@@ -228,13 +232,13 @@ final queryflow = Queryflow(
 
 #### Fetching Models
 
-Use `fetchAs<T>()` to retrieve typed objects:
+Use `selectModel<Model>()` to retrieve typed objects:
 
 ```dart
 final users = await queryflow
-    .select('users')
+    .selectModel<User>()
     .where('age', GreaterThan(18))
-    .fetchAs<User>();
+    .fetch();
 
 // Work with strongly-typed User objects
 for (var user in users) {

@@ -14,7 +14,7 @@ import 'package:queryflow/src/builders/select/select_builder.dart';
 ///   .join('orders', InnerJoin('id', 'user_id'))
 ///   .where('users.active', Equals(true));
 /// ```
-mixin JoinMixin on SelectBuilderBase {
+mixin JoinMixin<T> on SelectBuilderBase<T> {
   /// Adds a JOIN clause to the query using the specified table and join matcher.
   ///
   /// The [table] parameter specifies the table to join with.
@@ -45,7 +45,7 @@ mixin JoinMixin on SelectBuilderBase {
   ///
   /// Returns the [SelectBuilder] instance for method chaining.
   @override
-  SelectBuilder join(String table, JoinMatcher matcher) {
+  SelectBuilder<T> join(String table, JoinMatcher matcher) {
     matchers.add(
       matcher
         ..table = table
@@ -64,7 +64,7 @@ mixin JoinMixin on SelectBuilderBase {
   ///
   /// Returns the [SelectBuilder] instance for method chaining.
   @override
-  SelectBuilder joinRaw(String raw) {
+  SelectBuilder<T> joinRaw(String raw) {
     matchers.add(JoinRaw(raw));
     return this;
   }

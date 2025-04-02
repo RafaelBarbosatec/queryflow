@@ -105,6 +105,18 @@ class Queryflow implements QueryflowMethods, QueryflowExecuteTransation {
     );
   }
 
+  @override
+  SelectBuilder<T> selectModel<T>([List<String> fields = const []]) {
+    final adapter = _queryTypeRetriver.getAdapter<T>();
+    final table = adapter.table;
+    return SelectBuilderModelImpl<T>(
+      _executor,
+      table,
+      _queryTypeRetriver,
+      fields: fields,
+    );
+  }
+
   /// Creates an INSERT query builder for the specified table.
   ///
   /// Parameters:
@@ -318,6 +330,7 @@ abstract class QueryflowMethods {
 
   Future<int> insertModel<T>(T model);
   Future<void> updateModel<T>(T model);
+  SelectBuilder<T> selectModel<T>([List<String> fields = const []]);
 
   /// Executes a raw SQL query string.
   ///

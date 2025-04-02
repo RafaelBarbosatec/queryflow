@@ -6,7 +6,7 @@ import 'package:queryflow/src/builders/select/select_builder.dart';
 /// This mixin provides the ability to limit the number of rows returned by a query
 /// and optionally specify an offset for pagination purposes.
 ///
-mixin LimitMixin on SelectBuilderBase {
+mixin LimitMixin<T> on SelectBuilderBase<T> {
   @override
 
   /// Adds a LIMIT clause to the SQL query.
@@ -22,7 +22,7 @@ mixin LimitMixin on SelectBuilderBase {
   ///   .limit(10, 20) // Limit to 10 records, starting from the 21st record
   ///   .fetch();
   /// ```
-  SelectBuilderFetch limit(int limitValue, [int? offset]) {
+  SelectBuilderFetch<T> limit(int limitValue, [int? offset]) {
     matchers.add(
       EndMatcher(
         raw: 'LIMIT $limitValue${offset != null ? ' OFFSET $offset' : ''}',

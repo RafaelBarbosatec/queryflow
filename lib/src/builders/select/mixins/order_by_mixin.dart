@@ -26,7 +26,7 @@ import 'package:queryflow/src/builders/select/select_builder.dart';
 ///   .orderBy(['category', 'name'], OrderByType.asc)
 ///   .fetch();
 /// ```
-mixin OrderByMixin on SelectBuilderBase {
+mixin OrderByMixin<T> on SelectBuilderBase<T> {
   @override
 
   /// Orders the query results by the specified fields.
@@ -50,7 +50,7 @@ mixin OrderByMixin on SelectBuilderBase {
   ///   .orderBy(['department', 'last_name'], OrderByType.asc)
   ///   .fetch();
   /// ```
-  SelectBuilderFetch orderBy(
+  SelectBuilderFetch<T> orderBy(
     List<String> fields, [
     OrderByType type = OrderByType.desc,
   ]) {

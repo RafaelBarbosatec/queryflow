@@ -5,7 +5,7 @@ import 'package:queryflow/src/builders/select/select_builder.dart';
 ///
 /// This mixin adds methods for filtering query results using various conditions
 /// like equals, greater than, less than, etc. through the WhereMatcher classes.
-mixin WhereMixin on SelectBuilderBase {
+mixin WhereMixin<T> on SelectBuilderBase<T> {
   /// Adds a WHERE condition to the query using the specified field and matcher.
   ///
   /// This method is the primary way to filter results in a SELECT query by adding
@@ -43,7 +43,7 @@ mixin WhereMixin on SelectBuilderBase {
   /// @param type The type of boolean operator to use (AND or OR)
   /// @return The same builder instance for method chaining
   @override
-  SelectBuilderWhere where(
+  SelectBuilderWhere<T> where(
     String field,
     WhereMatcher matcher, {
     WhereMatcherType type = WhereMatcherType.and,
@@ -70,7 +70,7 @@ mixin WhereMixin on SelectBuilderBase {
   /// @param type The type of boolean operator to use (AND or OR)
   /// @return The same builder instance for method chaining
   @override
-  SelectBuilderWhere notWhere(
+  SelectBuilderWhere<T> notWhere(
     String field,
     WhereMatcher matcher, {
     WhereMatcherType type = WhereMatcherType.and,
@@ -97,7 +97,7 @@ mixin WhereMixin on SelectBuilderBase {
   /// @param type The type of boolean operator to use (AND or OR)
   /// @return The same builder instance for method chaining
   @override
-  SelectBuilderWhere whereRaw(
+  SelectBuilderWhere<T> whereRaw(
     String raw, {
     WhereMatcherType type = WhereMatcherType.and,
   }) {

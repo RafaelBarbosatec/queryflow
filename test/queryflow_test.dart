@@ -228,12 +228,8 @@ void main() {
   });
 
   test('Select model', () async {
-    final users = await queryflow
-        .select(
-          User.table,
-        )
-        .where('id', Equals(3))
-        .fetchAs<User>();
+    final users =
+        await queryflow.selectModel<User>().where('id', Equals(3)).fetch();
     expect(users.length, 1);
     expect(users[0].id, 3);
     expect(users[0].name, 'Gabriel');
@@ -248,12 +244,8 @@ void main() {
       ),
     );
 
-    final users = await queryflow
-        .select(
-          User.table,
-        )
-        .where('id', Equals(3))
-        .fetchAs<User>();
+    final users =
+        await queryflow.selectModel<User>().where('id', Equals(3)).fetch();
     expect(users.length, 1);
     expect(users[0].id, 3);
     expect(users[0].name, 'Fabio');

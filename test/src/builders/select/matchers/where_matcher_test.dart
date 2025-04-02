@@ -18,8 +18,7 @@ void main() {
     test('Between generates correct SQL', () {
       final matcher = Between('10', '20')..field = 'column';
       final result = matcher.compose('SELECT * FROM table');
-      expect(
-          result.query, 'SELECT * FROM table WHERE column BETWEEN ? AND ?');
+      expect(result.query, 'SELECT * FROM table WHERE column BETWEEN ? AND ?');
     });
 
     test('BetweenDate generates correct SQL', () {
@@ -50,15 +49,6 @@ void main() {
         result.query,
         'SELECT * FROM table WHERE column like ?',
       );
-    });
-
-    test('containsWhereSentence detects WHERE clause', () {
-      final matcher = Equals('value');
-      expect(
-        matcher.containsWhereSentence('SELECT * FROM table WHERE id = 1'),
-        true,
-      );
-      expect(matcher.containsWhereSentence('SELECT * FROM table'), false);
     });
   });
 }

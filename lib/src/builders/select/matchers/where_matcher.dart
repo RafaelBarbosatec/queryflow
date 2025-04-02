@@ -12,32 +12,18 @@ abstract class WhereMatcher implements BaseMatcher {
   WhereMatcherType type = WhereMatcherType.and;
   bool isNot = false;
   String field = '';
-  final key = 'WHERE';
+  final _key = 'WHERE';
 
-  String get not => isNot ? 'NOT ' : '';
-  bool containsWhereSentence(String current) {
-    return current.contains(key);
-  }
-}
+  String get _not => isNot ? 'NOT ' : '';
 
-class Equals extends WhereMatcher {
-  final dynamic value;
-  Equals(this.value);
-
-  @override
-  MatchResult compose(String current) {
-    List params = [value];
-    if (containsWhereSentence(current)) {
-      return MatchResult(
-        '$current ${type.value} $not$field = ?',
-        params,
-      );
+  String addsAgragator(String current) {
+    String agregator = '';
+    if (current.contains(_key)) {
+      agregator = ' ${type.value}';
     } else {
-      return MatchResult(
-        '$current $key $not$field = ?',
-        params,
-      );
+      agregator = ' $_key$_not';
     }
+    return '$current$agregator';
   }
 }
 
@@ -47,16 +33,52 @@ class WhereRaw extends WhereMatcher {
 
   @override
   MatchResult compose(String current) {
-    if (containsWhereSentence(current)) {
-      return MatchResult(
-        '$current ${type.value} $not $value',
-      );
-    } else {
-      return MatchResult(
-        '$current $key $not$value',
-      );
-    }
+    return MatchResult(
+      '${addsAgragator(current)} $value',
+    );
   }
+}
+
+class _ComparatorWhere extends WhereMatcher {
+  final String comparator;
+  final dynamic value;
+  _ComparatorWhere(
+    this.value,
+    this.comparator,
+  );
+
+  @override
+  MatchResult compose(String current) {
+    List params = [value];
+    return MatchResult(
+      '${addsAgragator(current)} $field $comparator ?',
+      params,
+    );
+  }
+}
+
+class Equals extends _ComparatorWhere {
+  Equals(dynamic value) : super(value, '=');
+}
+
+class Different extends _ComparatorWhere {
+  Different(dynamic value) : super(value, '!=');
+}
+
+class GreaterThan extends _ComparatorWhere {
+  GreaterThan(dynamic value) : super(value, '>');
+}
+
+class GreaterThanOrEqual extends _ComparatorWhere {
+  GreaterThanOrEqual(dynamic value) : super(value, '>=');
+}
+
+class LessThan extends _ComparatorWhere {
+  LessThan(dynamic value) : super(value, '<');
+}
+
+class LessThanOrEqual extends _ComparatorWhere {
+  LessThanOrEqual(dynamic value) : super(value, '<=');
 }
 
 class Between extends WhereMatcher {
@@ -67,17 +89,10 @@ class Between extends WhereMatcher {
   @override
   MatchResult compose(String current) {
     List params = [start, end];
-    if (containsWhereSentence(current)) {
-      return MatchResult(
-        '$current ${type.value} $not$field BETWEEN ? AND ?',
-        params,
-      );
-    } else {
-      return MatchResult(
-        '$current $key $not$field BETWEEN ? AND ?',
-        params,
-      );
-    }
+    return MatchResult(
+      '${addsAgragator(current)} $field BETWEEN ? AND ?',
+      params,
+    );
   }
 }
 
@@ -92,17 +107,10 @@ class BetweenDate extends WhereMatcher {
     final dateEnd = end.toIso8601String().split('T').first;
     List params = [dateStart, dateEnd];
 
-    if (containsWhereSentence(current)) {
-      return MatchResult(
-        "$current ${type.value} $not$field BETWEEN  ? AND ?",
-        params,
-      );
-    } else {
-      return MatchResult(
-        "$current $key $not$field BETWEEN ? AND ?",
-        params,
-      );
-    }
+    return MatchResult(
+      "${addsAgragator(current)} $field BETWEEN ? AND ?",
+      params,
+    );
   }
 }
 
@@ -114,17 +122,10 @@ class EqualsDate extends WhereMatcher {
   MatchResult compose(String current) {
     final date = value.toIso8601String().split('T').first;
     List params = [date];
-    if (containsWhereSentence(current)) {
-      return MatchResult(
-        "$current ${type.value} ${not}DATE($field) = ?",
-        params,
-      );
-    } else {
-      return MatchResult(
-        "$current $key ${not}DATE($field) = ?",
-        params,
-      );
-    }
+    return MatchResult(
+      "${addsAgragator(current)} DATE($field) = ?",
+      params,
+    );
   }
 }
 
@@ -135,40 +136,23 @@ class Like extends WhereMatcher {
   @override
   MatchResult compose(String current) {
     final params = [value];
-    if (containsWhereSentence(current)) {
-      return MatchResult('$current ${type.value} $not$field like ?', params);
-    } else {
-      return MatchResult('$current $key $not$field like ?', params);
-    }
+    return MatchResult(
+      '${addsAgragator(current)} $field like ?',
+      params,
+    );
   }
 }
 
-class GreaterThan extends WhereMatcher {
-  final dynamic value;
-  GreaterThan(this.value);
+class In extends WhereMatcher {
+  final List<String> value;
+  In(this.value);
 
   @override
   MatchResult compose(String current) {
-    final params = [value];
-    if (containsWhereSentence(current)) {
-      return MatchResult('$current ${type.value} $not$field > ?', params);
-    } else {
-      return MatchResult('$current $key $not$field > ?', params);
-    }
-  }
-}
-
-class LessThan extends WhereMatcher {
-  final dynamic value;
-  LessThan(this.value);
-
-  @override
-  MatchResult compose(String current) {
-    final params = [value];
-    if (containsWhereSentence(current)) {
-      return MatchResult('$current ${type.value} $not$field < ?', params);
-    } else {
-      return MatchResult('$current $key $not$field < ?', params);
-    }
+    final params = value;
+    return MatchResult(
+      '${addsAgragator(current)} $field IN (${value.map((e) => '?').join(',')})',
+      params,
+    );
   }
 }
