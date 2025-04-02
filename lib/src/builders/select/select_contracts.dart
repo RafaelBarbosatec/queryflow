@@ -1,12 +1,7 @@
 import 'package:queryflow/src/builders/select/matchers/where_matchers.dart';
+import 'package:queryflow/src/builders/select/select_builder.dart';
 
-abstract class SelectBuilderFetch {
-  Future<List<Map<String, dynamic>>> fetch();
-  Future<int> count();
-  Future<num> max();
-  Future<num> min();
-  Future<num> sum();
-  Future<num> avg();
+abstract class SelectBuilderSql {
   String toSql({
     bool isCount = false,
     bool isMax = false,
@@ -14,7 +9,19 @@ abstract class SelectBuilderFetch {
     bool isSum = false,
     bool isAvg = false,
   });
+}
+
+abstract class SelectBuilderFetch {
+  Future<List<Map<String, dynamic>>> fetch();
   Future<List<T>> fetchAs<T>();
+}
+
+abstract class SelectBuilderAgregation {
+  Future<int> count();
+  Future<num> max();
+  Future<num> min();
+  Future<num> sum();
+  Future<num> avg();
 }
 
 abstract class SelectBuilderLimit {
@@ -195,11 +202,3 @@ abstract class SelectBuilderWhere
     WhereMatcherType type = WhereMatcherType.and,
   });
 }
-
-abstract class SelectBuilder
-    implements
-        SelectBuilderWhere,
-        SelectBuilderFetch,
-        SelectBuilderLimit,
-        SelectBuilderJoin,
-        SelectBuilderOrderBy {}

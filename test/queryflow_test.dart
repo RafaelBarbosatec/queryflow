@@ -1,3 +1,4 @@
+// ignore_for_file: public_member_api_docs, sort_constructors_first
 import 'package:queryflow/queryflow.dart';
 import 'package:test/test.dart';
 
@@ -12,7 +13,15 @@ void main() {
         port: 3306,
         userName: "admin",
         password: "12345678",
-        databaseName: "boleiro", // optional
+        databaseName: "boleiro",
+        typeAdapters: [
+          QueryTypeAdapter<User>(
+            table: 'table_01',
+            primaryKeyColumn: 'id',
+            toMap: (user) => user.toMap(),
+            fromMap: User.fromMap,
+          )
+        ],
       );
       await _createTables(queryflow);
       initilized = true;
@@ -207,6 +216,48 @@ void main() {
     expect(result.length, 1);
     expect(result[0]['name'], 'Davi');
   });
+
+  test('insertModel', () async {
+    final id = await queryflow.insertModel(
+      User(
+        name: 'Gabriel',
+        date: DateTime.now(),
+      ),
+    );
+    print(id);
+  });
+
+  test('Select model', () async {
+    final users = await queryflow
+        .select(
+          User.table,
+        )
+        .where('id', Equals(3))
+        .fetchAs<User>();
+    expect(users.length, 1);
+    expect(users[0].id, 3);
+    expect(users[0].name, 'Gabriel');
+  });
+
+  test('updateModel', () async {
+    await queryflow.updateModel(
+      User(
+        id: 3,
+        name: 'Fabio',
+        date: DateTime.now(),
+      ),
+    );
+
+    final users = await queryflow
+        .select(
+          User.table,
+        )
+        .where('id', Equals(3))
+        .fetchAs<User>();
+    expect(users.length, 1);
+    expect(users[0].id, 3);
+    expect(users[0].name, 'Fabio');
+  });
 }
 
 Future<void> _createTables(Queryflow queryflow) async {
@@ -234,4 +285,33 @@ CREATE TABLE `table_02` (
   FOREIGN KEY (`table_01_id`) REFERENCES `table_01` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 ''');
+}
+
+class User {
+  static const table = 'table_01';
+  final int? id;
+  final String name;
+  final DateTime date;
+
+  User({
+    required this.name,
+    required this.date,
+    this.id,
+  });
+
+  Map<String, dynamic> toMap() {
+    return <String, dynamic>{
+      if (id != null) 'id': id,
+      'name': name,
+      'date': date.toIso8601String(),
+    };
+  }
+
+  factory User.fromMap(Map<String, dynamic> map) {
+    return User(
+      id: map['id'] as int?,
+      name: map['name'] as String,
+      date: map['date'],
+    );
+  }
 }

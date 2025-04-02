@@ -224,18 +224,17 @@ class Queryflow implements QueryflowMethods, QueryflowExecuteTransation {
   }
 
   @override
-  Future<int> putSingle<T>(T model) {
+  Future<int> insertModel<T>(T model) {
     final adapter = _queryTypeRetriver.getAdapter<T>();
     return insert(adapter.table, adapter.toMap(model)).execute();
   }
 
   @override
-  Future<void> updateSingle<T>(T model) {
+  Future<void> updateModel<T>(T model) {
     final adapter = _queryTypeRetriver.getAdapter<T>();
     final data = adapter.toMap(model);
 
-    final dataToUpdate = adapter.toMap(model)..remove(adapter.primaryKeyColumn);
-    return update(adapter.table, dataToUpdate)
+    return update(adapter.table, data)
         .where(
           adapter.primaryKeyColumn,
           Equals(data[adapter.primaryKeyColumn]),
@@ -317,8 +316,8 @@ abstract class QueryflowMethods {
   /// ```
   InsertBuilder insert(String table, Map<String, dynamic> fields);
 
-  Future<int> putSingle<T>(T model);
-  Future<void> updateSingle<T>(T model);
+  Future<int> insertModel<T>(T model);
+  Future<void> updateModel<T>(T model);
 
   /// Executes a raw SQL query string.
   ///

@@ -167,6 +167,113 @@ final customQuery = await queryflow.execute('SELECT * FROM users WHERE age > 18'
 print(customQuery);
 ```
 
+### Working with Models
+
+Queryflow provides seamless integration with your data models through type adapters, allowing you to directly map between your Dart objects and database records.
+
+#### Registering Type Adapters
+
+First, define your model class with appropriate mapping methods:
+
+```dart
+class User {
+  static const table = 'users';
+  final int? id;
+  final String name;
+  final DateTime date;
+
+  User({
+    required this.name,
+    required this.date,
+    this.id,
+  });
+
+  Map<String, dynamic> toMap() {
+    return <String, dynamic>{
+      if (id != null) 'id': id,
+      'name': name,
+      'date': date.toIso8601String(),
+    };
+  }
+
+  factory User.fromMap(Map<String, dynamic> map) {
+    return User(
+      id: map['id'] as int?,
+      name: map['name'] as String,
+      date: map['date'],
+    );
+  }
+}
+```
+
+Then register your type adapter when initializing Queryflow:
+
+```dart
+final queryflow = Queryflow(
+  host: 'localhost',
+  port: 3306,
+  userName: 'root',
+  password: 'password',
+  databaseName: 'example_db',
+  typeAdapters: [
+    QueryTypeAdapter<User>(
+      table: User.table,
+      primaryKeyColumn: 'id',
+      toMap: (user) => user.toMap(),
+      fromMap: User.fromMap,
+    )
+  ],
+);
+```
+
+#### Fetching Models
+
+Use `fetchAs<T>()` to retrieve typed objects:
+
+```dart
+final users = await queryflow
+    .select('users')
+    .where('age', GreaterThan(18))
+    .fetchAs<User>();
+
+// Work with strongly-typed User objects
+for (var user in users) {
+  print('User ${user.id}: ${user.name}, Date: ${user.date}');
+}
+```
+
+#### Inserting Models
+
+Insert model instances directly:
+
+```dart
+final newUser = User(
+  name: 'Gabriel',
+  date: DateTime.now(),
+);
+
+// Returns the inserted record's ID
+final userId = await queryflow.insertModel(newUser);
+print('Inserted user with ID: $userId');
+```
+
+#### Updating Models
+
+Update existing records using model instances:
+
+```dart
+// Update user with ID 1
+final userToUpdate = User(
+  id: 1, // ID must be provided for updates
+  name: 'Updated Name',
+  date: DateTime.now(),
+);
+
+await queryflow.updateModel(userToUpdate);
+```
+
+The model's type adapter will use the primary key (ID) to identify which record to update, and the model's `toMap()` method to determine which fields to update.
+
 ## Additional information
 
 For more details, refer to the source code or contribute to the project. If you encounter any issues, feel free to open an issue on the repository.

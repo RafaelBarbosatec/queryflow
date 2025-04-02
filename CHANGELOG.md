@@ -1,7 +1,7 @@
 ## NEXT
 
 * Adds `executeTransation`
-* Adds `putSingle` and `updateSingle` in `Queryflow`
+* Adds `insertModel` and `updateModel` in `Queryflow`
 
 ## 0.0.1
 

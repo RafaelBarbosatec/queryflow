@@ -10,6 +10,16 @@ import 'package:queryflow/src/type/query_type_retriver.dart';
 
 export 'select_contracts.dart';
 
+abstract class SelectBuilder
+    implements
+        SelectBuilderWhere,
+        SelectBuilderAgregation,
+        SelectBuilderSql,
+        SelectBuilderFetch,
+        SelectBuilderLimit,
+        SelectBuilderJoin,
+        SelectBuilderOrderBy {}
+
 abstract class SelectBuilderBase implements SelectBuilder {
   final String table;
   final List<String> fields;
