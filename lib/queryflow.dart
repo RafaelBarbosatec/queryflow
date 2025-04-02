@@ -96,7 +96,10 @@ class Queryflow implements QueryflowMethods, QueryflowExecuteTransation {
   ///   .Equals();
   /// ```
   @override
-  SelectBuilder select(String table, [List<String> fields = const []]) {
+  SelectBuilder<Map<String, dynamic>> select(
+    String table, [
+    List<String> fields = const [],
+  ]) {
     return SelectBuilderImpl(
       _executor,
       table,
@@ -289,7 +292,8 @@ abstract class QueryflowMethods {
   ///   .orderBy(['created_at'], OrderByType.asc)
   ///   .Equals();
   /// ```
-  SelectBuilder select(String table, [List<String> fields = const []]);
+  SelectBuilder<Map<String, dynamic>> select(String table,
+      [List<String> fields = const []]);
 
   /// Creates an UPDATE query builder for the specified table.
   ///
