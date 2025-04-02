@@ -1,4 +1,4 @@
-## NEXT
+## 0.1.0
 
 * Adds `executeTransation`
 * Adds `insertModel`, `updateModel` ans `selectModel` in `Queryflow`
