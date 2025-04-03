@@ -1,3 +1,7 @@
+## 0.1.1
+
+* Adds example
+
 ## 0.1.0
 
 * Adds `executeTransation`
