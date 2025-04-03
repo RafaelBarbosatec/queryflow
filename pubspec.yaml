@@ -1,5 +1,5 @@
 name: queryflow
-description: "Queryflow is a lightweight and flexible Dart package designed to simplify the process of building and executing SQL queries."
+description: "Queryflow is a lightweight and flexible Query Builder designed to simplify the process of building and executing SQL queries."
 version: 0.1.1
 homepage: https://github.com/RafaelBarbosatec/queryflow
 
