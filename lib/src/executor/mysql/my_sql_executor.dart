@@ -83,7 +83,7 @@ class MySqlExecutor implements Executor {
   ) async {
     if (_conn != null) {
       return await _conn!.transactional((conn) async {
-        return transaction(_MySqlExecutorTransation(conn));
+        return transaction(MySqlExecutorTransation(conn));
       });
     } else {
       throw Exception("Connection is not initialized.");
@@ -91,10 +91,10 @@ class MySqlExecutor implements Executor {
   }
 }
 
-class _MySqlExecutorTransation implements Executor {
+class MySqlExecutorTransation implements Executor {
   final MySQLConnection conn;
 
-  _MySqlExecutorTransation(this.conn);
+  MySqlExecutorTransation(this.conn);
 
   @override
   Future<List<Map<String, dynamic>>> execute(String query) async {

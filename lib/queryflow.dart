@@ -3,7 +3,8 @@ import 'dart:io';
 import 'package:queryflow/src/builders/builders.dart';
 import 'package:queryflow/src/builders/update/update_builder.dart';
 import 'package:queryflow/src/executor/executor.dart';
-import 'package:queryflow/src/executor/my_sql_executor.dart';
+import 'package:queryflow/src/executor/mysql/my_sql_executor.dart';
+import 'package:queryflow/src/executor/mysql/my_sql_pool_executor.dart';
 import 'package:queryflow/src/type/query_type_adapter.dart';
 import 'package:queryflow/src/type/query_type_retriver.dart';
 
@@ -64,19 +65,35 @@ class Queryflow implements QueryflowMethods, QueryflowExecuteTransation {
     SecurityContext? securityContext,
     Executor? executor,
     List<QueryTypeAdapter>? typeAdapters,
+    int maxConnections = 1,
   }) {
     _queryTypeRetriver = QueryTypeRetriver(typeAdapters ?? []);
-    _executor = executor ??
-        MySqlExecutor(
-          host: host,
-          port: port,
-          userName: userName,
-          password: password,
-          databaseName: databaseName,
-          collation: collation,
-          secure: secure,
-          securityContext: securityContext,
-        );
+    if (executor != null) {
+      _executor = executor;
+    } else if (maxConnections > 1) {
+      _executor = MySqlPoolExecutor(
+        host: host,
+        port: port,
+        userName: userName,
+        password: password,
+        databaseName: databaseName,
+        collation: collation,
+        secure: secure,
+        securityContext: securityContext,
+        maxConnections: maxConnections,
+      );
+    } else {
+      _executor = MySqlExecutor(
+        host: host,
+        port: port,
+        userName: userName,
+        password: password,
+        databaseName: databaseName,
+        collation: collation,
+        secure: secure,
+        securityContext: securityContext,
+      );
+    }
   }
 
   /// Creates a SELECT query builder for the specified table.

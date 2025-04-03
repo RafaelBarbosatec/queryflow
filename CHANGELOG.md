@@ -1,3 +1,7 @@
+## NEXT
+
+* Adds support to Pool of connections
+
 ## 0.1.1
 
 * Adds example
