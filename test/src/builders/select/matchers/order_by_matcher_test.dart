@@ -18,7 +18,10 @@ void main() {
         type: OrderByType.desc,
       );
       final result = matcher.compose('SELECT * FROM table');
-      expect(result.query, 'SELECT * FROM table ORDER BY column1, column2 DESC');
+      expect(
+        result.query,
+        'SELECT * FROM table ORDER BY column1, column2 DESC',
+      );
     });
 
     test('compose works with empty current string', () {

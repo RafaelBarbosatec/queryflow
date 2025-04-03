@@ -21,8 +21,10 @@ void main() {
       join.selectTable = 'orders';
 
       final result = join.compose('SELECT * FROM orders');
-      expect(result.query,
-          'SELECT * FROM orders LEFT JOIN users ON orders.id = users.user_id',);
+      expect(
+        result.query,
+        'SELECT * FROM orders LEFT JOIN users ON orders.id = users.user_id',
+      );
     });
 
     test('RightJoin composes correct SQL', () {
@@ -31,8 +33,10 @@ void main() {
       join.selectTable = 'orders';
 
       final result = join.compose('SELECT * FROM orders');
-      expect(result.query,
-          'SELECT * FROM orders RIGHT JOIN users ON orders.id = users.user_id',);
+      expect(
+        result.query,
+        'SELECT * FROM orders RIGHT JOIN users ON orders.id = users.user_id',
+      );
     });
 
     test('FullOuterJoin composes correct SQL', () {
@@ -41,8 +45,10 @@ void main() {
       join.selectTable = 'orders';
 
       final result = join.compose('SELECT * FROM orders');
-      expect(result.query,
-          'SELECT * FROM orders FULL OUTER JOIN users ON orders.id = users.user_id',);
+      expect(
+        result.query,
+        'SELECT * FROM orders FULL OUTER JOIN users ON orders.id = users.user_id',
+      );
     });
 
     test('JoinRaw composes correct SQL', () {
