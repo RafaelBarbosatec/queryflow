@@ -238,12 +238,44 @@ class Queryflow implements QueryflowMethods, QueryflowExecuteTransation {
     );
   }
 
+  /// Inserts a model object into its corresponding database table.
+  ///
+  /// This method uses type adapters to convert the model object to a database map
+  /// and determine the appropriate table. The primary key will be automatically
+  /// assigned to the model if the database generates it.
+  ///
+  /// Parameters:
+  /// - [model]: The model object to insert into the database
+  ///
+  /// Returns a Future that resolves to the inserted row's ID.
+  ///
+  /// Example:
+  /// ```dart
+  /// final user = User(name: 'John', email: 'john@example.com');
+  /// final userId = await db.insertModel(user);
+  /// ```
   @override
   Future<int> insertModel<T>(T model) {
     final adapter = _queryTypeRetriver.getAdapter<T>();
     return insert(adapter.table, adapter.toMap(model)).execute();
   }
 
+  /// Updates a model object in its corresponding database table.
+  ///
+  /// This method uses the model's primary key to identify the record to update and
+  /// updates all other fields with the current model values. The primary key value
+  /// must be present in the model.
+  ///
+  /// Parameters:
+  /// - [model]: The model object with updated values to persist to the database
+  ///
+  /// Returns a Future that completes when the update operation is finished.
+  ///
+  /// Example:
+  /// ```dart
+  /// final user = User(id: 1, name: 'John Smith', email: 'john@example.com');
+  /// await db.updateModel(user);
+  /// ```
   @override
   Future<void> updateModel<T>(T model) {
     final adapter = _queryTypeRetriver.getAdapter<T>();
@@ -292,8 +324,10 @@ abstract class QueryflowMethods {
   ///   .orderBy(['created_at'], OrderByType.asc)
   ///   .Equals();
   /// ```
-  SelectBuilder<Map<String, dynamic>> select(String table,
-      [List<String> fields = const []]);
+  SelectBuilder<Map<String, dynamic>> select(
+    String table, [
+    List<String> fields = const [],
+  ]);
 
   /// Creates an UPDATE query builder for the specified table.
   ///
