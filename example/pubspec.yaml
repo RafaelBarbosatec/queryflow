@@ -1,0 +1,17 @@
+name: queryflow_example
+description: "Queryflow Example"
+version: 0.0.1
+publish_to: 'none'
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+
+dependencies:
+  queryflow:
+    path: ../
+  
+
+dev_dependencies:
+  test: any
+  flutter_lints: ^5.0.0
+

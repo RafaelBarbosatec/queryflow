@@ -224,7 +224,7 @@ void main() {
         date: DateTime.now(),
       ),
     );
-    print(id);
+    expect(id, 3);
   });
 
   test('Select model', () async {
