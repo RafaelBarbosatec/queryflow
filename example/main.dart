@@ -1,5 +1,7 @@
 // ignore_for_file: avoid_print
 
+import 'dart:io';
+
 import 'package:queryflow/queryflow.dart';
 
 void main() async {
@@ -27,6 +29,13 @@ void main() async {
     ),
   );
 
+  await queryflow.insertModel<User>(
+    User(
+      name: 'Ana',
+      date: DateTime.now(),
+    ),
+  );
+
   final users = await queryflow.selectModel<User>().fetch();
 
   final usersById = await queryflow
@@ -37,9 +46,13 @@ void main() async {
       )
       .fetch();
 
+  print('users: $users');
+
   if (usersById.first.name == users.first.name) {
     print('objects are equal');
   }
+
+  exit(0);
 }
 
 Future<void> _createTables(Queryflow queryflow) async {
