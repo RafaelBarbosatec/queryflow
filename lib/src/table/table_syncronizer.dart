@@ -29,6 +29,11 @@ class TableSyncronizer {
             await _addColumn(table.name, column);
           }
         }
+        for (final existColumn in existingColumns) {
+          if (!table.columns.keys.contains(existColumn)) {
+            await _removeColumn(table.name, existColumn);
+          }
+        }
       }
     }
   }
@@ -84,6 +89,13 @@ class TableSyncronizer {
   Future<void> _execDropTable(String tableName) {
     return executor.execute(
       '''DROP TABLE IF EXISTS `$tableName`;''',
+    );
+  }
+
+  Future<void> _removeColumn(String name, existColumn) {
+    return executor.execute(
+      '''ALTER TABLE `$name` 
+        DROP COLUMN `$existColumn`;''',
     );
   }
 }

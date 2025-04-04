@@ -2,6 +2,8 @@
 import 'package:queryflow/queryflow.dart';
 import 'package:test/test.dart';
 
+import 'util/user_model.dart';
+
 void main() {
   bool initilized = false;
   late Queryflow queryflow;
@@ -15,12 +17,15 @@ void main() {
         password: "12345678",
         databaseName: "boleiro",
         typeAdapters: [
-          QueryTypeAdapter<User>(
-            table: 'table_01',
+          QueryTypeAdapter<UserModel>(
+            table: UserModel.table.name,
             primaryKeyColumn: 'id',
             toMap: (user) => user.toMap(),
-            fromMap: User.fromMap,
+            fromMap: UserModel.fromMap,
           )
+        ],
+        tables: [
+          UserModel.table,
         ],
       );
       await _createTables(queryflow);
@@ -219,7 +224,7 @@ void main() {
 
   test('insertModel', () async {
     final id = await queryflow.insertModel(
-      User(
+      UserModel(
         name: 'Gabriel',
         date: DateTime.now(),
       ),
@@ -229,7 +234,7 @@ void main() {
 
   test('Select model', () async {
     final users =
-        await queryflow.selectModel<User>().where('id', Equals(3)).fetch();
+        await queryflow.selectModel<UserModel>().where('id', Equals(3)).fetch();
     expect(users.length, 1);
     expect(users[0].id, 3);
     expect(users[0].name, 'Gabriel');
@@ -237,7 +242,7 @@ void main() {
 
   test('updateModel', () async {
     await queryflow.updateModel(
-      User(
+      UserModel(
         id: 3,
         name: 'Fabio',
         date: DateTime.now(),
@@ -245,7 +250,7 @@ void main() {
     );
 
     final users =
-        await queryflow.selectModel<User>().where('id', Equals(3)).fetch();
+        await queryflow.selectModel<UserModel>().where('id', Equals(3)).fetch();
     expect(users.length, 1);
     expect(users[0].id, 3);
     expect(users[0].name, 'Fabio');
@@ -277,33 +282,4 @@ CREATE TABLE `table_02` (
   FOREIGN KEY (`table_01_id`) REFERENCES `table_01` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 ''');
-}
-
-class User {
-  static const table = 'table_01';
-  final int? id;
-  final String name;
-  final DateTime date;
-
-  User({
-    required this.name,
-    required this.date,
-    this.id,
-  });
-
-  Map<String, dynamic> toMap() {
-    return <String, dynamic>{
-      if (id != null) 'id': id,
-      'name': name,
-      'date': date.toIso8601String(),
-    };
-  }
-
-  factory User.fromMap(Map<String, dynamic> map) {
-    return User(
-      id: map['id'] as int?,
-      name: map['name'] as String,
-      date: map['date'],
-    );
-  }
 }

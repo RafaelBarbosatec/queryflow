@@ -14,6 +14,7 @@ import 'src/builders/select/matchers/where_matchers.dart';
 
 export 'package:queryflow/src/builders/builders.dart';
 export 'package:queryflow/src/builders/select/matchers/where_matchers.dart';
+export 'package:queryflow/src/table/table_model.dart';
 export 'package:queryflow/src/type/query_type_adapter.dart';
 
 /// A fluent SQL query builder and executor for MySQL databases.
@@ -102,7 +103,7 @@ class Queryflow implements QueryflowMethods, QueryflowExecuteTransation {
     _tableSyncronizer = TableSyncronizer(
       executor: _executor,
       databaseName: databaseName ?? '',
-      tables: [],
+      tables: tables,
     );
   }
 

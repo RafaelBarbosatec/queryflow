@@ -30,7 +30,7 @@ class TableModel {
         columnDefinition += ' NOT NULL';
       }
       if (columnType.isAutoIncrement) {
-        columnDefinition += ' AUTOINCREMENT';
+        columnDefinition += ' AUTO_INCREMENT';
       }
       if (columnType.defaultValue != null) {
         columnDefinition += ' DEFAULT ${columnType.defaultValue}';
