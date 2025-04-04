@@ -13,13 +13,13 @@ class TableSyncronizer {
   });
 
   Future<void> syncronize({bool dropTable = false}) async {
-    for (var table in tables) {
-      bool tableExists = false;
-      if (dropTable) {
-        await _execDropTable(table.name);
-      } else {
-        tableExists = await _tableExists(table.name);
+    if (dropTable) {
+      for (final t in tables.reversed) {
+        await _execDropTable(t.name);
       }
+    }
+    for (var table in tables) {
+      final tableExists = await _tableExists(table.name);
       if (!tableExists) {
         await _createTable(table);
       } else {
