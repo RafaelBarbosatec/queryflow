@@ -12,6 +12,19 @@ class TableModel {
     this.outomaticIncrement = 1,
     this.charset = 'utf8mb4',
   });
+
+  String get primaryKeyColumn {
+    String name = '';
+    columns.forEach(
+      (key, value) {
+        if (name.isEmpty && value.isPrimaryKey) {
+          name = key;
+        }
+      },
+    );
+    return name;
+  }
+
   String toCreateSql() {
     StringBuffer sql = StringBuffer('CREATE TABLE `$name` (\n');
     List<String> columnDefinitions = [];

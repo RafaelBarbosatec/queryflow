@@ -18,13 +18,13 @@ void main() {
         typeAdapters: [
           QueryTypeAdapter<UserModel>(
             table: UserModel.table.name,
-            primaryKeyColumn: 'id',
+            primaryKeyColumn: UserModel.table.primaryKeyColumn,
             toMap: (user) => user.toMap(),
             fromMap: UserModel.fromMap,
           ),
           QueryTypeAdapter<ProfileModel>(
             table: ProfileModel.table.name,
-            primaryKeyColumn: 'id',
+            primaryKeyColumn: ProfileModel.table.primaryKeyColumn,
             toMap: (user) => user.toMap(),
             fromMap: ProfileModel.fromMap,
           )
