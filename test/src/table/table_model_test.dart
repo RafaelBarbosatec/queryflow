@@ -11,7 +11,6 @@ void main() {
         'age': TypeInt(),
         'isActive': TypeBool(),
         'createdAt': TypeDateTime(),
-        'data': TypeJson(),
         'profile_id': TypeInt(
           foreignKey: ForeingKey(
             table: 'profile',

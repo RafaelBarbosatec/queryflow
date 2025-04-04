@@ -5,6 +5,8 @@ import 'package:queryflow/src/builders/update/update_builder.dart';
 import 'package:queryflow/src/executor/executor.dart';
 import 'package:queryflow/src/executor/mysql/my_sql_executor.dart';
 import 'package:queryflow/src/executor/mysql/my_sql_pool_executor.dart';
+import 'package:queryflow/src/table/table_model.dart';
+import 'package:queryflow/src/table/table_syncronizer.dart';
 import 'package:queryflow/src/type/query_type_adapter.dart';
 import 'package:queryflow/src/type/query_type_retriver.dart';
 
@@ -42,6 +44,8 @@ class Queryflow implements QueryflowMethods, QueryflowExecuteTransation {
 
   late QueryTypeRetriver _queryTypeRetriver;
 
+  late TableSyncronizer _tableSyncronizer;
+
   /// Creates a new Queryflow instance for database operations.
   ///
   /// Parameters:
@@ -65,6 +69,7 @@ class Queryflow implements QueryflowMethods, QueryflowExecuteTransation {
     SecurityContext? securityContext,
     Executor? executor,
     List<QueryTypeAdapter>? typeAdapters,
+    List<TableModel> tables = const [],
     int maxConnections = 1,
   }) {
     _queryTypeRetriver = QueryTypeRetriver(typeAdapters ?? []);
@@ -94,6 +99,19 @@ class Queryflow implements QueryflowMethods, QueryflowExecuteTransation {
         securityContext: securityContext,
       );
     }
+    _tableSyncronizer = TableSyncronizer(
+      executor: _executor,
+      databaseName: databaseName ?? '',
+      tables: [],
+    );
+  }
+
+  Future<void> syncronize({
+    bool dropTable = false,
+  }) async {
+    return _tableSyncronizer.syncronize(
+      dropTable: dropTable,
+    );
   }
 
   /// Creates a SELECT query builder for the specified table.
