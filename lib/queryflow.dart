@@ -5,6 +5,7 @@ import 'package:queryflow/src/builders/update/update_builder.dart';
 import 'package:queryflow/src/executor/executor.dart';
 import 'package:queryflow/src/executor/mysql/my_sql_executor.dart';
 import 'package:queryflow/src/executor/mysql/my_sql_pool_executor.dart';
+import 'package:queryflow/src/logger/query_logger.dart';
 import 'package:queryflow/src/table/table_model.dart';
 import 'package:queryflow/src/table/table_syncronizer.dart';
 import 'package:queryflow/src/type/query_type_adapter.dart';
@@ -46,6 +47,8 @@ class Queryflow implements QueryflowMethods, QueryflowExecuteTransation {
   late QueryTypeRetriver _queryTypeRetriver;
 
   late TableSyncronizer _tableSyncronizer;
+  final bool debug;
+  final QueryLogger _logger;
 
   /// Creates a new Queryflow instance for database operations.
   ///
@@ -72,7 +75,9 @@ class Queryflow implements QueryflowMethods, QueryflowExecuteTransation {
     List<QueryTypeAdapter>? typeAdapters,
     List<TableModel> tables = const [],
     int maxConnections = 1,
-  }) {
+    this.debug = false,
+    QueryLogger? logger,
+  }) : _logger = logger ?? QueryLoggerDefault() {
     _queryTypeRetriver = QueryTypeRetriver(typeAdapters ?? []);
     if (executor != null) {
       _executor = executor;
@@ -98,6 +103,8 @@ class Queryflow implements QueryflowMethods, QueryflowExecuteTransation {
         collation: collation,
         secure: secure,
         securityContext: securityContext,
+        debug: debug,
+        logger: _logger,
       );
     }
     _tableSyncronizer = TableSyncronizer(

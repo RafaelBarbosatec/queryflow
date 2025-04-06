@@ -59,14 +59,14 @@ class TableSyncronizer {
     await executor.execute(table.toCreateSql());
   }
 
-  _getTableColumns(String name) {
+  Future<List<String>> _getTableColumns(String name) {
     return executor.execute(
       '''SELECT COLUMN_NAME 
         FROM INFORMATION_SCHEMA.COLUMNS 
         WHERE TABLE_SCHEMA = '$databaseName' 
         AND TABLE_NAME = '$name';''',
     ).then((result) {
-      return result.map((e) => e['COLUMN_NAME']).toList();
+      return result.map((e) => e['COLUMN_NAME'].toString()).toList();
     });
   }
 
@@ -81,6 +81,15 @@ class TableSyncronizer {
         '''ALTER TABLE `$name` 
           ADD COLUMN `$column` ${columnType.typeName};''',
       );
+      if (columnType.foreignKey != null) {
+        final key = columnType.foreignKey!.getKeyName;
+        await executor.execute(
+          '''ALTER TABLE `$name` 
+            ADD CONSTRAINT `$key` 
+            FOREIGN KEY (`$column`) 
+            REFERENCES `${columnType.foreignKey!.table}` (`${columnType.foreignKey!.column}`);''',
+        );
+      }
     } else {
       throw Exception('Column $column not found in table $name');
     }

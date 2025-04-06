@@ -33,6 +33,7 @@ void main() {
           UserModel.table,
           ProfileModel.table,
         ],
+        debug: true,
       );
       initilized = true;
     }
