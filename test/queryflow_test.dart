@@ -2,6 +2,9 @@
 import 'package:queryflow/queryflow.dart';
 import 'package:test/test.dart';
 
+import 'util/profile_profile.dart';
+import 'util/user_model.dart';
+
 void main() {
   bool initilized = false;
   late Queryflow queryflow;
@@ -15,15 +18,25 @@ void main() {
         password: "12345678",
         databaseName: "boleiro",
         typeAdapters: [
-          QueryTypeAdapter<User>(
-            table: 'table_01',
-            primaryKeyColumn: 'id',
+          QueryTypeAdapter<UserModel>(
+            table: UserModel.table.name,
+            primaryKeyColumn: UserModel.table.primaryKeyColumn,
             toMap: (user) => user.toMap(),
-            fromMap: User.fromMap,
+            fromMap: UserModel.fromMap,
+          ),
+          QueryTypeAdapter<ProfileModel>(
+            table: ProfileModel.table.name,
+            primaryKeyColumn: ProfileModel.table.primaryKeyColumn,
+            toMap: (user) => user.toMap(),
+            fromMap: ProfileModel.fromMap,
           )
         ],
+        tables: [
+          UserModel.table,
+          ProfileModel.table,
+        ],
       );
-      await _createTables(queryflow);
+      await queryflow.syncronize(dropTable: true);
       initilized = true;
     }
   });
@@ -32,7 +45,7 @@ void main() {
   group('insert', () {
     test('Should insert value and get the id', () async {
       var table1Id = await queryflow.insert(
-        'table_01',
+        UserModel.table.name,
         {
           'name': 'Rafael',
           'date': dateInsert.toIso8601String(),
@@ -40,7 +53,7 @@ void main() {
       ).execute();
 
       var table1Id2 = await queryflow.insert(
-        'table_01',
+        UserModel.table.name,
         {
           'name': 'Ana',
           'date': dateInsert.add(Duration(days: 1)).toIso8601String(),
@@ -51,18 +64,18 @@ void main() {
       expect(table1Id2, equals(2));
 
       var table2Id = await queryflow.insert(
-        'table_02',
+        ProfileModel.table.name,
         {
-          'table_01_id': table1Id,
+          'user_id': table1Id,
           'age': 30,
           'ocupation': 'developer',
         },
       ).execute();
 
       var table2Id2 = await queryflow.insert(
-        'table_02',
+        ProfileModel.table.name,
         {
-          'table_01_id': table1Id2,
+          'user_id': table1Id2,
           'age': 35,
           'ocupation': 'psychologist',
         },
@@ -75,7 +88,7 @@ void main() {
 
   group('select', () {
     test('Select all', () async {
-      var query = await queryflow.select('table_01').fetch();
+      var query = await queryflow.select(UserModel.table.name).fetch();
 
       expect(query.length, 2);
       expect(query[0]['id'], 1);
@@ -89,8 +102,10 @@ void main() {
     });
 
     test('Select Equals', () async {
-      var query =
-          await queryflow.select('table_01').where('id', Equals(2)).fetch();
+      var query = await queryflow
+          .select(UserModel.table.name)
+          .where('id', Equals(2))
+          .fetch();
 
       expect(query.length, 1);
       expect(query[0]['id'], 2);
@@ -99,7 +114,7 @@ void main() {
 
     test('Select Equals string', () async {
       var query = await queryflow
-          .select('table_01')
+          .select(UserModel.table.name)
           .where('name', Equals('Ana'))
           .fetch();
 
@@ -110,7 +125,7 @@ void main() {
 
     test('Select EqualsDate', () async {
       var query = await queryflow
-          .select('table_01')
+          .select(UserModel.table.name)
           .where('date', EqualsDate(dateInsert))
           .fetch();
 
@@ -121,8 +136,8 @@ void main() {
 
     test('Select Between', () async {
       var query = await queryflow
-          .select('table_01')
-          .join('table_02', InnerJoin('id', 'table_01_id'))
+          .select(UserModel.table.name)
+          .join(ProfileModel.table.name, InnerJoin('id', 'user_id'))
           .where('age', Between(29, 31))
           .fetch();
 
@@ -132,8 +147,10 @@ void main() {
     });
 
     test('Select Like', () async {
-      var query =
-          await queryflow.select('table_01').where('name', Like('A%')).fetch();
+      var query = await queryflow
+          .select(UserModel.table.name)
+          .where('name', Like('A%'))
+          .fetch();
 
       expect(query.length, 1);
       expect(query[0]['id'], 2);
@@ -142,8 +159,8 @@ void main() {
 
     test('Select GreaterThan', () async {
       var query = await queryflow
-          .select('table_01')
-          .join('table_02', InnerJoin('id', 'table_01_id'))
+          .select(UserModel.table.name)
+          .join(ProfileModel.table.name, InnerJoin('id', 'user_id'))
           .where('age', GreaterThan(31))
           .fetch();
 
@@ -154,8 +171,8 @@ void main() {
 
     test('Select GreaterThan', () async {
       var query = await queryflow
-          .select('table_01')
-          .join('table_02', InnerJoin('id', 'table_01_id'))
+          .select(UserModel.table.name)
+          .join(ProfileModel.table.name, InnerJoin('id', 'user_id'))
           .where('age', LessThan(31))
           .fetch();
 
@@ -165,32 +182,33 @@ void main() {
     });
 
     test('Select with orderBy', () async {
-      var resultDesc =
-          await queryflow.select('table_01').orderBy(['date']).fetch();
+      var resultDesc = await queryflow
+          .select(UserModel.table.name)
+          .orderBy(['date']).fetch();
       expect(resultDesc[1]['name'], 'Rafael');
       expect(resultDesc[0]['name'], 'Ana');
 
       var resultAsc = await queryflow
-          .select('table_01')
+          .select(UserModel.table.name)
           .orderBy(['date'], OrderByType.asc).fetch();
       expect(resultAsc[0]['name'], 'Rafael');
       expect(resultAsc[1]['name'], 'Ana');
     });
 
     test('Count', () async {
-      var query = await queryflow.select('table_01').count();
+      var query = await queryflow.select(UserModel.table.name).count();
       expect(query, 2);
     });
 
     test('Sum', () async {
-      var query = await queryflow.select('table_01', ['id']).sum();
+      var query = await queryflow.select(UserModel.table.name, ['id']).sum();
       expect(query, 3);
     });
 
     test('Select with Inner Join', () async {
       var query = await queryflow
-          .select('table_01')
-          .join('table_02', InnerJoin('id', 'table_01_id'))
+          .select(UserModel.table.name)
+          .join(ProfileModel.table.name, InnerJoin('id', 'user_id'))
           .fetch();
 
       expect(query.length, 2);
@@ -208,18 +226,20 @@ void main() {
 
   test('Update', () async {
     await queryflow
-        .update('table_01', {'name': 'Davi'})
+        .update(UserModel.table.name, {'name': 'Davi'})
         .where('id', Equals(1))
         .execute();
-    final result =
-        await queryflow.select('table_01').where('id', Equals(1)).fetch();
+    final result = await queryflow
+        .select(UserModel.table.name)
+        .where('id', Equals(1))
+        .fetch();
     expect(result.length, 1);
     expect(result[0]['name'], 'Davi');
   });
 
   test('insertModel', () async {
     final id = await queryflow.insertModel(
-      User(
+      UserModel(
         name: 'Gabriel',
         date: DateTime.now(),
       ),
@@ -229,7 +249,7 @@ void main() {
 
   test('Select model', () async {
     final users =
-        await queryflow.selectModel<User>().where('id', Equals(3)).fetch();
+        await queryflow.selectModel<UserModel>().where('id', Equals(3)).fetch();
     expect(users.length, 1);
     expect(users[0].id, 3);
     expect(users[0].name, 'Gabriel');
@@ -237,7 +257,7 @@ void main() {
 
   test('updateModel', () async {
     await queryflow.updateModel(
-      User(
+      UserModel(
         id: 3,
         name: 'Fabio',
         date: DateTime.now(),
@@ -245,65 +265,9 @@ void main() {
     );
 
     final users =
-        await queryflow.selectModel<User>().where('id', Equals(3)).fetch();
+        await queryflow.selectModel<UserModel>().where('id', Equals(3)).fetch();
     expect(users.length, 1);
     expect(users[0].id, 3);
     expect(users[0].name, 'Fabio');
   });
-}
-
-Future<void> _createTables(Queryflow queryflow) async {
-  await queryflow.execute('DROP TABLE IF EXISTS `table_02`');
-  await queryflow.execute('DROP TABLE IF EXISTS `table_01`');
-
-  // create table 1
-  await queryflow.execute('''
-CREATE TABLE `table_01` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `name` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
-  `date` datetime DEFAULT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-''');
-
-// create table 1
-  await queryflow.execute('''
-CREATE TABLE `table_02` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `table_01_id` int(11) NOT NULL,
-  `age` int(11) NOT NULL,
-  `ocupation` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  FOREIGN KEY (`table_01_id`) REFERENCES `table_01` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-''');
-}
-
-class User {
-  static const table = 'table_01';
-  final int? id;
-  final String name;
-  final DateTime date;
-
-  User({
-    required this.name,
-    required this.date,
-    this.id,
-  });
-
-  Map<String, dynamic> toMap() {
-    return <String, dynamic>{
-      if (id != null) 'id': id,
-      'name': name,
-      'date': date.toIso8601String(),
-    };
-  }
-
-  factory User.fromMap(Map<String, dynamic> map) {
-    return User(
-      id: map['id'] as int?,
-      name: map['name'] as String,
-      date: map['date'],
-    );
-  }
 }

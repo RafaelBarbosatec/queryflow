@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:mysql_dart/mysql_dart.dart';
 import 'package:queryflow/src/executor/executor.dart';
+import 'package:queryflow/src/logger/query_logger.dart';
 
 class MySqlExecutor implements Executor {
   final dynamic _host;
@@ -12,6 +13,8 @@ class MySqlExecutor implements Executor {
   final String? _databaseName;
   final String _collation;
   final SecurityContext? _securityContext;
+  final bool debug;
+  final QueryLogger _logger;
 
   MySQLConnection? _conn;
 
@@ -24,6 +27,8 @@ class MySqlExecutor implements Executor {
     String collation = 'utf8mb4_general_ci',
     bool secure = true,
     SecurityContext? securityContext,
+    QueryLogger? logger,
+    this.debug = false,
   })  : _host = host,
         _port = port,
         _userName = userName,
@@ -31,27 +36,37 @@ class MySqlExecutor implements Executor {
         _databaseName = databaseName,
         _collation = collation,
         _securityContext = securityContext,
-        _secure = secure;
+        _secure = secure,
+        _logger = logger ?? QueryLoggerDefault();
 
   @override
   Future<List<Map<String, dynamic>>> execute(String query) async {
     await connect();
+    _log("Query: $query");
     final result = await _conn!.execute(query);
 
-    return result.rows.map((e) {
+    final data = result.rows.map((e) {
       return e.typedAssoc();
     }).toList();
+
+    _log("Result: $data");
+    return data;
   }
 
   @override
   Future<List<Map<String, dynamic>>> executePrepared(
-      String query, List<dynamic> params) async {
+    String query,
+    List<dynamic> params,
+  ) async {
     await connect();
+    _log("Query: $query\nParams: $params");
     final prepare = await _conn!.prepare(query);
     final result = await prepare.execute(params);
-    return result.rows.map((e) {
+    final data = result.rows.map((e) {
       return e.typedAssoc();
     }).toList();
+    _log("Result: $data");
+    return data;
   }
 
   @override
@@ -83,25 +98,46 @@ class MySqlExecutor implements Executor {
   ) async {
     if (_conn != null) {
       return await _conn!.transactional((conn) async {
-        return transaction(MySqlExecutorTransation(conn));
+        return transaction(
+          MySqlExecutorTransation(
+            conn: conn,
+            debug: debug,
+            logger: _logger,
+          ),
+        );
       });
     } else {
       throw Exception("Connection is not initialized.");
+    }
+  }
+
+  void _log(Object? message) {
+    if (debug) {
+      _logger.d(message);
     }
   }
 }
 
 class MySqlExecutorTransation implements Executor {
   final MySQLConnection conn;
+  final bool debug;
+  final QueryLogger _logger;
 
-  MySqlExecutorTransation(this.conn);
+  MySqlExecutorTransation({
+    required this.conn,
+    this.debug = false,
+    QueryLogger? logger,
+  }) : _logger = logger ?? QueryLoggerDefault();
 
   @override
   Future<List<Map<String, dynamic>>> execute(String query) async {
+    _log("Query: $query");
     final result = await conn.execute(query);
-    return result.rows.map((e) {
+    final data = result.rows.map((e) {
       return e.typedAssoc();
     }).toList();
+    _log("Result: $data");
+    return data;
   }
 
   @override
@@ -109,11 +145,14 @@ class MySqlExecutorTransation implements Executor {
     String query,
     List params,
   ) async {
+    _log("Query: $query\nParams: $params");
     final prepare = await conn.prepare(query);
     final result = await prepare.execute(params);
-    return result.rows.map((e) {
+    final data = result.rows.map((e) {
       return e.typedAssoc();
     }).toList();
+    _log("Result: $data");
+    return data;
   }
 
   @override
@@ -131,5 +170,11 @@ class MySqlExecutorTransation implements Executor {
     Future<List<Map<String, dynamic>>> Function(Executor executor) transaction,
   ) {
     return Future.value([]);
+  }
+
+  void _log(Object? message) {
+    if (debug) {
+      _logger.d(message);
+    }
   }
 }

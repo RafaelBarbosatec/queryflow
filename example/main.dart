@@ -13,14 +13,18 @@ void main() async {
     databaseName: "boleiro",
     typeAdapters: [
       QueryTypeAdapter<User>(
-        table: 'table_01',
-        primaryKeyColumn: 'id',
+        table: User.table.name,
+        primaryKeyColumn: User.table.primaryKeyColumn,
         toMap: (user) => user.toMap(),
         fromMap: User.fromMap,
       )
     ],
+    tables: [
+      User.table,
+    ],
+    debug: true,
   );
-  await _createTables(queryflow);
+  await queryflow.syncronize(dropTable: true);
 
   var table1Id = await queryflow.insertModel<User>(
     User(
@@ -55,35 +59,7 @@ void main() async {
   exit(0);
 }
 
-Future<void> _createTables(Queryflow queryflow) async {
-  await queryflow.execute('DROP TABLE IF EXISTS `table_02`');
-  await queryflow.execute('DROP TABLE IF EXISTS `table_01`');
-
-  // create table 1
-  await queryflow.execute('''
-CREATE TABLE `table_01` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `name` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
-  `date` datetime DEFAULT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-''');
-
-// create table 1
-  await queryflow.execute('''
-CREATE TABLE `table_02` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `table_01_id` int(11) NOT NULL,
-  `age` int(11) NOT NULL,
-  `ocupation` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  FOREIGN KEY (`table_01_id`) REFERENCES `table_01` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-''');
-}
-
 class User {
-  static const table = 'table_01';
   final int? id;
   final String name;
   final DateTime date;
@@ -109,4 +85,19 @@ class User {
       date: map['date'],
     );
   }
+
+  static TableModel table = TableModel(
+    name: 'user_example',
+    columns: {
+      'id': TypeInt(
+        isAutoIncrement: true,
+        isPrimaryKey: true,
+      ),
+      'name': TypeVarchar(),
+      'date': TypeDateTime(),
+    },
+    initalData: [
+      [null, 'Gabriel', DateTime.now()],
+    ],
+  );
 }

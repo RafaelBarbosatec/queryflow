@@ -3,9 +3,12 @@ import 'dart:io';
 import 'package:mysql_dart/mysql_dart.dart';
 import 'package:queryflow/src/executor/executor.dart';
 import 'package:queryflow/src/executor/mysql/my_sql_executor.dart';
+import 'package:queryflow/src/logger/query_logger.dart';
 
 class MySqlPoolExecutor implements Executor {
   late MySQLConnectionPool _conn;
+  final bool debug;
+  final QueryLogger _logger;
 
   MySqlPoolExecutor({
     required dynamic host,
@@ -17,7 +20,9 @@ class MySqlPoolExecutor implements Executor {
     bool secure = true,
     SecurityContext? securityContext,
     int maxConnections = 10,
-  }) {
+    QueryLogger? logger,
+  })  : debug = false,
+        _logger = logger ?? QueryLoggerDefault() {
     _conn = MySQLConnectionPool(
       host: host,
       port: port,
@@ -34,22 +39,33 @@ class MySqlPoolExecutor implements Executor {
   @override
   Future<List<Map<String, dynamic>>> execute(String query) async {
     await connect();
+    _log("Query: $query");
     final result = await _conn.execute(query);
 
-    return result.rows.map((e) {
+    final data = result.rows.map((e) {
       return e.typedAssoc();
     }).toList();
+
+    _log("Result: $data");
+
+    return data;
   }
 
   @override
   Future<List<Map<String, dynamic>>> executePrepared(
-      String query, List<dynamic> params) async {
+    String query,
+    List<dynamic> params,
+  ) async {
     await connect();
+    _log("Query: $query\nParams: $params");
     final prepare = await _conn.prepare(query);
     final result = await prepare.execute(params);
-    return result.rows.map((e) {
+    final data = result.rows.map((e) {
       return e.typedAssoc();
     }).toList();
+
+    _log("Result: $data");
+    return data;
   }
 
   @override
@@ -67,7 +83,17 @@ class MySqlPoolExecutor implements Executor {
     Future<List<Map<String, dynamic>>> Function(Executor executor) transaction,
   ) async {
     return await _conn.transactional((conn) async {
-      return transaction(MySqlExecutorTransation(conn));
+      return transaction(MySqlExecutorTransation(
+        conn: conn,
+        debug: debug,
+        logger: _logger,
+      ));
     });
+  }
+
+  void _log(Object? message) {
+    if (debug) {
+      _logger.d(message);
+    }
   }
 }

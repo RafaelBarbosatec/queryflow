@@ -5,6 +5,9 @@ import 'package:queryflow/src/builders/update/update_builder.dart';
 import 'package:queryflow/src/executor/executor.dart';
 import 'package:queryflow/src/executor/mysql/my_sql_executor.dart';
 import 'package:queryflow/src/executor/mysql/my_sql_pool_executor.dart';
+import 'package:queryflow/src/logger/query_logger.dart';
+import 'package:queryflow/src/table/table_model.dart';
+import 'package:queryflow/src/table/table_syncronizer.dart';
 import 'package:queryflow/src/type/query_type_adapter.dart';
 import 'package:queryflow/src/type/query_type_retriver.dart';
 
@@ -12,6 +15,7 @@ import 'src/builders/select/matchers/where_matchers.dart';
 
 export 'package:queryflow/src/builders/builders.dart';
 export 'package:queryflow/src/builders/select/matchers/where_matchers.dart';
+export 'package:queryflow/src/table/table_model.dart';
 export 'package:queryflow/src/type/query_type_adapter.dart';
 
 /// A fluent SQL query builder and executor for MySQL databases.
@@ -42,6 +46,10 @@ class Queryflow implements QueryflowMethods, QueryflowExecuteTransation {
 
   late QueryTypeRetriver _queryTypeRetriver;
 
+  late TableSyncronizer _tableSyncronizer;
+  final bool debug;
+  final QueryLogger _logger;
+
   /// Creates a new Queryflow instance for database operations.
   ///
   /// Parameters:
@@ -65,8 +73,11 @@ class Queryflow implements QueryflowMethods, QueryflowExecuteTransation {
     SecurityContext? securityContext,
     Executor? executor,
     List<QueryTypeAdapter>? typeAdapters,
+    List<TableModel> tables = const [],
     int maxConnections = 1,
-  }) {
+    this.debug = false,
+    QueryLogger? logger,
+  }) : _logger = logger ?? QueryLoggerDefault() {
     _queryTypeRetriver = QueryTypeRetriver(typeAdapters ?? []);
     if (executor != null) {
       _executor = executor;
@@ -92,8 +103,45 @@ class Queryflow implements QueryflowMethods, QueryflowExecuteTransation {
         collation: collation,
         secure: secure,
         securityContext: securityContext,
+        debug: debug,
+        logger: _logger,
       );
     }
+    _tableSyncronizer = TableSyncronizer(
+      executor: _executor,
+      databaseName: databaseName ?? '',
+      tables: tables,
+      logger: _logger,
+    );
+  }
+
+  /// Synchronizes the database schema with the defined table models.
+  ///
+  /// This method ensures that the database schema matches the table definitions
+  /// provided during the initialization of the `Queryflow` instance. It can
+  /// optionally drop existing tables before recreating them, ensuring a clean
+  /// state.
+  ///
+  /// Parameters:
+  /// - [dropTable]: If `true`, all tables will be dropped before synchronization.
+  ///   Defaults to `false`.
+  ///
+  /// Example:
+  /// ```dart
+  /// await queryflow.syncronize(dropTable: true);
+  /// ```
+  ///
+  /// This will drop all existing tables and recreate them based on the table
+  /// definitions provided.
+  ///
+  /// Note: Use the `dropTable` option with caution, as it will delete all data
+  /// in the existing tables.
+  Future<void> syncronize({
+    bool dropTable = false,
+  }) async {
+    return _tableSyncronizer.syncronize(
+      dropTable: dropTable,
+    );
   }
 
   /// Creates a SELECT query builder for the specified table.
