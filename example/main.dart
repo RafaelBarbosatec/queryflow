@@ -95,5 +95,8 @@ class User {
       'name': TypeVarchar(),
       'date': TypeDateTime(),
     },
+    initalData: [
+      [1, 'Gabriel', DateTime.now()],
+    ],
   );
 }
