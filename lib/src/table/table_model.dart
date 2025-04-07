@@ -77,6 +77,8 @@ class TableModel {
     return sql.toString();
   }
 
+  int get columnsToInsert =>
+      columns.values.where((e) => e.isAutoIncrement == false).length;
 
   String toInsertSql() {
     StringBuffer sql = StringBuffer('INSERT INTO `$name` (');
@@ -84,13 +86,8 @@ class TableModel {
     List<String> values = [];
 
     columns.forEach((columnName, columnType) {
-      if (columnType.isAutoIncrement) return;
       columnNames.add('`$columnName`');
-      if (columnType.defaultValue != null) {
-        values.add('${columnType.defaultValue}');
-      } else {
-        values.add('?');
-      }
+      values.add('?');
     });
 
     sql.writeAll(columnNames, ', ');

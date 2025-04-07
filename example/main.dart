@@ -22,6 +22,7 @@ void main() async {
     tables: [
       User.table,
     ],
+    debug: true,
   );
   await queryflow.syncronize(dropTable: true);
 
@@ -96,7 +97,7 @@ class User {
       'date': TypeDateTime(),
     },
     initalData: [
-      [1, 'Gabriel', DateTime.now()],
+      [null, 'Gabriel', DateTime.now()],
     ],
   );
 }
