@@ -115,6 +115,27 @@ class Queryflow implements QueryflowMethods, QueryflowExecuteTransation {
     );
   }
 
+  /// Synchronizes the database schema with the defined table models.
+  ///
+  /// This method ensures that the database schema matches the table definitions
+  /// provided during the initialization of the `Queryflow` instance. It can
+  /// optionally drop existing tables before recreating them, ensuring a clean
+  /// state.
+  ///
+  /// Parameters:
+  /// - [dropTable]: If `true`, all tables will be dropped before synchronization.
+  ///   Defaults to `false`.
+  ///
+  /// Example:
+  /// ```dart
+  /// await queryflow.syncronize(dropTable: true);
+  /// ```
+  ///
+  /// This will drop all existing tables and recreate them based on the table
+  /// definitions provided.
+  ///
+  /// Note: Use the `dropTable` option with caution, as it will delete all data
+  /// in the existing tables.
   Future<void> syncronize({
     bool dropTable = false,
   }) async {

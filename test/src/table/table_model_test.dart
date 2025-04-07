@@ -9,8 +9,8 @@ void main() {
         name: 'users',
         columns: {
           'id': TypeInt(isPrimaryKey: true),
-          'uuid': TypeString(isPrimaryKey: true), // Another primary key
-          'name': TypeString(),
+          'uuid': TypeVarchar(isPrimaryKey: true), // Another primary key
+          'name': TypeVarchar(),
         },
       );
 
@@ -22,7 +22,7 @@ void main() {
       final tableModel = TableModel(
         name: 'logs',
         columns: {
-          'event': TypeString(),
+          'event': TypeVarchar(),
           'timestamp': TypeDateTime(),
         },
       );
@@ -35,7 +35,7 @@ void main() {
         name: 'products',
         columns: {
           'id': TypeInt(isPrimaryKey: true, isAutoIncrement: true),
-          'name': TypeString(isNullable: false),
+          'name': TypeVarchar(isNullable: false),
           'price': TypeDouble(defaultValue: '0.0'),
           'in_stock': TypeBool(defaultValue: 'TRUE'),
         },

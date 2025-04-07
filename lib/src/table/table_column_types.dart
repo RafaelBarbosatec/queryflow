@@ -17,7 +17,7 @@ abstract class TableColumnType {
         );
 
   String get typeName {
-    if (this is TypeString) return 'VARCHAR(${(this as TypeString).length})';
+    if (this is TypeVarchar) return 'VARCHAR(${(this as TypeVarchar).length})';
     if (this is TypeText) return 'TEXT';
     if (this is TypeInt && (this as TypeInt).length == 1) return 'TINYINT';
     if (this is TypeInt && (this as TypeInt).length == 2) return 'SMALLINT';
@@ -58,13 +58,14 @@ class ForeingKey {
     this.keyName,
   });
 
-  String getKeyName(String currentColumn) =>
-      keyName ?? 'fk_${currentColumn}_${table}_$column';
+  String getKeyName(String currentColumn) {
+    return keyName ?? 'fk_${currentColumn}_${table}_$column';
+  }
 }
 
-class TypeString extends TableColumnType {
+class TypeVarchar extends TableColumnType {
   final int length;
-  TypeString({
+  TypeVarchar({
     this.length = 255,
     super.isPrimaryKey = false,
     super.isAutoIncrement = false,

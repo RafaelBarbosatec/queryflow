@@ -4,16 +4,19 @@ Queryflow is a lightweight and flexible Dart package designed to simplify the pr
 
 ## Features
 
-- Fluent API for building SQL queries with method chaining
-- Complete CRUD operations: SELECT, INSERT, UPDATE support
-- Advanced WHERE conditions with various matchers (Equals, GreaterThan, LessThan, Like, Between, etc.)
-- Date-specific operations with EqualsDate and BetweenDate matchers
-- Flexible JOIN operations (Inner, Left, Right, Full Outer)
-- ORDER BY functionality with both ascending and descending options
-- Aggregate functions: COUNT, SUM, MAX, MIN, and AVG
-- Raw SQL query execution for complex scenarios
-- Clean integration with MySQL databases
-- Type-safe query building to minimize SQL syntax errors
+- **Fluent API**: Build SQL queries effortlessly using method chaining.
+- **Comprehensive CRUD Support**: Perform SELECT, INSERT, and UPDATE operations with ease.
+- **Advanced WHERE Conditions**: Use matchers like `Equals`, `GreaterThan`, `LessThan`, `Like`, `Between`, and more.
+- **Date-Specific Operations**: Simplify date filtering with `EqualsDate` and `BetweenDate` matchers.
+- **Flexible JOIN Operations**: Support for `Inner`, `Left`, `Right`, and `Full Outer` joins.
+- **ORDER BY Functionality**: Sort results in ascending or descending order.
+- **Aggregate Functions**: Perform calculations like `COUNT`, `SUM`, `MAX`, `MIN`, and `AVG`.
+- **Raw SQL Execution**: Execute custom SQL queries for complex scenarios.
+- **MySQL Integration**: Seamless compatibility with MySQL databases.
+- **Type-Safe Query Building**: Minimize SQL syntax errors with type-safe constructs.
+- **Model Integration**: Map database records to Dart objects using type adapters.
+- **Schema Management**: Define and synchronize database schemas programmatically with `TableModel`.
+- **Initial Data Support**: Preload tables with initial data during schema synchronization.
 
 ## Getting started
 
@@ -277,6 +280,114 @@ await queryflow.updateModel(userToUpdate);
 ```
 
 The model's type adapter will use the primary key (ID) to identify which record to update, and the model's `toMap()` method to determine which fields to update.
+
+### Using `TableModel`
+
+`TableModel` is a core component of Queryflow that allows you to define and manage database tables programmatically. It provides a structured way to define table schemas, including columns, primary keys, foreign keys, and initial data.
+
+#### Defining a TableModel
+
+To define a table, create an instance of `TableModel` with the table name, columns, and optional configurations:
+
+```dart
+import 'package:queryflow/queryflow.dart';
+
+final userTable = TableModel(
+  name: 'users',
+  columns: {
+    'id': TypeInt(
+      isPrimaryKey: true,
+      isAutoIncrement: true,
+    ),
+    'name': TypeVarchar(),
+    'date': TypeDateTime(),
+  },
+);
+
+```
+
+#### Adding Foreign Keys
+
+You can define foreign keys for relationships between tables:
+
+```dart
+
+final profileTable = TableModel(
+  name: 'profiles',
+  columns: {
+    'id': TypeInt(
+      isPrimaryKey: true,
+      isAutoIncrement: true,
+    ),
+    'user_id': TypeInt(
+      foreignKey: ForeignKey(
+        table: 'users',
+        column: 'id',
+      ),
+    ),
+    'age': TypeInt(),
+    'occupation': TypeVarchar(),
+  },
+);
+
+```
+
+#### Synchronizing Tables
+
+Use the `synchronize` method to synchronize your table definitions with the database. This ensures that tables are created, updated, or dropped as needed:
+
+```dart
+  await queryflow.synchronize(dropTable: true); // default = false
+```
+
+#### Initial Data
+
+You can define initial data to be inserted into the table upon creation:
+
+```dart
+
+final userTableWithInitialData = TableModel(
+  name: 'users',
+  columns: {
+    'id': TypeInt(
+      isPrimaryKey: true,
+      isAutoIncrement: true,
+    ),
+    'name': TypeVarchar(),
+    'date': TypeDateTime(),
+  },
+  initalData: [
+    [1, 'Rafael', DateTime(2025, 4, 7)],
+    [2, 'Ana', DateTime(2025, 4, 8)],
+  ],
+);
+
+```
+
+#### Example Usage
+
+```dart
+
+final tables = [
+  userTable,
+  profileTable,
+];
+
+final queryflow = Queryflow(
+  host: 'localhost',
+  port: 3306,
+  userName: 'root',
+  password: 'password',
+  databaseName: 'example_db',
+  tables: tables,
+);
+
+await queryflow.syncronize(dropTable: true);
+
+```
+
+By using TableModel, you can manage your database schema directly in your Dart code, ensuring consistency and reducing the need for manual SQL scripts. 
+
 
 ## Additional information
 

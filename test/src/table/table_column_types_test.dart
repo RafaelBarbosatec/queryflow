@@ -44,7 +44,7 @@ void main() {
 
   group('typeName', () {
     test('TypeString should return correct VARCHAR type', () {
-      final stringType = TypeString(length: 100);
+      final stringType = TypeVarchar(length: 100);
       expect(stringType.typeName, equals('VARCHAR(100)'));
     });
 
@@ -107,9 +107,9 @@ void main() {
 
   group('Type constraints', () {
     test('TypeString should validate length constraints', () {
-      expect(() => TypeString(length: 0), throwsA(isA<AssertionError>()));
-      expect(() => TypeString(length: 256), throwsA(isA<AssertionError>()));
-      expect(() => TypeString(length: 100), returnsNormally);
+      expect(() => TypeVarchar(length: 0), throwsA(isA<AssertionError>()));
+      expect(() => TypeVarchar(length: 256), throwsA(isA<AssertionError>()));
+      expect(() => TypeVarchar(length: 100), returnsNormally);
     });
 
     test('TypeInt should validate length constraints', () {
@@ -121,7 +121,7 @@ void main() {
 
   group('Default values', () {
     test('should use default values when not specified', () {
-      final stringType = TypeString();
+      final stringType = TypeVarchar();
       expect(stringType.length, equals(255));
       expect(stringType.isPrimaryKey, isFalse);
       expect(stringType.isAutoIncrement, isFalse);

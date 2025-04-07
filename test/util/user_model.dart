@@ -34,7 +34,7 @@ class UserModel {
         isAutoIncrement: true,
         isPrimaryKey: true,
       ),
-      'name': TypeString(),
+      'name': TypeVarchar(),
       'date': TypeDateTime(),
     },
   );

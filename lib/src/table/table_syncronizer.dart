@@ -67,6 +67,9 @@ class TableSyncronizer {
 
   Future<void> _createTable(TableModel table) async {
     await executor.execute(table.toCreateSql());
+    if (table.initalData != null) {
+      await _insertInitialData(table, table.initalData!);
+    }
   }
 
   Future<List<String>> _getTableColumns(String name) {
@@ -116,5 +119,14 @@ class TableSyncronizer {
       '''ALTER TABLE `$name` 
         DROP COLUMN `$existColumn`;''',
     );
+  }
+
+  Future<void> _insertInitialData(TableModel table, List<List> dataList) async {
+    for (final data in dataList) {
+      await executor.executePrepared(table.toInsertSql(), data);
+      logger?.s(
+        "Inserted data[${dataList.indexOf(data)}] into table '${table.name}'",
+      );
+    }
   }
 }

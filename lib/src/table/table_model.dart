@@ -8,6 +8,7 @@ class TableModel {
   final String engine;
   final int outomaticIncrement;
   final String charset;
+  final List<List<dynamic>>? initalData;
 
   TableModel({
     required this.name,
@@ -15,6 +16,7 @@ class TableModel {
     this.engine = 'InnoDB',
     this.outomaticIncrement = 1,
     this.charset = 'utf8mb4',
+    this.initalData,
   });
 
   String get primaryKeyColumn {
@@ -72,6 +74,29 @@ class TableModel {
     sql.write(' AUTO_INCREMENT=$outomaticIncrement');
     sql.write(' DEFAULT CHARSET=$charset');
     sql.write(';');
+    return sql.toString();
+  }
+
+
+  String toInsertSql() {
+    StringBuffer sql = StringBuffer('INSERT INTO `$name` (');
+    List<String> columnNames = [];
+    List<String> values = [];
+
+    columns.forEach((columnName, columnType) {
+      if (columnType.isAutoIncrement) return;
+      columnNames.add('`$columnName`');
+      if (columnType.defaultValue != null) {
+        values.add('${columnType.defaultValue}');
+      } else {
+        values.add('?');
+      }
+    });
+
+    sql.writeAll(columnNames, ', ');
+    sql.write(') VALUES (');
+    sql.writeAll(values, ', ');
+    sql.write(');');
     return sql.toString();
   }
 }

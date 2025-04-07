@@ -41,7 +41,7 @@ class ProfileModel {
         foreignKey: ForeingKey(table: 'user_table', column: 'id'),
       ),
       'age': TypeInt(),
-      'ocupation': TypeString(),
+      'ocupation': TypeVarchar(),
     },
   );
 }

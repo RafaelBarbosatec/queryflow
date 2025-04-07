@@ -1,5 +1,6 @@
 ## NEXT
 
+* Adds TableModel. By using TableModel, you can manage your database schema directly in your Dart code, ensuring consistency and reducing the need for manual SQL scripts.
 * Adds support to Pool of connections
 
 ## 0.1.1
