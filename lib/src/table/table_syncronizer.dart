@@ -67,7 +67,7 @@ class TableSyncronizer {
 
   Future<void> _createTable(TableModel table) async {
     await executor.execute(table.toCreateSql());
-    if (table.initalData != null) {
+    if (table.initalData?.isNotEmpty ?? false) {
       await _insertInitialData(table, table.initalData!);
     }
   }
@@ -122,6 +122,11 @@ class TableSyncronizer {
   }
 
   Future<void> _insertInitialData(TableModel table, List<List> dataList) async {
+    if (table.columns.length != dataList.first.length) {
+      throw Exception(
+        'The number of columns in the table does not match the number of values in the data list',
+      );
+    }
     for (final data in dataList) {
       await executor.executePrepared(table.toInsertSql(), data);
       logger?.s(
