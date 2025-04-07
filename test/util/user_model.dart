@@ -28,13 +28,13 @@ class UserModel {
   }
 
   static TableModel table = TableModel(
-    name: 'table_01',
+    name: 'user_table',
     columns: {
       'id': TypeInt(
         isAutoIncrement: true,
         isPrimaryKey: true,
       ),
-      'name': TypeString(length: 255),
+      'name': TypeString(),
       'date': TypeDateTime(),
     },
   );

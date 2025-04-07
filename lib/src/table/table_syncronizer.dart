@@ -1,41 +1,51 @@
 import 'package:queryflow/src/executor/executor.dart';
+import 'package:queryflow/src/logger/query_logger.dart';
 import 'package:queryflow/src/table/table_model.dart';
 
 class TableSyncronizer {
   final Executor executor;
   final String databaseName;
   final List<TableModel> tables;
+  final QueryLogger? logger;
 
   TableSyncronizer({
     required this.executor,
     required this.tables,
     required this.databaseName,
+    this.logger,
   });
 
   Future<void> syncronize({bool dropTable = false}) async {
+    logger?.i('Start syncronizing tables');
     if (dropTable) {
       for (final t in tables.reversed) {
         await _execDropTable(t.name);
+        logger?.s("Dropped table '${t.name}'");
       }
     }
     for (var table in tables) {
       final tableExists = await _tableExists(table.name);
       if (!tableExists) {
         await _createTable(table);
+        logger?.s("Created table '${table.name}'");
       } else {
         final existingColumns = await _getTableColumns(table.name);
         for (var column in table.columns.keys) {
           if (!existingColumns.contains(column)) {
             await _addColumn(table.name, column);
+            logger?.s("Added column '$column' to table '${table.name}'");
           }
         }
         for (final existColumn in existingColumns) {
           if (!table.columns.keys.contains(existColumn)) {
             await _removeColumn(table.name, existColumn);
+            logger
+                ?.s("Removed column '$existColumn' from table '${table.name}'");
           }
         }
       }
     }
+    logger?.i('Finished syncronizing tables');
   }
 
   Future<void> dropTable(String tableName) async {

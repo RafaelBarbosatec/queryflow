@@ -111,6 +111,7 @@ class Queryflow implements QueryflowMethods, QueryflowExecuteTransation {
       executor: _executor,
       databaseName: databaseName ?? '',
       tables: tables,
+      logger: _logger,
     );
   }
 

@@ -1,67 +1,117 @@
 import 'package:queryflow/queryflow.dart';
 import 'package:test/test.dart';
 
-import '../../util/profile_profile.dart';
-import '../../util/user_model.dart';
-
 void main() {
-  late Queryflow queryflow;
-  bool initilized = false;
-  setUp(() {
-    if (!initilized) {
-      queryflow = Queryflow(
-        host: "127.0.0.1",
-        port: 3306,
-        userName: "admin",
-        password: "12345678",
-        databaseName: "boleiro",
-        typeAdapters: [
-          QueryTypeAdapter<UserModel>(
-            table: UserModel.table.name,
-            primaryKeyColumn: UserModel.table.primaryKeyColumn,
-            toMap: (user) => user.toMap(),
-            fromMap: UserModel.fromMap,
-          ),
-          QueryTypeAdapter<ProfileModel>(
-            table: ProfileModel.table.name,
-            primaryKeyColumn: ProfileModel.table.primaryKeyColumn,
-            toMap: (user) => user.toMap(),
-            fromMap: ProfileModel.fromMap,
-          )
-        ],
-        tables: [
-          UserModel.table,
-          ProfileModel.table,
-        ],
-        debug: true,
+// Additional tests for TableModel class
+  group('TableModel tests', () {
+    test('primaryKeyColumn returns the name of the first primary key', () {
+      final tableModel = TableModel(
+        name: 'users',
+        columns: {
+          'id': TypeInt(isPrimaryKey: true),
+          'uuid': TypeString(isPrimaryKey: true), // Another primary key
+          'name': TypeString(),
+        },
       );
-      initilized = true;
-    }
-  });
 
-  test('Syncronize', () async {
-    await queryflow.syncronize();
-    final result = await queryflow.selectModel<UserModel>().fetch();
-    print(result);
-  });
+      expect(tableModel.primaryKeyColumn, 'id');
+    });
 
-  test('table model ...', () async {
-    TableModel tableModel = TableModel(
-      name: 'test',
-      columns: {
-        'id': TypeInt(isPrimaryKey: true, isAutoIncrement: true),
-        'name': TypeString(isNullable: false),
-        'age': TypeInt(),
-        'isActive': TypeBool(),
-        'createdAt': TypeDateTime(),
-        'profile_id': TypeInt(
-          foreignKey: ForeingKey(
-            table: 'profile',
-            column: 'id',
+    test('primaryKeyColumn returns empty string when no primary key exists',
+        () {
+      final tableModel = TableModel(
+        name: 'logs',
+        columns: {
+          'event': TypeString(),
+          'timestamp': TypeDateTime(),
+        },
+      );
+
+      expect(tableModel.primaryKeyColumn, '');
+    });
+
+    test('toCreateSql generates valid SQL with single primary key', () {
+      final tableModel = TableModel(
+        name: 'products',
+        columns: {
+          'id': TypeInt(isPrimaryKey: true, isAutoIncrement: true),
+          'name': TypeString(isNullable: false),
+          'price': TypeDouble(defaultValue: '0.0'),
+          'in_stock': TypeBool(defaultValue: 'TRUE'),
+        },
+      );
+
+      final sql = tableModel.toCreateSql();
+      expect(sql, contains('CREATE TABLE `products`'));
+      expect(sql, contains('`id` INT(11) NOT NULL AUTO_INCREMENT'));
+      expect(sql, contains('`name` VARCHAR(255) NOT NULL'));
+      expect(sql, contains('`price` DOUBLE DEFAULT 0.0'));
+      expect(sql, contains('`in_stock` BOOLEAN DEFAULT TRUE'));
+      expect(sql, contains('PRIMARY KEY (id)'));
+      expect(sql, contains('ENGINE=InnoDB'));
+    });
+
+    test('toCreateSql generates valid SQL with multiple primary keys', () {
+      final tableModel = TableModel(
+        name: 'order_items',
+        columns: {
+          'order_id': TypeInt(isPrimaryKey: true),
+          'product_id': TypeInt(isPrimaryKey: true),
+          'quantity': TypeInt(isNullable: false),
+        },
+      );
+
+      final sql = tableModel.toCreateSql();
+      expect(sql, contains('CREATE TABLE `order_items`'));
+      expect(sql, contains('PRIMARY KEY (order_id, product_id)'));
+    });
+
+    test('toCreateSql includes foreign key constraints', () {
+      final tableModel = TableModel(
+        name: 'comments',
+        columns: {
+          'id': TypeInt(isPrimaryKey: true, isAutoIncrement: true),
+          'content': TypeText(),
+          'user_id': TypeInt(
+            foreignKey: ForeingKey(
+              table: 'users',
+              column: 'id',
+            ),
           ),
-        ),
-      },
-    );
-    print(tableModel.toCreateSql());
+          'post_id': TypeInt(
+            foreignKey: ForeingKey(
+              table: 'posts',
+              column: 'id',
+            ),
+          ),
+        },
+      );
+
+      final sql = tableModel.toCreateSql();
+      expect(sql, contains('CONSTRAINT `fk_user_id_users_id`'));
+      expect(
+          sql, contains('FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)'));
+      expect(sql, contains('CONSTRAINT `fk_post_id_posts_id`'));
+      expect(
+          sql, contains('FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`)'));
+    });
+
+    test('toCreateSql uses custom engine, charset and auto increment', () {
+      final tableModel = TableModel(
+        name: 'logs',
+        columns: {
+          'id': TypeInt(isPrimaryKey: true, isAutoIncrement: true),
+          'message': TypeText(),
+        },
+        engine: 'MyISAM',
+        outomaticIncrement: 1000,
+        charset: 'latin1',
+      );
+
+      final sql = tableModel.toCreateSql();
+      expect(sql, contains('ENGINE=MyISAM'));
+      expect(sql, contains('AUTO_INCREMENT=1000'));
+      expect(sql, contains('DEFAULT CHARSET=latin1'));
+    });
   });
 }

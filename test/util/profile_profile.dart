@@ -31,14 +31,14 @@ class ProfileModel {
   }
 
   static TableModel table = TableModel(
-    name: 'table_02',
+    name: 'profile_table',
     columns: {
       'id': TypeInt(
         isAutoIncrement: true,
         isPrimaryKey: true,
       ),
       'user_id': TypeInt(
-        foreignKey: ForeingKey(table: 'table_01', column: 'id'),
+        foreignKey: ForeingKey(table: 'user_table', column: 'id'),
       ),
       'age': TypeInt(),
       'ocupation': TypeString(),

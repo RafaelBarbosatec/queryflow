@@ -49,15 +49,17 @@ class MySqlExecutor implements Executor {
       return e.typedAssoc();
     }).toList();
 
-    _logger.d("Result: $data");
+    _log("Result: $data");
     return data;
   }
 
   @override
   Future<List<Map<String, dynamic>>> executePrepared(
-      String query, List<dynamic> params) async {
+    String query,
+    List<dynamic> params,
+  ) async {
     await connect();
-    _log("Query: $query");
+    _log("Query: $query\nParams: $params");
     final prepare = await _conn!.prepare(query);
     final result = await prepare.execute(params);
     final data = result.rows.map((e) {
@@ -129,14 +131,12 @@ class MySqlExecutorTransation implements Executor {
 
   @override
   Future<List<Map<String, dynamic>>> execute(String query) async {
+    _log("Query: $query");
     final result = await conn.execute(query);
     final data = result.rows.map((e) {
       return e.typedAssoc();
     }).toList();
-    if (debug) {
-      _logger.d("Query: $query");
-      _logger.d("Result: $data");
-    }
+    _log("Result: $data");
     return data;
   }
 
@@ -145,15 +145,13 @@ class MySqlExecutorTransation implements Executor {
     String query,
     List params,
   ) async {
+    _log("Query: $query\nParams: $params");
     final prepare = await conn.prepare(query);
     final result = await prepare.execute(params);
     final data = result.rows.map((e) {
       return e.typedAssoc();
     }).toList();
-    if (debug) {
-      _logger.d("Query: $query");
-      _logger.d("Result: $data");
-    }
+    _log("Result: $data");
     return data;
   }
 
@@ -172,5 +170,11 @@ class MySqlExecutorTransation implements Executor {
     Future<List<Map<String, dynamic>>> Function(Executor executor) transaction,
   ) {
     return Future.value([]);
+  }
+
+  void _log(Object? message) {
+    if (debug) {
+      _logger.d(message);
+    }
   }
 }
