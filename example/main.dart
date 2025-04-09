@@ -12,12 +12,7 @@ void main() async {
     password: "12345678",
     databaseName: "boleiro",
     typeAdapters: [
-      QueryTypeAdapter<User>(
-        table: User.table.name,
-        primaryKeyColumn: User.table.primaryKeyColumn,
-        toMap: (user) => user.toMap(),
-        fromMap: User.fromMap,
-      )
+      User.adapter,
     ],
     tables: [
       User.table,
@@ -99,5 +94,12 @@ class User {
     initalData: [
       [null, 'Gabriel', DateTime.now()],
     ],
+  );
+
+  static QueryTypeAdapter<User> adapter = QueryTypeAdapter<User>(
+    table: User.table.name,
+    primaryKeyColumn: User.table.primaryKeyColumn,
+    toMap: (user) => user.toMap(),
+    fromMap: User.fromMap,
   );
 }

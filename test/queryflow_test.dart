@@ -18,18 +18,8 @@ void main() {
         password: "12345678",
         databaseName: "boleiro",
         typeAdapters: [
-          QueryTypeAdapter<UserModel>(
-            table: UserModel.table.name,
-            primaryKeyColumn: UserModel.table.primaryKeyColumn,
-            toMap: (user) => user.toMap(),
-            fromMap: UserModel.fromMap,
-          ),
-          QueryTypeAdapter<ProfileModel>(
-            table: ProfileModel.table.name,
-            primaryKeyColumn: ProfileModel.table.primaryKeyColumn,
-            toMap: (user) => user.toMap(),
-            fromMap: ProfileModel.fromMap,
-          )
+          UserModel.adapter,
+          ProfileModel.adapter,
         ],
         tables: [
           UserModel.table,

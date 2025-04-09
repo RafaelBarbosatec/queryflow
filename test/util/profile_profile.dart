@@ -30,7 +30,7 @@ class ProfileModel {
         userId: map['user_id'] as int);
   }
 
-  static TableModel table = TableModel(
+  static final table = TableModel(
     name: 'profile_table',
     columns: {
       'id': TypeInt(
@@ -43,5 +43,12 @@ class ProfileModel {
       'age': TypeInt(),
       'ocupation': TypeVarchar(),
     },
+  );
+
+  static final adapter = QueryTypeAdapter<ProfileModel>(
+    table: ProfileModel.table.name,
+    primaryKeyColumn: ProfileModel.table.primaryKeyColumn,
+    toMap: (user) => user.toMap(),
+    fromMap: ProfileModel.fromMap,
   );
 }

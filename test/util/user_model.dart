@@ -27,7 +27,7 @@ class UserModel {
     );
   }
 
-  static TableModel table = TableModel(
+  static final table = TableModel(
     name: 'user_table',
     columns: {
       'id': TypeInt(
@@ -37,5 +37,12 @@ class UserModel {
       'name': TypeVarchar(),
       'date': TypeDateTime(),
     },
+  );
+
+  static final adapter = QueryTypeAdapter<UserModel>(
+    table: UserModel.table.name,
+    primaryKeyColumn: UserModel.table.primaryKeyColumn,
+    toMap: (user) => user.toMap(),
+    fromMap: UserModel.fromMap,
   );
 }
