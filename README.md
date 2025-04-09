@@ -1,3 +1,8 @@
+[![Dart](https://img.shields.io/badge/Made%20with-Dart-blue.svg)](https://dart.dev/)
+[![MIT Licence](https://badges.frapsoft.com/os/mit/mit.svg?v=103)](https://opensource.org/licenses/mit-license.php)
+[![pub package](https://img.shields.io/pub/v/queryflow.svg)](https://pub.dev/packages/queryflow)
+[![](https://img.shields.io/static/v1?label=Sponsor&message=%E2%9D%A4&logo=GitHub&color=%23fe8e86)](https://github.com/sponsors/rafaelbarbosatec)
+
 # Queryflow
 
 Queryflow is a lightweight and flexible Dart package designed to simplify the process of building and executing SQL queries. It provides a fluent API for constructing queries. Queryflow is particularly useful for Dart and Flutter developers working with MySQL databases.
