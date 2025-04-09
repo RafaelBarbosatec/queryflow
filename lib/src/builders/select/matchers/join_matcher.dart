@@ -26,6 +26,9 @@ abstract class JoinMatcher implements BaseMatcher {
   /// The name of the table being joined.
   String table = '';
 
+  /// The alias for the joined table.
+  String? alias;
+
   /// The name of the table from which the join originates.
   String selectTable = '';
 
@@ -52,8 +55,9 @@ abstract class JoinMatcher implements BaseMatcher {
   @override
   MatchResult compose(String current) {
     String prefix = '${type.value} JOIN';
+    String aliasPart = alias != null ? ' AS $alias' : '';
     return MatchResult(
-      '$current $prefix $table ON $selectTable.$firstField = $table.$secondField',
+      '$current $prefix $table$aliasPart ON $selectTable.$firstField = ${alias ?? table}.$secondField',
     );
   }
 }

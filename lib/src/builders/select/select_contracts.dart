@@ -70,7 +70,7 @@ abstract class SelectBuilderJoin<T> {
   /// ```
   ///
   /// Returns the [SelectBuilder] instance for method chaining.
-  SelectBuilder<T> join(String table, JoinMatcher matcher);
+  SelectBuilder<T> join(String table, JoinMatcher matcher, {String? alias});
 
   /// Adds a raw JOIN clause to the query using the provided SQL string.
   ///

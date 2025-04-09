@@ -122,6 +122,10 @@ final usersWithOrders = await queryflow.select('users', ['users.id', 'users.name
     .join('orders', InnerJoin('id', 'user_id'))
     .fetch();
 
+final usersWithOrdersAlias = await queryflow.select('users', ['users.id', 'users.name', 'o.total'])
+    .join('orders', InnerJoin('id', 'user_id'), alias:'o')
+    .fetch();
+
 final usersWithOrders = await queryflow.select('users', ['users.id', 'users.name', 'orders.total'])
     .join('orders', LeftJoin('id', 'user_id'))
     .fetch();
