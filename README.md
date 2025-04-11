@@ -187,6 +187,11 @@ print(customQuery);
 
 Queryflow provides seamless integration with your data models through type adapters, allowing you to directly map between your Dart objects and database records.
 
+There is to type of adapters: `QueryTypeAdapter` and `TypeAdapter`.
+
+- ***QueryTypeAdapter*** : Used to execute `selectModel`.
+- ***TypeAdapter*** : Used to execute method `.fetchAs` availabe in `selectModel` and `select`.
+
 #### Registering Type Adapters
 
 First, define your model class with appropriate mapping methods:
@@ -237,7 +242,11 @@ final queryflow = Queryflow(
       primaryKeyColumn: 'id',
       toMap: (user) => user.toMap(),
       fromMap: User.fromMap,
-    )
+    ),
+    /// If you just need use .fetchAs
+    /// TypeAdapter<User>(
+    ///  fromMap: User.fromMap,
+    /// ),
   ],
 );
 ```
@@ -289,6 +298,9 @@ await queryflow.updateModel(userToUpdate);
 ```
 
 The model's type adapter will use the primary key (ID) to identify which record to update, and the model's `toMap()` method to determine which fields to update.
+
+
+
 
 ### Using `TableModel`
 
