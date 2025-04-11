@@ -28,8 +28,20 @@ abstract class SelectBuilderBase<T>
   final List<String> fields;
   final List<BaseMatcher> matchers = [];
   final List params = [];
+  final QueryTypeRetriver queryTypeRetriver;
 
-  SelectBuilderBase(this.executor, this.table, {this.fields = const []});
+  SelectBuilderBase(this.executor, this.table, this.queryTypeRetriver,
+      {this.fields = const []});
+
+  @override
+  Future<List<R>> fetchAs<R>() async {
+    final query = toSql();
+    final result = await executor.executePrepared(query, params);
+    return result.map((e) {
+      final adapter = queryTypeRetriver.getType<R>();
+      return adapter.fromMap(e);
+    }).toList();
+  }
 }
 
 class SelectBuilderImpl extends SelectBuilderBase<Map<String, dynamic>>
@@ -40,11 +52,10 @@ class SelectBuilderImpl extends SelectBuilderBase<Map<String, dynamic>>
         OrderByMixin,
         AgregationMixin,
         ToSqlMixin {
-  final QueryTypeRetriver queryTypeRetriver;
   SelectBuilderImpl(
     super.executor,
     super.table,
-    this.queryTypeRetriver, {
+    super.queryTypeRetriver, {
     super.fields = const [],
   });
 
@@ -63,11 +74,10 @@ class SelectBuilderModelImpl<T> extends SelectBuilderBase<T>
         OrderByMixin<T>,
         AgregationMixin<T>,
         ToSqlMixin<T> {
-  final QueryTypeRetriver queryTypeRetriver;
   SelectBuilderModelImpl(
     super.executor,
     super.table,
-    this.queryTypeRetriver, {
+    super.queryTypeRetriver, {
     super.fields = const [],
   });
 
@@ -76,7 +86,7 @@ class SelectBuilderModelImpl<T> extends SelectBuilderBase<T>
     final query = toSql();
     final result = await executor.executePrepared(query, params);
     return result.map((e) {
-      final adapter = queryTypeRetriver.getAdapter<T>();
+      final adapter = queryTypeRetriver.getQueryType<T>();
       return adapter.fromMap(e);
     }).toList();
   }

@@ -13,6 +13,7 @@ abstract class SelectBuilderSql {
 
 abstract class SelectBuilderFetch<T> {
   Future<List<T>> fetch();
+  Future<List<R>> fetchAs<R>();
 }
 
 abstract class SelectBuilderAgregation {

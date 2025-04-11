@@ -29,7 +29,7 @@ void main() {
       ),
     ];
     final retriver = QueryTypeRetriver(adapters);
-    final userAdapter = retriver.getAdapter<User>();
+    final userAdapter = retriver.getQueryType<User>();
     expect(userAdapter.table, 'user');
     expect(userAdapter.primaryKeyColumn, 'id');
     expect(userAdapter.toMap(User('John', 30)), {'name': 'John', 'age': 30});
@@ -39,7 +39,7 @@ void main() {
   test('Should retrive adpater with error', () async {
     final retriver = QueryTypeRetriver([]);
     try {
-      retriver.getAdapter<User>();
+      retriver.getQueryType<User>();
     } catch (e) {
       expect(e, isA<Exception>());
     }

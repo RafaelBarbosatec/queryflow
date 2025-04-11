@@ -72,7 +72,7 @@ class Queryflow implements QueryflowMethods, QueryflowExecuteTransation {
     bool secure = true,
     SecurityContext? securityContext,
     Executor? executor,
-    List<QueryTypeAdapter>? typeAdapters,
+    List<TypeAdapter>? typeAdapters,
     List<TableModel> tables = const [],
     int maxConnections = 1,
     this.debug = false,
@@ -175,7 +175,7 @@ class Queryflow implements QueryflowMethods, QueryflowExecuteTransation {
 
   @override
   SelectBuilder<T> selectModel<T>([List<String> fields = const []]) {
-    final adapter = _queryTypeRetriver.getAdapter<T>();
+    final adapter = _queryTypeRetriver.getQueryType<T>();
     final table = adapter.table;
     return SelectBuilderModelImpl<T>(
       _executor,
@@ -321,7 +321,7 @@ class Queryflow implements QueryflowMethods, QueryflowExecuteTransation {
   /// ```
   @override
   Future<int> insertModel<T>(T model) {
-    final adapter = _queryTypeRetriver.getAdapter<T>();
+    final adapter = _queryTypeRetriver.getQueryType<T>();
     return insert(adapter.table, adapter.toMap(model)).execute();
   }
 
@@ -343,7 +343,7 @@ class Queryflow implements QueryflowMethods, QueryflowExecuteTransation {
   /// ```
   @override
   Future<void> updateModel<T>(T model) {
-    final adapter = _queryTypeRetriver.getAdapter<T>();
+    final adapter = _queryTypeRetriver.getQueryType<T>();
     final data = adapter.toMap(model);
 
     return update(adapter.table, data)
