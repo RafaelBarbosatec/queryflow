@@ -1,3 +1,7 @@
+## next
+
+* Adds `TypeAdapter`.
+
 ## 0.2.1
 
 * Adds `alias` in `join` method.
