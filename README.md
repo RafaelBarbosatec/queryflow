@@ -187,10 +187,12 @@ print(customQuery);
 
 Queryflow provides seamless integration with your data models through type adapters, allowing you to directly map between your Dart objects and database records.
 
-There is to type of adapters: `QueryTypeAdapter` and `TypeAdapter`.
+#### Type Adapters
 
-- ***QueryTypeAdapter*** : Used to execute `selectModel`.
-- ***TypeAdapter*** : Used to execute method `.fetchAs` availabe in `selectModel` and `select`.
+Queryflow offers two types of adapters:
+
+- **TypeAdapter**: Basic adapter that only handles conversion from database records to your model objects. Used with the `.fetchAs()` method on any query.
+- **QueryTypeAdapter**: Extended adapter that supports full CRUD operations with models. Required for `selectModel()`, `insertModel()`, and `updateModel()` methods.
 
 #### Registering Type Adapters
 
@@ -221,7 +223,7 @@ class User {
     return User(
       id: map['id'] as int?,
       name: map['name'] as String,
-      date: map['date'],
+      date: DateTime.parse(map['date'] as String),
     );
   }
 }
@@ -237,16 +239,18 @@ final queryflow = Queryflow(
   password: 'password',
   databaseName: 'example_db',
   typeAdapters: [
+    // Full model support (CRUD operations)
     QueryTypeAdapter<User>(
       table: User.table,
       primaryKeyColumn: 'id',
       toMap: (user) => user.toMap(),
       fromMap: User.fromMap,
     ),
-    /// If you just need use .fetchAs
-    /// TypeAdapter<User>(
-    ///  fromMap: User.fromMap,
-    /// ),
+    
+    // For other types that only need conversion from DB records
+    TypeAdapter<Product>(
+      fromMap: Product.fromMap,
+    ),
   ],
 );
 ```
@@ -299,7 +303,16 @@ await queryflow.updateModel(userToUpdate);
 
 The model's type adapter will use the primary key (ID) to identify which record to update, and the model's `toMap()` method to determine which fields to update.
 
+#### Fetch with TypeAdapter
 
+```dart
+// Use fetchAs() on any regular query to convert results to your model
+final products = await queryflow
+    .select('products', ['id', 'name', 'price'])
+    .where('price', LessThan(100))
+    .orderBy('price')
+    .fetchAs<Product>();
+```
 
 
 ### Using `TableModel`

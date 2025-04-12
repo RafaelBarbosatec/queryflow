@@ -1,4 +1,4 @@
-## next
+## 0.2.2
 
 * Adds `TypeAdapter`.
 
