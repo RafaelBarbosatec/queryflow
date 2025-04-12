@@ -102,6 +102,17 @@ void main() {
       expect(query[0]['name'], 'Ana');
     });
 
+    test('Select Equals with fetchAs', () async {
+      var query = await queryflow
+          .select(UserModel.table.name)
+          .where('id', Equals(2))
+          .fetchAs<UserModel>();
+
+      expect(query.length, 1);
+      expect(query.first.id, 2);
+      expect(query.first.name, 'Ana');
+    });
+
     test('Select Equals string', () async {
       var query = await queryflow
           .select(UserModel.table.name)
