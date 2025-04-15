@@ -21,7 +21,7 @@ jobs:
           channel: 'stable'
           cache: true
       - name: Format
-        run: flutter format --set-exit-if-changed .
+        run: dart format --set-exit-if-changed .
       - name: Analyze
         run: flutter analyze
   test:
@@ -40,7 +40,6 @@ jobs:
         with:
           mysql version: '8.0'
           mysql database: 'boleiro'
-          mysql root password: '12345678'
           mysql user: 'admin'
           mysql password: '12345678'
       - name: Test
