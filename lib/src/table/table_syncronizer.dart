@@ -66,9 +66,14 @@ class TableSyncronizer {
   }
 
   Future<void> _createTable(TableModel table) async {
-    await executor.execute(table.toCreateSql());
-    if (table.initalData?.isNotEmpty ?? false) {
-      await _insertInitialData(table, table.initalData!);
+    try {
+      await executor.execute(table.toCreateSql());
+      if (table.initalData?.isNotEmpty ?? false) {
+        await _insertInitialData(table, table.initalData!);
+      }
+    } catch (e) {
+      logger?.e(e);
+      return Future.value();
     }
   }
 
@@ -109,16 +114,26 @@ class TableSyncronizer {
   }
 
   Future<void> _execDropTable(String tableName) {
-    return executor.execute(
-      '''DROP TABLE IF EXISTS `$tableName`;''',
-    );
+    try {
+      return executor.execute(
+        '''DROP TABLE IF EXISTS `$tableName`;''',
+      );
+    } catch (e) {
+      logger?.e(e);
+      return Future.value();
+    }
   }
 
   Future<void> _removeColumn(String name, existColumn) {
-    return executor.execute(
-      '''ALTER TABLE `$name` 
+    try {
+      return executor.execute(
+        '''ALTER TABLE `$name` 
         DROP COLUMN `$existColumn`;''',
-    );
+      );
+    } catch (e) {
+      logger?.e(e);
+      return Future.value();
+    }
   }
 
   Future<void> _insertInitialData(TableModel table, List<List> dataList) async {

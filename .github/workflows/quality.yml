@@ -29,11 +29,6 @@ jobs:
         uses: actions/checkout@v1
       - name: Intall dart
         uses: dart-lang/setup-dart@v1
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          channel: 'stable'
-          cache: true
       - uses: mirromutth/mysql-action@v1.1
         with:
           mysql version: '8.0'

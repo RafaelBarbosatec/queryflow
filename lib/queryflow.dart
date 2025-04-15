@@ -138,7 +138,7 @@ class Queryflow implements QueryflowMethods, QueryflowExecuteTransation {
   /// in the existing tables.
   Future<void> syncronize({
     bool dropTable = false,
-  }) async {
+  }) {
     return _tableSyncronizer.syncronize(
       dropTable: dropTable,
     );
