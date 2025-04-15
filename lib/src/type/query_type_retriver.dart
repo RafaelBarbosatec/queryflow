@@ -1,12 +1,13 @@
 import 'package:queryflow/queryflow.dart';
 
 /// A utility class responsible for retrieving the type of a query.
-/// 
+///
 /// This class provides methods and functionality to determine and handle
 /// the type of queries being processed within the application.
 class QueryTypeRetriver {
   final List<TypeAdapter> adapters;
   QueryTypeRetriver(this.adapters);
+
   /// Retrieves a [QueryTypeAdapter] for the specified type [T].
   ///
   /// This method is used to obtain a type-safe adapter for handling

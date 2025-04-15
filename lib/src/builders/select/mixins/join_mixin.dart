@@ -45,13 +45,12 @@ mixin JoinMixin<T> on SelectBuilderBase<T> {
   ///
   /// Returns the [SelectBuilder] instance for method chaining.
   @override
-  SelectBuilder<T> join(String table, JoinMatcher matcher,{String? alias}) {
+  SelectBuilder<T> join(String table, JoinMatcher matcher, {String? alias}) {
     matchers.add(
       matcher
         ..table = table
         ..alias = alias
         ..selectTable = super.table,
-        
     );
     return this;
   }
