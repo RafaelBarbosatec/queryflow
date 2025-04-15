@@ -36,4 +36,4 @@ jobs:
           mysql user: 'admin'
           mysql password: '12345678'
       - name: Test
-        run: flutter test
+        run: dart test
