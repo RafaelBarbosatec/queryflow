@@ -2,10 +2,10 @@ name: Test and Lint
 on:
   pull_request:
     branches:
-      - master
+      - main
   push:
     branches:
-      - master
+      - main
 
 jobs:
   format:
