@@ -25,6 +25,6 @@ class QueryLoggerDefault implements QueryLogger {
 
   @override
   void e(Object? message) {
-    print('\x1B[31m$message\x1B[0m');
+    print('\x1B[31m🚨 $message\x1B[0m');
   }
 }

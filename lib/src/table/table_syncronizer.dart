@@ -72,7 +72,7 @@ class TableSyncronizer {
         await _insertInitialData(table, table.initalData!);
       }
     } catch (e) {
-      logger?.e(e);
+      logger?.e('CREATE TABLE: $e');
       return Future.value();
     }
   }
@@ -119,7 +119,7 @@ class TableSyncronizer {
         '''DROP TABLE IF EXISTS `$tableName`;''',
       );
     } catch (e) {
-      logger?.e(e);
+      logger?.e('DROP TABLE: $e');
       return Future.value();
     }
   }
@@ -131,7 +131,7 @@ class TableSyncronizer {
         DROP COLUMN `$existColumn`;''',
       );
     } catch (e) {
-      logger?.e(e);
+      logger?.e('ALTER TABLE: $e');
       return Future.value();
     }
   }
