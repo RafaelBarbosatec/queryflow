@@ -8,7 +8,7 @@ on:
       - main
 
 jobs:
-  format:
+  analyze:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -19,10 +19,7 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
-          flutter-version: 3.29.1
           cache: true
-      - name: Format
-        run: dart format --set-exit-if-changed .
       - name: Analyze
         run: flutter analyze
   test:
