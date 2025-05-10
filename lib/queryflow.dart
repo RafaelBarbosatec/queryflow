@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'package:queryflow/src/builders/builders.dart';
-import 'package:queryflow/src/builders/update/update_builder.dart';
 import 'package:queryflow/src/executor/executor.dart';
 import 'package:queryflow/src/executor/mysql/my_sql_executor.dart';
 import 'package:queryflow/src/executor/mysql/my_sql_pool_executor.dart';
@@ -232,6 +231,14 @@ class Queryflow implements QueryflowMethods, QueryflowExecuteTransation {
     );
   }
 
+  @override
+  DeleteBuilder delete(String table) {
+    return DeleteBuilderImpl(
+      _executor,
+      table,
+    );
+  }
+
   /// Executes a raw SQL query string.
   ///
   /// This is useful for complex queries that cannot be easily built with the fluent API.
@@ -412,6 +419,7 @@ abstract class QueryflowMethods {
   /// .execute();
   /// ```
   UpdateBuilder update(String table, Map<String, dynamic> fields);
+  DeleteBuilder delete(String table);
 
   /// Creates an INSERT query builder for the specified table.
   ///

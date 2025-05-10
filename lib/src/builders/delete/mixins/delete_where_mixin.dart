@@ -1,8 +1,8 @@
 import 'package:queryflow/queryflow.dart';
 
-mixin UpdateWhereMixin on UpdateBuilderBase {
+mixin DeleteWhereMixin on DeleteBuilderBase {
   @override
-  UpdateBuilder where(
+  DeleteBuilder where(
     String field,
     WhereMatcher matcher, {
     WhereMatcherType type = WhereMatcherType.and,
@@ -16,7 +16,7 @@ mixin UpdateWhereMixin on UpdateBuilderBase {
   }
 
   @override
-  UpdateBuilder notWhere(
+  DeleteBuilder notWhere(
     String field,
     WhereMatcher matcher, {
     WhereMatcherType type = WhereMatcherType.and,
@@ -31,7 +31,7 @@ mixin UpdateWhereMixin on UpdateBuilderBase {
   }
 
   @override
-  UpdateBuilder whereRaw(
+  DeleteBuilder whereRaw(
     String raw, {
     WhereMatcherType type = WhereMatcherType.and,
   }) {
