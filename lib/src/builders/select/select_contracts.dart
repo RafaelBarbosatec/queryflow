@@ -16,6 +16,13 @@ abstract class SelectBuilderFetch<T> {
   Future<List<R>> fetchAs<R>();
 }
 
+abstract class SelectBuilderOrderByAndFetch<T> extends SelectBuilderFetch<T> {
+  SelectBuilderFetch<T> orderBy(
+    List<String> fields, [
+    OrderByType type = OrderByType.desc,
+  ]);
+}
+
 abstract class SelectBuilderAgregation {
   Future<int> count();
   Future<num> max();
@@ -122,11 +129,16 @@ abstract class SelectBuilderOrderBy<T> {
   ]);
 }
 
+abstract class SelectBuilderGroupBy<T> {
+  SelectBuilderOrderByAndFetch<T> groupBy(List<String> fields);
+}
+
 abstract class SelectBuilderWhere<T>
     implements
         SelectBuilderFetch<T>,
         SelectBuilderLimit<T>,
-        SelectBuilderOrderBy<T> {
+        SelectBuilderOrderBy<T>,
+        SelectBuilderGroupBy<T> {
   /// Adds a WHERE condition to the query using the specified field and matcher.
   ///
   /// This method is the primary way to filter results in a SELECT query by adding

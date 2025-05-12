@@ -1,5 +1,6 @@
 ## next
 * Adds `delete` method.
+* Adds `Group by`
 
 ## 0.2.2
 

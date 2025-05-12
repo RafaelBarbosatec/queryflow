@@ -1,4 +1,5 @@
 import 'package:queryflow/src/builders/matcher.dart';
+import 'package:queryflow/src/builders/select/mixins/group_by_mixin.dart';
 import 'package:queryflow/src/builders/select/mixins/join_mixin.dart';
 import 'package:queryflow/src/builders/select/mixins/limit_mixin.dart';
 import 'package:queryflow/src/builders/select/mixins/order_by_mixin.dart';
@@ -19,10 +20,12 @@ abstract class SelectBuilder<T>
         SelectBuilderSql,
         SelectBuilderLimit<T>,
         SelectBuilderJoin<T>,
-        SelectBuilderOrderBy<T> {}
+        SelectBuilderOrderBy<T>,
+        SelectBuilderGroupBy<T>,
+        SelectBuilderOrderByAndFetch<T>,
+        SelectBuilderFetch<T> {}
 
-abstract class SelectBuilderBase<T>
-    implements SelectBuilderFetch<T>, SelectBuilder<T> {
+abstract class SelectBuilderBase<T> implements SelectBuilder<T> {
   final Executor executor;
   final String table;
   final List<String> fields;
@@ -30,8 +33,12 @@ abstract class SelectBuilderBase<T>
   final List params = [];
   final QueryTypeRetriver queryTypeRetriver;
 
-  SelectBuilderBase(this.executor, this.table, this.queryTypeRetriver,
-      {this.fields = const []});
+  SelectBuilderBase(
+    this.executor,
+    this.table,
+    this.queryTypeRetriver, {
+    this.fields = const [],
+  });
 
   @override
   Future<List<R>> fetchAs<R>() async {
@@ -50,6 +57,7 @@ class SelectBuilderImpl extends SelectBuilderBase<Map<String, dynamic>>
         LimitMixin,
         JoinMixin,
         OrderByMixin,
+        GroupByMixin,
         AgregationMixin,
         ToSqlMixin {
   SelectBuilderImpl(
@@ -72,6 +80,7 @@ class SelectBuilderModelImpl<T> extends SelectBuilderBase<T>
         LimitMixin<T>,
         JoinMixin<T>,
         OrderByMixin<T>,
+        GroupByMixin<T>,
         AgregationMixin<T>,
         ToSqlMixin<T> {
   SelectBuilderModelImpl(
