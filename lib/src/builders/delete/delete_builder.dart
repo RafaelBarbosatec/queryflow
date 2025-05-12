@@ -66,7 +66,7 @@ class DeleteBuilderImpl extends DeleteBuilderBase with DeleteWhereMixin {
     _params.clear();
     final whereList = matchers.whereType<WhereMatcher>();
 
-    String query = 'DELETE $table';
+    String query = 'DELETE FROM $table';
     for (final w in whereList) {
       final result = w.compose(query);
       query = result.query;

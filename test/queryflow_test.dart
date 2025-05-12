@@ -271,4 +271,16 @@ void main() {
     expect(users[0].id, 3);
     expect(users[0].name, 'Fabio');
   });
+
+  test('Delete', () async {
+    final countBefore = await queryflow.selectModel<UserModel>().count();
+    expect(countBefore, 3);
+
+    await queryflow
+        .delete(UserModel.table.name)
+        .where('id', Equals(3))
+        .execute();
+    final countAfter = await queryflow.selectModel<UserModel>().count();
+    expect(countAfter, 2);
+  });
 }
