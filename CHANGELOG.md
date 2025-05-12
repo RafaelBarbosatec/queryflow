@@ -1,4 +1,4 @@
-## next
+## 0.2.3
 * Adds `delete` method.
 * Adds `Group by`
 
