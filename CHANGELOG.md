@@ -1,4 +1,9 @@
+## 0.2.4
+
+* Adds `fetchOne` method.
+
 ## 0.2.3
+
 * Adds `delete` method.
 * Adds `Group by`
 
