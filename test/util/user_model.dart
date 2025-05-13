@@ -35,6 +35,7 @@ class UserModel {
         isPrimaryKey: true,
       ),
       'name': TypeVarchar(),
+      'last_name': TypeText(isNullable: true),
       'date': TypeDateTime(),
     },
   );

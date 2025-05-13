@@ -39,6 +39,7 @@ void main() {
         {
           'name': 'Rafael',
           'date': dateInsert.toIso8601String(),
+          'last_name': 'Barbosa',
         },
       ).execute();
 
