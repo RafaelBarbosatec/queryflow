@@ -72,6 +72,12 @@ class SelectBuilderImpl extends SelectBuilderBase<Map<String, dynamic>>
     final query = toSql();
     return executor.executePrepared(query, params);
   }
+
+  @override
+  Future<Map<String, dynamic>?> fetchOne() async {
+    final result = await fetch();
+    return result.firstOrNull;
+  }
 }
 
 class SelectBuilderModelImpl<T> extends SelectBuilderBase<T>
@@ -98,5 +104,11 @@ class SelectBuilderModelImpl<T> extends SelectBuilderBase<T>
       final adapter = queryTypeRetriver.getQueryType<T>();
       return adapter.fromMap(e);
     }).toList();
+  }
+
+  @override
+  Future<T?> fetchOne() async {
+    final result = await fetch();
+    return result.firstOrNull;
   }
 }
