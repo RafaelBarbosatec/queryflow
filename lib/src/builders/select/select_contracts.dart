@@ -16,6 +16,7 @@ abstract class SelectBuilderFetch<T> extends SelectBuilderAgregation {
   Future<T?> fetchOne();
   Future<List<R>> fetchAs<R>();
   Future<R?> fetchAsOne<R>();
+  String toSql();
 }
 
 abstract class SelectBuilderOrderByAndFetch<T> extends SelectBuilderFetch<T> {

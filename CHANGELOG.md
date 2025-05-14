@@ -1,4 +1,4 @@
-## next
+## 0.2.5
 
 * Adds `fetchAsOne` method.
 * Fix show count method

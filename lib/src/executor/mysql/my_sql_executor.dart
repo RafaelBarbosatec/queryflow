@@ -83,13 +83,15 @@ class MySqlExecutor implements Executor {
     );
 
     if (!_conn!.connected) {
-      await _conn!.connect();
+      _conn = null;
+      await connect();
     }
   }
 
   @override
-  Future<void> close() {
-    return _conn?.close() ?? Future.value();
+  Future<void> close() async {
+    await _conn?.close();
+    _conn = null;
   }
 
   @override
