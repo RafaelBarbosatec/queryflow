@@ -49,6 +49,12 @@ abstract class SelectBuilderBase<T> implements SelectBuilder<T> {
       return adapter.fromMap(e);
     }).toList();
   }
+
+  @override
+  Future<R?> fetchAsOne<R>() async {
+    final result = await fetchAs<R>();
+    return result.firstOrNull;
+  }
 }
 
 class SelectBuilderImpl extends SelectBuilderBase<Map<String, dynamic>>

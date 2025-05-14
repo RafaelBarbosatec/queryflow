@@ -1,3 +1,8 @@
+## next
+
+* Adds `fetchAsOne` method.
+* Fix show count method
+
 ## 0.2.4
 
 * Adds `fetchOne` method.

@@ -11,10 +11,11 @@ abstract class SelectBuilderSql {
   });
 }
 
-abstract class SelectBuilderFetch<T> {
+abstract class SelectBuilderFetch<T> extends SelectBuilderAgregation {
   Future<List<T>> fetch();
   Future<T?> fetchOne();
   Future<List<R>> fetchAs<R>();
+  Future<R?> fetchAsOne<R>();
 }
 
 abstract class SelectBuilderOrderByAndFetch<T> extends SelectBuilderFetch<T> {
