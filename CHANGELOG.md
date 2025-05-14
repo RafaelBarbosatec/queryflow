@@ -1,3 +1,7 @@
+## 0.2.8
+
+* Flix `limit` bug
+
 ## 0.2.7
 
 * Able `limit` after `orderBy`

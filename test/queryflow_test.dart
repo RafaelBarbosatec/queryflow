@@ -227,7 +227,8 @@ void main() {
 
     test('Select with orderBy and limit', () async {
       var query = await queryflow
-          .select(UserModel.table.name)
+          .selectModel<UserModel>()
+          .where('name', Different(''))
           .orderBy(['name'])
           .limit(1)
           .fetch();

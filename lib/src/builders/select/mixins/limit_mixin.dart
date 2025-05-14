@@ -1,3 +1,4 @@
+import 'package:queryflow/src/builders/matcher.dart';
 import 'package:queryflow/src/builders/select/matchers/end_matcher.dart';
 import 'package:queryflow/src/builders/select/select_builder.dart';
 
@@ -24,10 +25,28 @@ mixin LimitMixin<T> on SelectBuilderBase<T> {
   /// ```
   SelectBuilderFetch<T> limit(int limitValue, [int? offset]) {
     matchers.add(
-      EndMatcher(
-        raw: 'LIMIT $limitValue${offset != null ? ' OFFSET $offset' : ''}',
+      LimitMatcher(
+        limitValue: limitValue,
+        offset: offset,
       ),
     );
     return this;
+  }
+}
+
+class LimitMatcher extends EndMatcher {
+  final int limitValue;
+  final int? offset;
+
+  LimitMatcher({
+    required this.limitValue,
+    this.offset,
+  }) : super(raw: '');
+
+  @override
+  MatchResult compose(String current) {
+    return MatchResult(
+      '$current LIMIT $limitValue${offset != null ? ' OFFSET $offset' : ''}',
+    );
   }
 }
