@@ -360,10 +360,6 @@ class Queryflow implements QueryflowMethods, QueryflowExecuteTransation {
         )
         .execute();
   }
-
-  Future<void> close() {
-    return _executor.close();
-  }
 }
 
 abstract class QueryflowExecuteTransation {

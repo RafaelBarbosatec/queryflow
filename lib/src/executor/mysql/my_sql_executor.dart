@@ -95,12 +95,12 @@ class MySqlExecutor implements Executor {
       _conn = null;
       await connect();
     }
+    _tryCount = 0;
   }
 
   @override
   Future<void> close() async {
-    await _conn?.close();
-    _conn = null;
+    return _conn?.close() ?? Future.value();
   }
 
   @override
