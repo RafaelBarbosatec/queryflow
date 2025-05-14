@@ -1,4 +1,4 @@
-## 0.2.6
+## 0.2.7
 
 * Able `limit` after `orderBy`
 

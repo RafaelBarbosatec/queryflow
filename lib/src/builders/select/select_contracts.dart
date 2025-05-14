@@ -136,7 +136,7 @@ abstract class SelectBuilderOrderBy<T> {
   ///   .orderBy(['department', 'last_name'], OrderByType.asc)
   ///   .fetch();
   /// ```
-  SelectBuilderFetch<T> orderBy(
+  SelectBuilderFetchAndLimit<T> orderBy(
     List<String> fields, [
     OrderByType type = OrderByType.desc,
   ]);
