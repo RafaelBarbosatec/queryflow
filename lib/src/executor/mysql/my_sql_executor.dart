@@ -69,9 +69,6 @@ class MySqlExecutor implements Executor {
     return data;
   }
 
-  final int _maxTry = 4;
-  int _tryCount = 0;
-
   @override
   Future<void> connect() async {
     _conn ??= await MySQLConnection.createConnection(
@@ -86,16 +83,8 @@ class MySqlExecutor implements Executor {
     );
 
     if (!_conn!.connected) {
-      _tryCount++;
-      if (_tryCount > _maxTry) {
-        _logger.e("Failed to connect to MySQL after $_maxTry attempts.");
-        return;
-      }
-      await Future.delayed(const Duration(seconds: 1));
-      _conn = null;
-      await connect();
+      await _conn!.connect();
     }
-    _tryCount = 0;
   }
 
   @override
