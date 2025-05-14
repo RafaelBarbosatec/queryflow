@@ -4,11 +4,7 @@ import 'package:queryflow/src/builders/select/select_builder.dart';
 mixin ToSqlMixin<T> on SelectBuilderBase<T> {
   @override
   String toSql({
-    bool isCount = false,
-    bool isMax = false,
-    bool isMin = false,
-    bool isSum = false,
-    bool isAvg = false,
+    SqlAgregateType type = SqlAgregateType.none,
   }) {
     String fieldsP = '*';
     params.clear();
@@ -16,25 +12,18 @@ mixin ToSqlMixin<T> on SelectBuilderBase<T> {
       fieldsP = fields.join(', ');
     }
     String query = "SELECT $fieldsP FROM $table";
-
-    if (isCount) {
-      query = 'SELECT COUNT($fieldsP) as numerOf FROM $table';
-    }
-
-    if (isMax) {
-      query = 'SELECT MAX($fieldsP) as numerOf FROM $table';
-    }
-
-    if (isMin) {
-      query = 'SELECT MIN($fieldsP) as numerOf FROM $table';
-    }
-
-    if (isSum) {
-      query = 'SELECT SUM($fieldsP) as numerOf FROM $table';
-    }
-
-    if (isAvg) {
-      query = 'SELECT AVG($fieldsP) as numerOf FROM $table';
+    switch (type) {
+      case SqlAgregateType.count:
+        query = 'SELECT COUNT($fieldsP) as numerOf FROM $table';
+      case SqlAgregateType.max:
+        query = 'SELECT MAX($fieldsP) as numerOf FROM $table';
+      case SqlAgregateType.min:
+        query = 'SELECT MIN($fieldsP) as numerOf FROM $table';
+      case SqlAgregateType.sum:
+        query = 'SELECT SUM($fieldsP) as numerOf FROM $table';
+      case SqlAgregateType.avg:
+        query = 'SELECT AVG($fieldsP) as numerOf FROM $table';
+      case SqlAgregateType.none:
     }
 
     final joinMatchers = matchers.whereType<JoinMatcher>().toList();

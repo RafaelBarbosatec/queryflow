@@ -1,13 +1,18 @@
 import 'package:queryflow/src/builders/select/matchers/where_matchers.dart';
 import 'package:queryflow/src/builders/select/select_builder.dart';
 
+enum SqlAgregateType {
+  count,
+  max,
+  min,
+  sum,
+  avg,
+  none,
+}
+
 abstract class SelectBuilderSql {
   String toSql({
-    bool isCount = false,
-    bool isMax = false,
-    bool isMin = false,
-    bool isSum = false,
-    bool isAvg = false,
+    SqlAgregateType type = SqlAgregateType.none,
   });
 }
 
