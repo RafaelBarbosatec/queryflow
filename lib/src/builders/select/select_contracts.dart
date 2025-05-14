@@ -16,19 +16,24 @@ abstract class SelectBuilderSql {
   });
 }
 
-abstract class SelectBuilderFetch<T> extends SelectBuilderAgregation {
+abstract class SelectBuilderFetch<T> {
   Future<List<T>> fetch();
   Future<T?> fetchOne();
   Future<List<R>> fetchAs<R>();
   Future<R?> fetchAsOne<R>();
+  Future<int> count();
   String toSql();
 }
 
 abstract class SelectBuilderOrderByAndFetch<T> extends SelectBuilderFetch<T> {
-  SelectBuilderFetch<T> orderBy(
+  SelectBuilderFetchAndLimit<T> orderBy(
     List<String> fields, [
     OrderByType type = OrderByType.desc,
   ]);
+}
+
+abstract class SelectBuilderFetchAndLimit<T> extends SelectBuilderFetch<T> {
+  SelectBuilderFetch<T> limit(int limitValue, [int? offset]);
 }
 
 abstract class SelectBuilderAgregation {

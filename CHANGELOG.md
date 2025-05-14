@@ -1,3 +1,7 @@
+## 0.2.6
+
+* Able `limit` after `orderBy`
+
 ## 0.2.5
 
 * Adds `fetchAsOne` method.

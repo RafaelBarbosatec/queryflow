@@ -224,6 +224,15 @@ void main() {
       expect(date.day, dateInsert.day);
       expect(date.hour, dateInsert.hour);
     });
+
+    test('Select with orderBy and limit', () async {
+      var query = await queryflow
+          .select(UserModel.table.name)
+          .orderBy(['name'])
+          .limit(1)
+          .fetch();
+      expect(query.length, 1);
+    });
   });
 
   test('Update', () async {

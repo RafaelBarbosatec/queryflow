@@ -50,7 +50,7 @@ mixin OrderByMixin<T> on SelectBuilderBase<T> {
   ///   .orderBy(['department', 'last_name'], OrderByType.asc)
   ///   .fetch();
   /// ```
-  SelectBuilderFetch<T> orderBy(
+  SelectBuilderFetchAndLimit<T> orderBy(
     List<String> fields, [
     OrderByType type = OrderByType.desc,
   ]) {

@@ -23,6 +23,7 @@ abstract class SelectBuilder<T>
         SelectBuilderOrderBy<T>,
         SelectBuilderGroupBy<T>,
         SelectBuilderOrderByAndFetch<T>,
+        SelectBuilderFetchAndLimit<T>,
         SelectBuilderFetch<T> {}
 
 abstract class SelectBuilderBase<T> implements SelectBuilder<T> {
