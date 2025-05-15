@@ -22,15 +22,15 @@ class ViewSyncronizer {
         await _createView(view);
         logger?.s("Created view '${view.name}'");
       } else {
-        final existingColumns = await _getViewColumns(view.name);
         final currentQuery = view.query.toSql();
-        bool hasChanges = false;
-        for (var column in existingColumns) {
-          if (!currentQuery.contains(column)) {
-            hasChanges = true;
-            break;
-          }
-        }
+        final existingColumns = await _getViewColumns(view.name);
+        final currentColumns = getViewColumnsByString(currentQuery);
+
+        bool hasChanges = _checkForChanges(
+          existingColumns,
+          currentColumns,
+        );
+
         if (hasChanges) {
           await _updateView(view);
           logger?.s("Updated view '${view.name}'");
@@ -40,30 +40,29 @@ class ViewSyncronizer {
     logger?.i('Finished syncronizing views');
   }
 
-  Future<bool> _viewExists(String name) async {
-    final result = await executor.execute(
-      '''SELECT TABLE_NAME 
-        FROM INFORMATION_SCHEMA.VIEWS 
-        WHERE TABLE_SCHEMA = '$databaseName' 
-        AND TABLE_NAME = '$name';''',
-    );
-    return result.isNotEmpty;
-  }
-
   Future<void> _createView(ViewModel view) async {
     final query = view.query.toSql();
-    await executor.executePrepared(
-      '''CREATE OR REPLACE VIEW ${view.name} AS ?;''',
-      [query],
+    await executor.execute(
+      '''CREATE OR REPLACE VIEW ${view.name} AS $query;''',
     );
   }
 
   Future<void> _updateView(ViewModel view) async {
     final query = view.query.toSql();
-    executor.executePrepared(
-      '''CREATE OR REPLACE VIEW ${view.name} AS ?;''',
-      [query],
+    executor.execute(
+      '''CREATE OR REPLACE VIEW ${view.name} AS $query;''',
     );
+  }
+
+  Future<bool> _viewExists(String name) async {
+    final result = await executor.executePrepared(
+      '''SELECT TABLE_NAME 
+        FROM INFORMATION_SCHEMA.VIEWS 
+        WHERE TABLE_SCHEMA = ?
+        AND TABLE_NAME = ?;''',
+      [databaseName, name],
+    );
+    return result.isNotEmpty;
   }
 
   Future<List<String>> _getViewColumns(String name) {
@@ -73,5 +72,32 @@ class ViewSyncronizer {
         AND TABLE_NAME = ?;''', [name]).then((result) {
       return result.map((e) => e['COLUMN_NAME'].toString()).toList();
     });
+  }
+
+  static List<String> getViewColumnsByString(String currentQuery) {
+    final trimmedQuery = currentQuery.trim();
+    final regex = RegExp(r'(?<=SELECT\s)(.*?)(?=\sFROM)',
+        caseSensitive: false, dotAll: true);
+    final match = regex.firstMatch(trimmedQuery);
+    if (match != null) {
+      return match.group(0)?.split(',').map((e) => e.trim()).toList() ?? [];
+    } else {
+      return [];
+    }
+  }
+
+  bool _checkForChanges(
+    List<String> existingColumns,
+    List<String> currentColumns,
+  ) {
+    if (existingColumns.length != currentColumns.length) {
+      return true;
+    }
+    for (var column in existingColumns) {
+      if (!currentColumns.contains(column)) {
+        return true;
+      }
+    }
+    return false;
   }
 }
