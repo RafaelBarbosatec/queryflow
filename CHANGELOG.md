@@ -1,3 +1,7 @@
+# next
+
+* Adds View syncronizer
+
 ## 0.2.8
 
 * Flix `limit` bug
