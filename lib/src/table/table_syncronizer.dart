@@ -56,11 +56,12 @@ class TableSyncronizer {
   }
 
   Future<bool> _tableExists(String name) async {
-    final result = await executor.execute(
+    final result = await executor.executePrepared(
       '''SELECT TABLE_NAME 
         FROM INFORMATION_SCHEMA.TABLES 
-        WHERE TABLE_SCHEMA = '$databaseName' 
-        AND TABLE_NAME = '$name';''',
+        WHERE TABLE_SCHEMA = ? 
+        AND TABLE_NAME = ?;''',
+      [databaseName, name],
     );
     return result.isNotEmpty;
   }
@@ -78,11 +79,12 @@ class TableSyncronizer {
   }
 
   Future<List<String>> _getTableColumns(String name) {
-    return executor.execute(
+    return executor.executePrepared(
       '''SELECT COLUMN_NAME 
         FROM INFORMATION_SCHEMA.COLUMNS 
-        WHERE TABLE_SCHEMA = '$databaseName' 
-        AND TABLE_NAME = '$name';''',
+        WHERE TABLE_SCHEMA = ? 
+        AND TABLE_NAME = ?;''',
+      [databaseName, name],
     ).then((result) {
       return result.map((e) => e['COLUMN_NAME'].toString()).toList();
     });
