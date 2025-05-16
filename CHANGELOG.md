@@ -1,3 +1,7 @@
+## Next
+
+* Fix View sync.
+
 ## 0.3.0
 
 * Adds View syncronizer

@@ -80,7 +80,12 @@ class ViewSyncronizer {
         caseSensitive: false, dotAll: true);
     final match = regex.firstMatch(trimmedQuery);
     if (match != null) {
-      return match.group(0)?.split(',').map((e) => e.trim()).toList() ?? [];
+      return match
+              .group(0)
+              ?.split(',')
+              .map((e) => _getCName(e.trim()))
+              .toList() ??
+          [];
     } else {
       return [];
     }
@@ -99,5 +104,11 @@ class ViewSyncronizer {
       }
     }
     return false;
+  }
+
+  static String _getCName(String trim) {
+    var name = trim.split(' ').last;
+    name = name.split('.').last;
+    return name;
   }
 }

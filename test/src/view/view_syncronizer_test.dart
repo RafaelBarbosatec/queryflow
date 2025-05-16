@@ -29,7 +29,7 @@ void main() {
           ViewModel(
             name: 'user_view',
             query: '''
-           SELECT * FROM user_table
+           SELECT name,date FROM user_table
           ''',
           ),
         ],
