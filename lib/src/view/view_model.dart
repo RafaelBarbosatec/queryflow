@@ -1,8 +1,6 @@
-import 'package:queryflow/queryflow.dart';
-
 class ViewModel {
   final String name;
-  final SelectBuilderFetch query;
+  final String query;
 
   ViewModel({
     required this.name,

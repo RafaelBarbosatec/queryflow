@@ -3,6 +3,7 @@ abstract class TableColumnType {
   final bool isAutoIncrement;
   final bool isNullable;
   final dynamic defaultValue;
+  final dynamic onUpdate;
   final ForeingKey? foreignKey;
 
   TableColumnType({
@@ -10,6 +11,7 @@ abstract class TableColumnType {
     required this.isAutoIncrement,
     required this.isNullable,
     required this.defaultValue,
+    required this.onUpdate,
     this.foreignKey,
   }) : assert(
           !isAutoIncrement || isPrimaryKey,
@@ -71,6 +73,7 @@ class TypeVarchar extends TableColumnType {
     super.isAutoIncrement = false,
     super.isNullable = true,
     super.defaultValue,
+    super.onUpdate,
     super.foreignKey,
   }) : assert(
           (length > 0 && length <= 255),
@@ -84,6 +87,7 @@ class TypeText extends TableColumnType {
     super.isAutoIncrement = false,
     super.isNullable = true,
     super.defaultValue,
+    super.onUpdate,
     super.foreignKey,
   });
 }
@@ -96,6 +100,7 @@ class TypeInt extends TableColumnType {
     super.isAutoIncrement = false,
     super.isNullable = true,
     super.defaultValue,
+    super.onUpdate,
     super.foreignKey,
   }) : assert(
           length > 0 && length <= 11,
@@ -109,6 +114,7 @@ class TypeDouble extends TableColumnType {
     super.isAutoIncrement = false,
     super.isNullable = true,
     super.defaultValue,
+    super.onUpdate,
   });
 }
 
@@ -118,6 +124,7 @@ class TypeBool extends TableColumnType {
     super.isAutoIncrement = false,
     super.isNullable = true,
     super.defaultValue,
+    super.onUpdate,
   });
 }
 
@@ -127,6 +134,7 @@ class TypeDateTime extends TableColumnType {
     super.isAutoIncrement = false,
     super.isNullable = true,
     super.defaultValue,
+    super.onUpdate,
   });
 }
 
@@ -136,6 +144,7 @@ class TypeBlob extends TableColumnType {
     super.isAutoIncrement = false,
     super.isNullable = true,
     super.defaultValue,
+    super.onUpdate,
   });
 }
 
@@ -147,6 +156,7 @@ class TypeFloat extends TableColumnType {
     super.isAutoIncrement = false,
     super.isNullable = true,
     super.defaultValue,
+    super.onUpdate,
   });
 }
 
@@ -156,6 +166,7 @@ class TypeDate extends TableColumnType {
     super.isAutoIncrement = false,
     super.isNullable = true,
     super.defaultValue,
+    super.onUpdate,
   });
 }
 
@@ -165,6 +176,7 @@ class TypeTimestamp extends TableColumnType {
     super.isAutoIncrement = false,
     super.isNullable = true,
     super.defaultValue,
+    super.onUpdate,
   });
 }
 
@@ -174,6 +186,7 @@ class TypeTime extends TableColumnType {
     super.isAutoIncrement = false,
     super.isNullable = true,
     super.defaultValue,
+    super.onUpdate,
   });
 }
 
@@ -183,6 +196,7 @@ class TypeYear extends TableColumnType {
     super.isAutoIncrement = false,
     super.isNullable = true,
     super.defaultValue,
+    super.onUpdate,
   });
 }
 
@@ -194,5 +208,6 @@ class TypeEnum extends TableColumnType {
     super.isAutoIncrement = false,
     super.isNullable = true,
     super.defaultValue,
+    super.onUpdate,
   });
 }

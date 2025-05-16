@@ -281,3 +281,21 @@ class In extends WhereMatcher {
     );
   }
 }
+
+class IsNull extends WhereMatcher {
+  @override
+  MatchResult compose(String current) {
+    return MatchResult(
+      '${addsAgragator(current)} $field IS NULL',
+    );
+  }
+}
+
+class IsNotNull extends WhereMatcher {
+  @override
+  MatchResult compose(String current) {
+    return MatchResult(
+      '${addsAgragator(current)} $field IS NOT NULL',
+    );
+  }
+}

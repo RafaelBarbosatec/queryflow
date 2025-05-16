@@ -54,6 +54,9 @@ class TableModel {
       if (columnType.defaultValue != null) {
         columnDefinition += ' DEFAULT ${columnType.defaultValue}';
       }
+      if (columnType.onUpdate != null) {
+        columnDefinition += ' ON UPDATE ${columnType.onUpdate}';
+      }
       columnDefinitions.add(columnDefinition);
     });
 

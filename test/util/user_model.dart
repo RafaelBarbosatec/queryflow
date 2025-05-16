@@ -36,7 +36,10 @@ class UserModel {
       ),
       'name': TypeVarchar(),
       'last_name': TypeText(isNullable: true),
-      'date': TypeDateTime(),
+      'date': TypeDateTime(
+        defaultValue: 'CURRENT_TIMESTAMP',
+        onUpdate: 'CURRENT_TIMESTAMP',
+      ),
     },
   );
 

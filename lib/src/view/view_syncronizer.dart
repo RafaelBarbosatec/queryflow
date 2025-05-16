@@ -22,7 +22,7 @@ class ViewSyncronizer {
         await _createView(view);
         logger?.s("Created view '${view.name}'");
       } else {
-        final currentQuery = view.query.toSql();
+        final currentQuery = view.query;
         final existingColumns = await _getViewColumns(view.name);
         final currentColumns = getViewColumnsByString(currentQuery);
 
@@ -41,14 +41,14 @@ class ViewSyncronizer {
   }
 
   Future<void> _createView(ViewModel view) async {
-    final query = view.query.toSql();
+    final query = view.query;
     await executor.execute(
       '''CREATE OR REPLACE VIEW ${view.name} AS $query;''',
     );
   }
 
   Future<void> _updateView(ViewModel view) async {
-    final query = view.query.toSql();
+    final query = view.query;
     executor.execute(
       '''CREATE OR REPLACE VIEW ${view.name} AS $query;''',
     );

@@ -1,6 +1,8 @@
-# next
+## 0.3.0
 
 * Adds View syncronizer
+* Adds `IsNull` and `IsNotNull`
+* Adds `onUpdate` in tablecolumn
 
 ## 0.2.8
 
