@@ -398,6 +398,69 @@ final userTableWithInitialData = TableModel(
 
 ```
 
+### Using Database Views
+
+Queryflow supports creating and managing database views through the `ViewModel` class. Views provide a way to create virtual tables based on SQL queries, making complex data retrieval more efficient.
+
+#### Defining a View
+
+Define a view by creating an instance of `ViewModel` with a name and the SQL query:
+
+```dart
+final userView = ViewModel(
+  name: 'user_summary_view',
+  query: '''
+    SELECT u.id, u.name, p.age, p.occupation 
+    FROM users u
+    INNER JOIN profiles p ON u.id = p.user_id
+  ''',
+);
+```
+
+#### Registering Views
+
+Register your views when initializing Queryflow:
+
+```dart
+final queryflow = Queryflow(
+  host: 'localhost',
+  port: 3306,
+  userName: 'root',
+  password: 'password',
+  databaseName: 'example_db',
+  tables: [userTable, profileTable],
+  views: [userView],
+);
+```
+
+#### Synchronizing Views
+
+Views are automatically synchronized when you call `synchronize()`:
+
+```dart
+await queryflow.synchronize();
+```
+
+This will create new views or update existing ones if their structure has changed.
+
+#### Querying Views
+
+You can query views just like regular tables:
+
+```dart
+final results = await queryflow
+    .select('user_summary_view', ['id', 'name', 'age'])
+    .where('age', GreaterThan(25))
+    .orderBy('name')
+    .fetch();
+```
+
+Views are particularly useful for:
+- Simplifying complex joins
+- Creating denormalized views of normalized data
+- Abstracting security restrictions
+- Improving query performance for frequently accessed data
+
 #### Example Usage
 
 ```dart
