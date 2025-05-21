@@ -30,14 +30,14 @@ void main() {
             name: 'user_view',
             query: (builder) {
               return builder(
-                table: 'user_table',
-                fields: ['name', 'age', 'date'],
-              ).where('age', GreaterThanOrEqual(18)).orderBy(['name']);
+                table: UserModel.table.name,
+                fields: ['name', 'date'],
+              ).where('name', Different('a')).orderBy(['name']);
             },
           ),
         ],
       );
-      await queryflow.syncronize(dropTable: true);
+      await queryflow.syncronize();
       initilized = true;
     }
   });
