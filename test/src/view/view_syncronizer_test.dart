@@ -42,6 +42,11 @@ void main() {
     }
   });
 
+  test('SHould select view', () async {
+    final result = await queryflow.select('user_view').fetch();
+    expect(result.isNotEmpty, true);
+  });
+
   test('Should retrive columns from query', () async {
     final query = '''
       SELECT name, age
