@@ -26,11 +26,13 @@ void main() {
           ProfileModel.table,
         ],
         views: [
-          ViewModel(
+          ViewModel.builder(
             name: 'user_view',
-            query: '''
-           SELECT name,date FROM user_table
-          ''',
+            query: (builder) {
+              return builder(table: 'user', fields: ['name', 'age', 'date'])
+                  .where('age', GreaterThanOrEqual(18))
+                  .orderBy(['name']);
+            },
           ),
         ],
       );

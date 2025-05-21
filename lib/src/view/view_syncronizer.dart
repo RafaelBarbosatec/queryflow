@@ -1,17 +1,16 @@
-import 'package:queryflow/src/executor/executor.dart';
+import 'package:queryflow/queryflow.dart';
 import 'package:queryflow/src/logger/query_logger.dart';
-import 'package:queryflow/src/view/view_model.dart';
 
 class ViewSyncronizer {
   final List<ViewModel> views;
   final String databaseName;
   final QueryLogger? logger;
-  final Executor executor;
+  final QueryflowMethods queryflow;
   ViewSyncronizer({
     required this.views,
     required this.databaseName,
+    required this.queryflow,
     this.logger,
-    required this.executor,
   });
 
   Future<void> syncronize() async {
@@ -22,7 +21,7 @@ class ViewSyncronizer {
         await _createView(view);
         logger?.s("Created view '${view.name}'");
       } else {
-        final currentQuery = view.query;
+        final currentQuery = _getViewQuery(view);
         final existingColumns = await _getViewColumns(view.name);
         final currentColumns = getViewColumnsByString(currentQuery);
 
@@ -41,21 +40,21 @@ class ViewSyncronizer {
   }
 
   Future<void> _createView(ViewModel view) async {
-    final query = view.query;
-    await executor.execute(
+    final query = _getViewQuery(view);
+    await queryflow.execute(
       '''CREATE OR REPLACE VIEW ${view.name} AS $query;''',
     );
   }
 
   Future<void> _updateView(ViewModel view) async {
-    final query = view.query;
-    executor.execute(
+    final query = _getViewQuery(view);
+    queryflow.execute(
       '''CREATE OR REPLACE VIEW ${view.name} AS $query;''',
     );
   }
 
   Future<bool> _viewExists(String name) async {
-    final result = await executor.executePrepared(
+    final result = await queryflow.executePrepared(
       '''SELECT TABLE_NAME 
         FROM INFORMATION_SCHEMA.VIEWS 
         WHERE TABLE_SCHEMA = ?
@@ -66,7 +65,7 @@ class ViewSyncronizer {
   }
 
   Future<List<String>> _getViewColumns(String name) {
-    return executor.executePrepared('''SELECT COLUMN_NAME 
+    return queryflow.executePrepared('''SELECT COLUMN_NAME 
         FROM INFORMATION_SCHEMA.COLUMNS 
         WHERE TABLE_SCHEMA = '$databaseName' 
         AND TABLE_NAME = ?;''', [name]).then((result) {
@@ -110,5 +109,18 @@ class ViewSyncronizer {
     var name = trim.split(' ').last;
     name = name.split('.').last;
     return name;
+  }
+
+  String _getViewQuery(ViewModel view) {
+    return view.when(
+      builder: (p0) {
+        return p0.query(
+          ({List<String> fields = const [], required table}) {
+            return queryflow.select(table, fields);
+          },
+        ).toSql();
+      },
+      raw: (p0) => p0.query,
+    );
   }
 }

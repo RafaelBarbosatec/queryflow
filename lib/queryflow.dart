@@ -120,7 +120,7 @@ class Queryflow implements QueryflowMethods, QueryflowExecuteTransation {
     );
 
     _viewSyncronizer = ViewSyncronizer(
-      executor: _executor,
+      queryflow: this,
       databaseName: databaseName ?? '',
       views: views,
       logger: _logger,
