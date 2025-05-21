@@ -13,4 +13,5 @@ dependencies:
 dev_dependencies:
   test: any
   flutter_lints: ^5.0.0
+  mocktail: ^1.0.4
 

@@ -43,7 +43,7 @@ abstract class SelectBuilderBase<T> implements SelectBuilder<T> {
 
   @override
   Future<List<R>> fetchAs<R>() async {
-    final query = toSql();
+    final query = toPreparedSql();
     final result = await executor.executePrepared(query, params);
     return result.map((e) {
       final adapter = queryTypeRetriver.getType<R>();
@@ -76,7 +76,7 @@ class SelectBuilderImpl extends SelectBuilderBase<Map<String, dynamic>>
 
   @override
   Future<List<Map<String, dynamic>>> fetch() {
-    final query = toSql();
+    final query = toPreparedSql();
     return executor.executePrepared(query, params);
   }
 
@@ -105,7 +105,7 @@ class SelectBuilderModelImpl<T> extends SelectBuilderBase<T>
 
   @override
   Future<List<T>> fetch() async {
-    final query = toSql();
+    final query = toPreparedSql();
     final result = await executor.executePrepared(query, params);
     return result.map((e) {
       final adapter = queryTypeRetriver.getQueryType<T>();

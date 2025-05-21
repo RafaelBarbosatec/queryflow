@@ -4,7 +4,7 @@ mixin AgregationMixin<T> on SelectBuilderBase<T> {
   @override
   Future<int> count() async {
     final result = await executor.executePrepared(
-      toSql(type: SqlAgregateType.count),
+      toPreparedSql(type: SqlAgregateType.count),
       params,
     );
     return result[0]['numerOf'] ?? 0;
@@ -14,7 +14,7 @@ mixin AgregationMixin<T> on SelectBuilderBase<T> {
   Future<num> max() async {
     _sumValidation();
     final result = await executor.executePrepared(
-      toSql(type: SqlAgregateType.max),
+      toPreparedSql(type: SqlAgregateType.max),
       params,
     );
     return num.tryParse(result[0]['numerOf'].toString()) ?? 0;
@@ -24,7 +24,7 @@ mixin AgregationMixin<T> on SelectBuilderBase<T> {
   Future<num> min() async {
     _sumValidation();
     final result = await executor.executePrepared(
-      toSql(type: SqlAgregateType.min),
+      toPreparedSql(type: SqlAgregateType.min),
       params,
     );
     return num.tryParse(result[0]['numerOf'].toString()) ?? 0;
@@ -34,7 +34,7 @@ mixin AgregationMixin<T> on SelectBuilderBase<T> {
   Future<num> sum() async {
     _sumValidation();
     final result = await executor.executePrepared(
-      toSql(type: SqlAgregateType.sum),
+      toPreparedSql(type: SqlAgregateType.sum),
       params,
     );
     return num.tryParse(result[0]['numerOf'].toString()) ?? 0;
@@ -44,7 +44,7 @@ mixin AgregationMixin<T> on SelectBuilderBase<T> {
   Future<num> avg() async {
     _sumValidation();
     final result = await executor.executePrepared(
-      toSql(type: SqlAgregateType.avg),
+      toPreparedSql(type: SqlAgregateType.avg),
       params,
     );
     return num.tryParse(result[0]['numerOf'].toString()) ?? 0;

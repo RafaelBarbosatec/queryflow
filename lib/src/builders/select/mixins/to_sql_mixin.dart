@@ -3,7 +3,7 @@ import 'package:queryflow/src/builders/select/select_builder.dart';
 
 mixin ToSqlMixin<T> on SelectBuilderBase<T> {
   @override
-  String toSql({
+  String toPreparedSql({
     SqlAgregateType type = SqlAgregateType.none,
   }) {
     String fieldsP = '*';
@@ -48,5 +48,20 @@ mixin ToSqlMixin<T> on SelectBuilderBase<T> {
       params.addAll(e.params);
     }
     return query;
+  }
+
+  @override
+  String toSql() {
+    String sql = toPreparedSql();
+    int i = 0;
+    while (sql.contains('?')) {
+      var param = '${params[i]}';
+      if (params[i] is String || params[i] is DateTime) {
+        param = "'${params[i]}'";
+      }
+      sql = sql.replaceFirst('?', param);
+      i++;
+    }
+    return sql;
   }
 }
