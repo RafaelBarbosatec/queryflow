@@ -15,26 +15,30 @@ class ViewSyncronizer {
 
   Future<void> syncronize() async {
     logger?.i('Start syncronizing view');
-    for (var view in views) {
-      final viewExists = await _viewExists(view.name);
-      if (!viewExists) {
-        await _createView(view);
-        logger?.s("Created view '${view.name}'");
-      } else {
-        final currentQuery = _getViewQuery(view);
-        final existingColumns = await _getViewColumns(view.name);
-        final currentColumns = getViewColumnsByString(currentQuery);
+    try {
+      for (var view in views) {
+        final viewExists = await _viewExists(view.name);
+        if (!viewExists) {
+          await _createView(view);
+          logger?.s("Created view '${view.name}'");
+        } else {
+          final currentQuery = _getViewQuery(view);
+          final existingColumns = await _getViewColumns(view.name);
+          final currentColumns = getViewColumnsByString(currentQuery);
 
-        bool hasChanges = _checkForChanges(
-          existingColumns,
-          currentColumns,
-        );
+          bool hasChanges = _checkForChanges(
+            existingColumns,
+            currentColumns,
+          );
 
-        if (hasChanges) {
-          await _updateView(view);
-          logger?.s("Updated view '${view.name}'");
+          if (hasChanges) {
+            await _updateView(view);
+            logger?.s("Updated view '${view.name}'");
+          }
         }
       }
+    } catch (e) {
+      logger?.e('Error syncronizing views: $e');
     }
     logger?.i('Finished syncronizing views');
   }

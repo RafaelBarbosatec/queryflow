@@ -29,9 +29,10 @@ void main() {
           ViewModel.builder(
             name: 'user_view',
             query: (builder) {
-              return builder(table: 'user', fields: ['name', 'age', 'date'])
-                  .where('age', GreaterThanOrEqual(18))
-                  .orderBy(['name']);
+              return builder(
+                table: 'user_table',
+                fields: ['name', 'age', 'date'],
+              ).where('age', GreaterThanOrEqual(18)).orderBy(['name']);
             },
           ),
         ],
