@@ -1,3 +1,7 @@
+## 0.3.2
+
+* Sync view improvements. Adds `ViewModel.raw` and `ViewModel.builder`
+
 ## 0.3.1
 
 * Fix View sync.

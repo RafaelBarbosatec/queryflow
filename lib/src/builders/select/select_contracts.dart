@@ -11,7 +11,7 @@ enum SqlAgregateType {
 }
 
 abstract class SelectBuilderSql {
-  String toSql({
+  String toPreparedSql({
     SqlAgregateType type = SqlAgregateType.none,
   });
 }

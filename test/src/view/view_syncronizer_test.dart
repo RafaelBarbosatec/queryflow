@@ -26,17 +26,25 @@ void main() {
           ProfileModel.table,
         ],
         views: [
-          ViewModel(
+          ViewModel.builder(
             name: 'user_view',
-            query: '''
-           SELECT name,date FROM user_table
-          ''',
+            query: (builder) {
+              return builder(
+                table: UserModel.table.name,
+                fields: ['name', 'date'],
+              ).where('name', Different('a')).orderBy(['name']);
+            },
           ),
         ],
       );
       await queryflow.syncronize();
       initilized = true;
     }
+  });
+
+  test('SHould select view', () async {
+    final result = await queryflow.select('user_view').fetch();
+    expect(result.isNotEmpty, true);
   });
 
   test('Should retrive columns from query', () async {

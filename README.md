@@ -407,7 +407,7 @@ Queryflow supports creating and managing database views through the `ViewModel` 
 Define a view by creating an instance of `ViewModel` with a name and the SQL query:
 
 ```dart
-final userView = ViewModel(
+final userView = ViewModel.raw(
   name: 'user_summary_view',
   query: '''
     SELECT u.id, u.name, p.age, p.occupation 
