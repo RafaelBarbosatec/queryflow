@@ -9,7 +9,7 @@ void main() {
   bool initilized = false;
   late Queryflow queryflow;
 
-  setUp(() async {
+  setUpAll(() async {
     if (!initilized) {
       queryflow = Queryflow(
         host: "127.0.0.1",

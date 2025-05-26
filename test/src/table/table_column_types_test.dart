@@ -8,10 +8,11 @@ void main() {
         () {
       expect(
         () => TypeInt(
-            isPrimaryKey: false,
-            isAutoIncrement: true,
-            isNullable: false,
-            defaultValue: null),
+          isPrimaryKey: false,
+          isAutoIncrement: true,
+          isNotNull: false,
+          defaultValue: null,
+        ),
         throwsA(isA<AssertionError>()),
       );
     });
@@ -22,7 +23,7 @@ void main() {
         () => TypeInt(
             isPrimaryKey: true,
             isAutoIncrement: true,
-            isNullable: false,
+            isNotNull: false,
             defaultValue: null),
         returnsNormally,
       );
@@ -125,7 +126,7 @@ void main() {
       expect(stringType.length, equals(255));
       expect(stringType.isPrimaryKey, isFalse);
       expect(stringType.isAutoIncrement, isFalse);
-      expect(stringType.isNullable, isTrue);
+      expect(stringType.isNotNull, isFalse);
       expect(stringType.defaultValue, isNull);
     });
 
@@ -134,7 +135,7 @@ void main() {
         length: 4,
         isPrimaryKey: true,
         isAutoIncrement: true,
-        isNullable: false,
+        isNotNull: false,
         defaultValue: 0,
         foreignKey: ForeingKey(table: 'other_table', column: 'id'),
       );
@@ -142,7 +143,7 @@ void main() {
       expect(intType.length, equals(4));
       expect(intType.isPrimaryKey, isTrue);
       expect(intType.isAutoIncrement, isTrue);
-      expect(intType.isNullable, isFalse);
+      expect(intType.isNotNull, isFalse);
       expect(intType.defaultValue, equals(0));
       expect(intType.foreignKey?.table, equals('other_table'));
       expect(intType.foreignKey?.column, equals('id'));

@@ -35,7 +35,7 @@ void main() {
         name: 'products',
         columns: {
           'id': TypeInt(isPrimaryKey: true, isAutoIncrement: true),
-          'name': TypeVarchar(isNullable: false),
+          'name': TypeVarchar(isNotNull: true),
           'price': TypeDouble(defaultValue: '0.0'),
           'in_stock': TypeBool(defaultValue: 'TRUE'),
         },
@@ -57,7 +57,7 @@ void main() {
         columns: {
           'order_id': TypeInt(isPrimaryKey: true),
           'product_id': TypeInt(isPrimaryKey: true),
-          'quantity': TypeInt(isNullable: false),
+          'quantity': TypeInt(),
         },
       );
 

@@ -35,7 +35,7 @@ class UserModel {
         isPrimaryKey: true,
       ),
       'name': TypeVarchar(),
-      'last_name': TypeText(isNullable: true),
+      'last_name': TypeText(),
       'date': TypeDateTime(
         defaultValue: 'CURRENT_TIMESTAMP',
         onUpdate: 'CURRENT_TIMESTAMP',

@@ -45,7 +45,7 @@ class TableModel {
       if (columnType.isPrimaryKey) {
         primaryKeys.add(columnName);
       }
-      if (!columnType.isNullable || columnType.isPrimaryKey) {
+      if (columnType.isNotNull || columnType.isPrimaryKey) {
         columnDefinition += ' NOT NULL';
       }
       if (columnType.isAutoIncrement) {

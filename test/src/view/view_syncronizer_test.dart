@@ -34,7 +34,7 @@ void main() {
           ),
         ],
       );
-      await queryflow.syncronize(dropTable: true);
+      await queryflow.syncronize();
       initilized = true;
     }
   });
