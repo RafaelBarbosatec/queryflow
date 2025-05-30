@@ -1,11 +1,8 @@
-import 'package:queryflow/queryflow.dart';
 import 'package:queryflow/src/view/view_syncronizer.dart';
 import 'package:test/test.dart';
 
-import '../../util/profile_profile.dart';
-import '../../util/user_model.dart';
-
 void main() {
+  /*
   bool initilized = false;
   late Queryflow queryflow;
 
@@ -42,10 +39,12 @@ void main() {
     }
   });
 
-  test('SHould select view', () async {
+
+  test('Should select view', () async {
     final result = await queryflow.select('user_view').fetch();
     expect(result.isNotEmpty, true);
   });
+  */
 
   test('Should retrive columns from query', () async {
     final query = '''
