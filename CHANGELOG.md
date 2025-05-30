@@ -1,3 +1,7 @@
+## 0.3.4
+
+* fix max_prepared_stmt_count error
+
 ## 0.3.3
 
 * Rename params `isNullblae` to `isNotNull`

@@ -59,13 +59,17 @@ class MySqlPoolExecutor implements Executor {
     await connect();
     _log("Query: $query\nParams: $params");
     final prepare = await _conn.prepare(query);
-    final result = await prepare.execute(params);
-    final data = result.rows.map((e) {
-      return e.typedAssoc();
-    }).toList();
+    try {
+      final result = await prepare.execute(params);
+      final data = result.rows.map((e) {
+        return e.typedAssoc();
+      }).toList();
 
-    _log("Result: $data");
-    return data;
+      _log("Result: $data");
+      return data;
+    } finally {
+      await prepare.deallocate();
+    }
   }
 
   @override
@@ -83,11 +87,13 @@ class MySqlPoolExecutor implements Executor {
     Future<List<Map<String, dynamic>>> Function(Executor executor) transaction,
   ) async {
     return await _conn.transactional((conn) async {
-      return transaction(MySqlExecutorTransation(
-        conn: conn,
-        debug: debug,
-        logger: _logger,
-      ));
+      return transaction(
+        MySqlExecutorTransation(
+          conn: conn,
+          debug: debug,
+          logger: _logger,
+        ),
+      );
     });
   }
 
