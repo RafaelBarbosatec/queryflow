@@ -88,10 +88,10 @@ void main() {
       );
 
       final sql = tableModel.toCreateSql();
-      expect(sql, contains('CONSTRAINT `fk_user_id_users_id`'));
+      expect(sql, contains('CONSTRAINT `fk_comments_user_id_users_id`'));
       expect(
           sql, contains('FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)'));
-      expect(sql, contains('CONSTRAINT `fk_post_id_posts_id`'));
+      expect(sql, contains('CONSTRAINT `fk_comments_post_id_posts_id`'));
       expect(
           sql, contains('FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`)'));
     });
