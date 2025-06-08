@@ -97,6 +97,7 @@ class Queryflow implements QueryflowMethods, QueryflowExecuteTransation {
         securityContext: securityContext,
         maxConnections: maxConnections,
         logger: _logger,
+        debug: debug,
       );
     } else {
       _executor = MySqlExecutor(

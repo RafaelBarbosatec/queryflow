@@ -28,7 +28,6 @@ class TableSyncronizer {
         final tableExists = await _tableExists(table.name);
         if (!tableExists) {
           await _createTable(table);
-          logger?.s("Created table '${table.name}'");
         } else {
           final existingColumns = await _getTableColumns(table.name);
           for (var column in table.columns.keys) {
@@ -71,13 +70,15 @@ class TableSyncronizer {
   }
 
   Future<void> _createTable(TableModel table) async {
+    final sql = table.toCreateSql();
     try {
-      await executor.execute(table.toCreateSql());
+      await executor.execute(sql);
+      logger?.s("Created table '${table.name}'");
       if (table.initalData?.isNotEmpty ?? false) {
         await _insertInitialData(table, table.initalData!);
       }
     } catch (e) {
-      logger?.e('CREATE TABLE: $e');
+      logger?.e('CREATE TABLE: $e ($sql)');
       return Future.value();
     }
   }

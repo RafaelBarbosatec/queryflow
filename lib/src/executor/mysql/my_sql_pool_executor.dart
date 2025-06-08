@@ -21,8 +21,8 @@ class MySqlPoolExecutor implements Executor {
     SecurityContext? securityContext,
     int maxConnections = 10,
     QueryLogger? logger,
-  })  : debug = false,
-        _logger = logger ?? QueryLoggerDefault() {
+    this.debug = false,
+  }) : _logger = logger ?? QueryLoggerDefault() {
     _conn = MySQLConnectionPool(
       host: host,
       port: port,

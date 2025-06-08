@@ -33,13 +33,14 @@ void main() {
   group('ForeingKey', () {
     test('should generate key name when not provided', () {
       final foreignKey = ForeingKey(table: 'users', column: 'id');
-      expect(foreignKey.getKeyName('user_id'), equals('fk_user_id_users_id'));
+      expect(foreignKey.getKeyName('profile', 'user_id'),
+          equals('fk_profile_user_id_users_id'));
     });
 
     test('should use provided key name', () {
       final foreignKey =
           ForeingKey(table: 'users', column: 'id', keyName: 'custom_key');
-      expect(foreignKey.getKeyName('user_id'), equals('custom_key'));
+      expect(foreignKey.getKeyName('profile', 'user_id'), equals('custom_key'));
     });
   });
 

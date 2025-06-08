@@ -52,7 +52,11 @@ class TableModel {
         columnDefinition += ' AUTO_INCREMENT';
       }
       if (columnType.defaultValue != null) {
-        columnDefinition += ' DEFAULT ${columnType.defaultValue}';
+        if (columnType is TypeVarchar || columnType is TypeText) {
+          columnDefinition += ' DEFAULT \'${columnType.defaultValue}\'';
+        } else {
+          columnDefinition += ' DEFAULT ${columnType.defaultValue}';
+        }
       }
       if (columnType.onUpdate != null) {
         columnDefinition += ' ON UPDATE ${columnType.onUpdate}';
@@ -67,7 +71,7 @@ class TableModel {
     foreignKeys.forEach((columnName, columnType) {
       final foreignKey = columnType.foreignKey!;
       columnDefinitions.add(
-        'CONSTRAINT `${foreignKey.getKeyName(columnName)}` FOREIGN KEY (`$columnName`) REFERENCES `${foreignKey.table}` (`${foreignKey.column}`)',
+        'CONSTRAINT `${foreignKey.getKeyName(name, columnName)}` FOREIGN KEY (`$columnName`) REFERENCES `${foreignKey.table}` (`${foreignKey.column}`)',
       );
     });
 

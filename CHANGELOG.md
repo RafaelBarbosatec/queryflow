@@ -1,3 +1,8 @@
+## 0.3.5
+
+* Log improvements
+* fix FOREIGN KEY key name
+
 ## 0.3.4
 
 * fix max_prepared_stmt_count error

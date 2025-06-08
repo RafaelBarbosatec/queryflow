@@ -60,8 +60,8 @@ class ForeingKey {
     this.keyName,
   });
 
-  String getKeyName(String currentColumn) {
-    return keyName ?? 'fk_${currentColumn}_${table}_$column';
+  String getKeyName(String currentTable, String currentColumn) {
+    return keyName ?? 'fk_${currentTable}_${currentColumn}_${table}_$column';
   }
 }
 
