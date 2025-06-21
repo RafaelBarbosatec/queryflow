@@ -61,12 +61,16 @@ class MySqlExecutor implements Executor {
     await connect();
     _log("Query: $query\nParams: $params");
     final prepare = await _conn!.prepare(query);
-    final result = await prepare.execute(params);
-    final data = result.rows.map((e) {
-      return e.typedAssoc();
-    }).toList();
-    _log("Result: $data");
-    return data;
+    try {
+      final result = await prepare.execute(params);
+      final data = result.rows.map((e) {
+        return e.typedAssoc();
+      }).toList();
+      _log("Result: $data");
+      return data;
+    } finally {
+      await prepare.deallocate();
+    }
   }
 
   @override
@@ -147,12 +151,16 @@ class MySqlExecutorTransation implements Executor {
   ) async {
     _log("Query: $query\nParams: $params");
     final prepare = await conn.prepare(query);
-    final result = await prepare.execute(params);
-    final data = result.rows.map((e) {
-      return e.typedAssoc();
-    }).toList();
-    _log("Result: $data");
-    return data;
+    try {
+      final result = await prepare.execute(params);
+      final data = result.rows.map((e) {
+        return e.typedAssoc();
+      }).toList();
+      _log("Result: $data");
+      return data;
+    } finally {
+      await prepare.deallocate();
+    }
   }
 
   @override

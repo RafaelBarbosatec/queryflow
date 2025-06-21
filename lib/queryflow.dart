@@ -347,6 +347,19 @@ class Queryflow implements QueryflowMethods, QueryflowExecuteTransation {
     return insert(adapter.table, adapter.toMap(model)).execute();
   }
 
+  @override
+  Future<void> deleteModel<T>(T model) {
+    final adapter = _queryTypeRetriver.getQueryType<T>();
+    final data = adapter.toMap(model);
+    final primaryKeyColumn = adapter.primaryKeyColumn;
+    return delete(adapter.table)
+        .where(
+          primaryKeyColumn,
+          Equals(data[primaryKeyColumn]),
+        )
+        .execute();
+  }
+
   /// Updates a model object in its corresponding database table.
   ///
   /// This method uses the model's primary key to identify the record to update and
@@ -460,6 +473,7 @@ abstract class QueryflowMethods {
 
   Future<int> insertModel<T>(T model);
   Future<void> updateModel<T>(T model);
+  Future<void> deleteModel<T>(T model);
   SelectBuilder<T> selectModel<T>([List<String> fields = const []]);
 
   /// Executes a raw SQL query string.

@@ -1,3 +1,8 @@
+## 0.3.6
+
+* Adds `deleteModel`.
+* deallocate PreparedStmt from insert transactions
+
 ## 0.3.5
 
 * Log improvements
