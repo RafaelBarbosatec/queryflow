@@ -36,8 +36,8 @@ void main() {
         columns: {
           'id': TypeInt(isPrimaryKey: true, isAutoIncrement: true),
           'name': TypeVarchar(isNotNull: true),
-          'price': TypeDouble(defaultValue: '0.0'),
-          'in_stock': TypeBool(defaultValue: 'TRUE'),
+          'price': TypeDouble(defaultValue: 0.0),
+          'in_stock': TypeBool(defaultValue: true),
         },
       );
 
@@ -46,7 +46,7 @@ void main() {
       expect(sql, contains('`id` INT(11) NOT NULL AUTO_INCREMENT'));
       expect(sql, contains('`name` VARCHAR(255) NOT NULL'));
       expect(sql, contains('`price` DOUBLE DEFAULT 0.0'));
-      expect(sql, contains('`in_stock` BOOLEAN DEFAULT TRUE'));
+      expect(sql, contains('`in_stock` BOOLEAN DEFAULT true'));
       expect(sql, contains('PRIMARY KEY (id)'));
       expect(sql, contains('ENGINE=InnoDB'));
     });

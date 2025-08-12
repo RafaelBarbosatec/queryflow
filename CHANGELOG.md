@@ -1,3 +1,6 @@
+## 0.3.7
+* update default values in TableModel tests to use correct types
+
 ## 0.3.6
 
 * Adds `deleteModel`.

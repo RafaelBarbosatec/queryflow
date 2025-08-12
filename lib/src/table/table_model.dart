@@ -52,7 +52,7 @@ class TableModel {
         columnDefinition += ' AUTO_INCREMENT';
       }
       if (columnType.defaultValue != null) {
-        if (columnType is TypeVarchar || columnType is TypeText) {
+        if (_isString(columnType.defaultValue)) {
           columnDefinition += ' DEFAULT \'${columnType.defaultValue}\'';
         } else {
           columnDefinition += ' DEFAULT ${columnType.defaultValue}';
@@ -102,5 +102,9 @@ class TableModel {
     sql.writeAll(values, ', ');
     sql.write(');');
     return sql.toString();
+  }
+
+  bool _isString(dynamic defaultValue) {
+    return defaultValue is String;
   }
 }
