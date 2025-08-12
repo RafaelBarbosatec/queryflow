@@ -52,7 +52,7 @@ class TableModel {
         columnDefinition += ' AUTO_INCREMENT';
       }
       if (columnType.defaultValue != null) {
-        if (_isString(columnType.defaultValue)) {
+        if (_isString(columnType)) {
           columnDefinition += ' DEFAULT \'${columnType.defaultValue}\'';
         } else {
           columnDefinition += ' DEFAULT ${columnType.defaultValue}';
@@ -104,7 +104,23 @@ class TableModel {
     return sql.toString();
   }
 
-  bool _isString(dynamic defaultValue) {
-    return defaultValue is String;
+  final List<String> _defaultValues = [
+    'CURRENT_TIMESTAMP',
+    'CURRENT_DATE',
+    'CURRENT_TIME',
+    'LOCALTIME',
+    'LOCALTIMESTAMP',
+  ];
+
+  bool _isString(TableColumnType columnType) {
+    if (_defaultValues.contains(columnType.defaultValue)) {
+      return false;
+    }
+    return columnType is TypeVarchar ||
+        columnType is TypeText ||
+        columnType is TypeEnum ||
+        columnType is TypeDateTime ||
+        columnType is TypeTime ||
+        columnType is TypeDate;
   }
 }
