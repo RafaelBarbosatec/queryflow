@@ -22,6 +22,8 @@ Queryflow is a lightweight and flexible Dart package designed to simplify the pr
 - **Model Integration**: Map database records to Dart objects using type adapters.
 - **Schema Management**: Define and synchronize database schemas programmatically with `TableModel`.
 - **Initial Data Support**: Preload tables with initial data during schema synchronization.
+- **Database Views**: Create and manage database views for complex data retrieval.
+- **Event Synchronizer**: Schedule and manage MySQL events for automated database tasks.
 
 ## Getting started
 
@@ -461,6 +463,111 @@ Views are particularly useful for:
 - Abstracting security restrictions
 - Improving query performance for frequently accessed data
 
+### Using Event Synchronizer
+
+The Event Synchronizer allows you to automatically synchronize MySQL events in your database, similar to what already exists for Views and Tables. This feature enables you to schedule and manage database tasks programmatically.
+
+#### Features
+
+- **Automatic synchronization**: Creates, updates, or maintains events based on your configuration
+- **Different scheduling types**: AT (one-time) or EVERY (recurring) events
+- **Flexible intervals**: Support for all MySQL interval types
+- **Query builders**: Integration with Queryflow builders
+- **Automatic management**: Removes orphaned events automatically
+- **Logging**: Detailed operation logs
+
+#### Event Types
+
+**EventSchedule**
+- `EventSchedule.at`: Executes once at a specific time
+- `EventSchedule.every`: Executes periodically
+
+**EventIntervalType**
+Support for all MySQL intervals:
+- `year`, `quarter`, `month`, `day`, `hour`, `minute`, `week`, `second`
+- Compound intervals: `yearMonth`, `dayHour`, `dayMinute`, `daySecond`, `hourMinute`, `hourSecond`, `minuteSecond`
+
+#### Basic Usage
+
+```dart
+import 'package:queryflow/src/event/event_model.dart';
+import 'package:queryflow/src/event/event_synchronizer.dart';
+
+// Define events
+final events = [
+  // One-time event
+  EventModel.raw(
+    name: 'cleanup_temp_data',
+    statement: 'DELETE FROM temp_logs WHERE created_at < DATE_SUB(NOW(), INTERVAL 1 DAY);',
+    schedule: EventSchedule.at,
+    executeAt: DateTime.now().add(Duration(hours: 1)),
+    comment: 'Cleans temporary data',
+  ),
+
+  // Recurring event
+  EventModel.raw(
+    name: 'daily_maintenance',
+    statement: 'CALL daily_maintenance_procedure();',
+    schedule: EventSchedule.every,
+    intervalValue: 1,
+    intervalType: EventIntervalType.day,
+    starts: DateTime.now(),
+    comment: 'Daily maintenance',
+  ),
+];
+
+// Create and execute synchronizer
+final synchronizer = EventSynchronizer(
+  events: events,
+  databaseName: 'my_database',
+  queryflow: queryflowInstance,
+  logger: logger, // Optional
+);
+
+await synchronizer.synchronize();
+```
+
+#### Advanced Examples
+
+**Event with End Date**
+```dart
+EventModel.raw(
+  name: 'promotion_cleanup',
+  statement: 'UPDATE products SET promotion_active = 0 WHERE promotion_end_date < NOW();',
+  schedule: EventSchedule.every,
+  intervalValue: 30,
+  intervalType: EventIntervalType.minute,
+  starts: DateTime.now(),
+  ends: DateTime.now().add(Duration(days: 30)), // Stops in 30 days
+),
+```
+
+**Disabled Event**
+```dart
+EventModel.raw(
+  name: 'maintenance_event',
+  statement: 'OPTIMIZE TABLE users, orders;',
+  schedule: EventSchedule.every,
+  intervalValue: 1,
+  intervalType: EventIntervalType.week,
+  enabled: false, // Created but not executed
+),
+```
+
+#### Prerequisites
+
+1. **Event Scheduler enabled**: The synchronizer automatically checks and enables the Event Scheduler if necessary
+2. **Adequate permissions**: The database user must have permissions to create/alter/remove events
+3. **MySQL 5.1+**: Events were introduced in MySQL 5.1
+
+#### Important Considerations
+
+1. **Time zone**: Timestamps are interpreted in the MySQL server's time zone
+2. **Persistence**: Events are persisted in the database and survive restarts
+3. **Monitoring**: Use `SHOW EVENTS` to view created events
+4. **Performance**: Heavy events can impact database performance
+5. **Logs**: Events don't generate automatic logs - implement internal logging if needed
+
 #### Example Usage
 
 ```dart
@@ -470,6 +577,18 @@ final tables = [
   profileTable,
 ];
 
+final events = [
+  EventModel.raw(
+    name: 'daily_cleanup',
+    statement: 'DELETE FROM temp_logs WHERE created_at < DATE_SUB(NOW(), INTERVAL 1 DAY);',
+    schedule: EventSchedule.every,
+    intervalValue: 1,
+    intervalType: EventIntervalType.day,
+    starts: DateTime.now(),
+    comment: 'Daily cleanup of temporary logs',
+  ),
+];
+
 final queryflow = Queryflow(
   host: 'localhost',
   port: 3306,
@@ -477,6 +596,8 @@ final queryflow = Queryflow(
   password: 'password',
   databaseName: 'example_db',
   tables: tables,
+  views: [userView],
+  events: events,
 );
 
 await queryflow.syncronize(dropTable: true);

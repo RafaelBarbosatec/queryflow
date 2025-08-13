@@ -1,6 +1,8 @@
 import 'dart:io';
 
 import 'package:queryflow/src/builders/builders.dart';
+import 'package:queryflow/src/event/event_model.dart';
+import 'package:queryflow/src/event/event_synchronizer.dart';
 import 'package:queryflow/src/executor/executor.dart';
 import 'package:queryflow/src/executor/mysql/my_sql_executor.dart';
 import 'package:queryflow/src/executor/mysql/my_sql_pool_executor.dart';
@@ -16,6 +18,8 @@ import 'src/builders/select/matchers/where_matchers.dart';
 
 export 'package:queryflow/src/builders/builders.dart';
 export 'package:queryflow/src/builders/select/matchers/where_matchers.dart';
+export 'package:queryflow/src/event/event_model.dart';
+export 'package:queryflow/src/event/event_synchronizer.dart';
 export 'package:queryflow/src/table/table_model.dart';
 export 'package:queryflow/src/type/query_type_adapter.dart';
 export 'package:queryflow/src/view/view_model.dart';
@@ -50,6 +54,7 @@ class Queryflow implements QueryflowMethods, QueryflowExecuteTransation {
 
   late TableSyncronizer _tableSyncronizer;
   late ViewSyncronizer _viewSyncronizer;
+  late EventSynchronizer _eventSynchronizer;
   final bool debug;
   final QueryLogger _logger;
 
@@ -78,6 +83,7 @@ class Queryflow implements QueryflowMethods, QueryflowExecuteTransation {
     List<TypeAdapter>? typeAdapters,
     List<TableModel> tables = const [],
     List<ViewModel> views = const [],
+    List<EventModel> events = const [],
     int maxConnections = 1,
     this.debug = false,
     QueryLogger? logger,
@@ -126,6 +132,13 @@ class Queryflow implements QueryflowMethods, QueryflowExecuteTransation {
       views: views,
       logger: _logger,
     );
+
+    _eventSynchronizer = EventSynchronizer(
+      events: events,
+      databaseName: databaseName ?? '',
+      queryflow: this,
+      logger: _logger,
+    );
   }
 
   /// Synchronizes the database schema with the defined table models.
@@ -156,6 +169,7 @@ class Queryflow implements QueryflowMethods, QueryflowExecuteTransation {
       dropTable: dropTable,
     );
     await _viewSyncronizer.syncronize();
+    await _eventSynchronizer.synchronize();
   }
 
   /// Creates a SELECT query builder for the specified table.
@@ -392,6 +406,11 @@ class Queryflow implements QueryflowMethods, QueryflowExecuteTransation {
   Future<void> close() {
     return _executor.close();
   }
+
+  @override
+  Future<void> createEvent(EventModel event) {
+    return _eventSynchronizer.createEvent(event);
+  }
 }
 
 abstract class QueryflowExecuteTransation {
@@ -490,4 +509,6 @@ abstract class QueryflowMethods {
     String query, [
     List<dynamic> params = const [],
   ]);
+
+  Future<void> createEvent(EventModel event);
 }

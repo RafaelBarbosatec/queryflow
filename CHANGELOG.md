@@ -1,4 +1,9 @@
+## 0.4.0
+
+* Adds Event Synchronizer
+
 ## 0.3.7
+
 * update default values in TableModel tests to use correct types
 
 ## 0.3.6

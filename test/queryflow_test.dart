@@ -25,6 +25,18 @@ void main() {
           UserModel.table,
           ProfileModel.table,
         ],
+        events: [
+          EventModel.raw(
+            name: 'event_test',
+            statement: '''
+UPDATE profile_table SET age = age + 1 
+WHERE age < 100
+''',
+            schedule: EventSchedule.every,
+            intervalType: EventIntervalType.day,
+            comment: 'teste teste teste',
+          )
+        ],
       );
       await queryflow.syncronize(dropTable: true);
       initilized = true;
