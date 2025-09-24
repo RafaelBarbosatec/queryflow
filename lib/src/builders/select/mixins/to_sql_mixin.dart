@@ -11,18 +11,21 @@ mixin ToSqlMixin<T> on SelectBuilderBase<T> {
     if (fields.isNotEmpty) {
       fieldsP = fields.join(', ');
     }
-    String query = "SELECT $fieldsP FROM $table";
+
+    // Use dialect to quote table name if available
+    final tableName = dialect?.quoteIdentifier(table) ?? table;
+    String query = "SELECT $fieldsP FROM $tableName";
     switch (type) {
       case SqlAgregateType.count:
-        query = 'SELECT COUNT($fieldsP) as numerOf FROM $table';
+        query = 'SELECT COUNT($fieldsP) as numerOf FROM $tableName';
       case SqlAgregateType.max:
-        query = 'SELECT MAX($fieldsP) as numerOf FROM $table';
+        query = 'SELECT MAX($fieldsP) as numerOf FROM $tableName';
       case SqlAgregateType.min:
-        query = 'SELECT MIN($fieldsP) as numerOf FROM $table';
+        query = 'SELECT MIN($fieldsP) as numerOf FROM $tableName';
       case SqlAgregateType.sum:
-        query = 'SELECT SUM($fieldsP) as numerOf FROM $table';
+        query = 'SELECT SUM($fieldsP) as numerOf FROM $tableName';
       case SqlAgregateType.avg:
-        query = 'SELECT AVG($fieldsP) as numerOf FROM $table';
+        query = 'SELECT AVG($fieldsP) as numerOf FROM $tableName';
       case SqlAgregateType.none:
     }
 

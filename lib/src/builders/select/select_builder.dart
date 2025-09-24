@@ -7,6 +7,7 @@ import 'package:queryflow/src/builders/select/mixins/where_mixin.dart';
 import 'package:queryflow/src/builders/select/select_contracts.dart';
 import 'package:queryflow/src/executor/executor.dart';
 import 'package:queryflow/src/type/query_type_retriver.dart';
+import 'package:queryflow/src/dialect/sql_dialect.dart';
 
 import 'mixins/agregation_mixin.dart';
 import 'mixins/to_sql_mixin.dart';
@@ -33,12 +34,14 @@ abstract class SelectBuilderBase<T> implements SelectBuilder<T> {
   final List<BaseMatcher> matchers = [];
   final List params = [];
   final QueryTypeRetriver queryTypeRetriver;
+  final SqlDialect? dialect;
 
   SelectBuilderBase(
     this.executor,
     this.table,
     this.queryTypeRetriver, {
     this.fields = const [],
+    this.dialect,
   });
 
   @override
@@ -72,6 +75,7 @@ class SelectBuilderImpl extends SelectBuilderBase<Map<String, dynamic>>
     super.table,
     super.queryTypeRetriver, {
     super.fields = const [],
+    super.dialect,
   });
 
   @override
@@ -101,6 +105,7 @@ class SelectBuilderModelImpl<T> extends SelectBuilderBase<T>
     super.table,
     super.queryTypeRetriver, {
     super.fields = const [],
+    super.dialect,
   });
 
   @override

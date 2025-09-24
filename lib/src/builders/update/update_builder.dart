@@ -3,6 +3,7 @@ import 'package:queryflow/src/builders/select/matchers/where_matchers.dart';
 import 'package:queryflow/src/builders/update/mixins/update_where_mixin.dart';
 import 'package:queryflow/src/builders/update/update_contracts.dart';
 import 'package:queryflow/src/executor/executor.dart';
+import 'package:queryflow/src/dialect/sql_dialect.dart';
 
 abstract class UpdateBuilder
     implements UpdateBuilderExecute, UpdateBuilderWhere {}
@@ -11,7 +12,9 @@ abstract class UpdateBuilderBase extends UpdateBuilder {
   final String table;
   final Map<String, dynamic> fields;
   final List<BaseMatcher> matchers = [];
-  UpdateBuilderBase(this.table, this.fields);
+  final SqlDialect? dialect;
+
+  UpdateBuilderBase(this.table, this.fields, {this.dialect});
 }
 
 class UpdateBuilderImpl extends UpdateBuilderBase with UpdateWhereMixin {
@@ -20,8 +23,9 @@ class UpdateBuilderImpl extends UpdateBuilderBase with UpdateWhereMixin {
   UpdateBuilderImpl(
     this.executor,
     String table,
-    Map<String, dynamic> fields,
-  ) : super(table, fields);
+    Map<String, dynamic> fields, {
+    SqlDialect? dialect,
+  }) : super(table, fields, dialect: dialect);
 
   final List _params = [];
 
@@ -36,14 +40,19 @@ class UpdateBuilderImpl extends UpdateBuilderBase with UpdateWhereMixin {
     _params.clear();
     final whereList = matchers.whereType<WhereMatcher>();
 
+    // Use dialect to quote identifiers if available
+    final tableName = dialect?.quoteIdentifier(table) ?? table;
+
     _params.addAll(fields.values);
     List<String> values = [];
     fields.forEach(
       (key, value) {
-        values.add('$key = ?');
+        final columnName = dialect?.quoteIdentifier(key) ?? key;
+        values.add('$columnName = ?');
       },
     );
-    String query = 'UPDATE $table SET ${values.join(', ')}';
+
+    String query = 'UPDATE $tableName SET ${values.join(', ')}';
     for (final w in whereList) {
       final result = w.compose(query);
       query = result.query;

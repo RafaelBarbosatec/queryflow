@@ -1,3 +1,5 @@
+import '../dialect/sql_dialect.dart';
+
 abstract class TableColumnType {
   final bool isPrimaryKey;
   final bool isAutoIncrement;
@@ -18,34 +20,62 @@ abstract class TableColumnType {
           'Auto increment can only be used with primary key',
         );
 
-  String get typeName {
-    if (this is TypeVarchar) return 'VARCHAR(${(this as TypeVarchar).length})';
-    if (this is TypeText) return 'TEXT';
-    if (this is TypeInt && (this as TypeInt).length == 1) return 'TINYINT';
-    if (this is TypeInt && (this as TypeInt).length == 2) return 'SMALLINT';
-    if (this is TypeInt && (this as TypeInt).length == 3) return 'MEDIUMINT';
-    if (this is TypeInt && (this as TypeInt).length == 4) return 'INT';
-    if (this is TypeInt && (this as TypeInt).length > 4) {
-      return 'INT(${(this as TypeInt).length})';
+  String get typeName => getTypeName();
+
+  String getTypeName([SqlDialect? dialect]) {
+    if (this is TypeVarchar) {
+      return dialect?.getSqlType('varchar', options: {'length': (this as TypeVarchar).length})
+        ?? 'VARCHAR(${(this as TypeVarchar).length})';
     }
-    if (this is TypeDouble) return 'DOUBLE';
+    if (this is TypeText) {
+      return dialect?.getSqlType('text') ?? 'TEXT';
+    }
+    if (this is TypeInt) {
+      return dialect?.getSqlType('int') ?? _getIntTypeName((this as TypeInt).length);
+    }
+    if (this is TypeDouble) {
+      return dialect?.getSqlType('double') ?? 'DOUBLE';
+    }
     if (this is TypeFloat) {
-      if ((this as TypeFloat).precision != null) {
-        return 'FLOAT(${(this as TypeFloat).precision})';
-      }
-      return 'FLOAT';
+      final precision = (this as TypeFloat).precision;
+      return dialect?.getSqlType('float', options: precision != null ? {'precision': precision} : null)
+        ?? (precision != null ? 'FLOAT($precision)' : 'FLOAT');
     }
-    if (this is TypeBool) return 'BOOLEAN';
-    if (this is TypeDateTime) return 'DATETIME';
-    if (this is TypeDate) return 'DATE';
-    if (this is TypeTimestamp) return 'TIMESTAMP';
-    if (this is TypeBlob) return 'BLOB';
+    if (this is TypeBool) {
+      return dialect?.getSqlType('boolean') ?? 'BOOLEAN';
+    }
+    if (this is TypeDateTime) {
+      return dialect?.getSqlType('datetime') ?? 'DATETIME';
+    }
+    if (this is TypeDate) {
+      return dialect?.getSqlType('date') ?? 'DATE';
+    }
+    if (this is TypeTimestamp) {
+      return dialect?.getSqlType('timestamp') ?? 'TIMESTAMP';
+    }
+    if (this is TypeBlob) {
+      return dialect?.getSqlType('blob') ?? 'BLOB';
+    }
     if (this is TypeEnum) {
-      return 'ENUM(${(this as TypeEnum).values.map((e) => "'$e'").join(', ')})';
+      return dialect?.getSqlType('enum') ??
+        'ENUM(${(this as TypeEnum).values.map((e) => "'$e'").join(', ')})';
     }
-    if (this is TypeTime) return 'TIME';
-    if (this is TypeYear) return 'YEAR';
+    if (this is TypeTime) {
+      return dialect?.getSqlType('time') ?? 'TIME';
+    }
+    if (this is TypeYear) {
+      return dialect?.getSqlType('year') ?? 'YEAR';
+    }
     throw Exception('Unknown type');
+  }
+
+  String _getIntTypeName(int length) {
+    if (length == 1) return 'TINYINT';
+    if (length == 2) return 'SMALLINT';
+    if (length == 3) return 'MEDIUMINT';
+    if (length == 4) return 'INT';
+    if (length > 4) return 'INT($length)';
+    return 'INT';
   }
 }
 

@@ -1,11 +1,15 @@
 import 'dart:io';
 
 import 'package:queryflow/src/builders/builders.dart';
+import 'package:queryflow/src/database_type.dart';
+import 'package:queryflow/src/dialect/sql_dialect.dart';
 import 'package:queryflow/src/event/event_model.dart';
 import 'package:queryflow/src/event/event_synchronizer.dart';
 import 'package:queryflow/src/executor/executor.dart';
 import 'package:queryflow/src/executor/mysql/my_sql_executor.dart';
 import 'package:queryflow/src/executor/mysql/my_sql_pool_executor.dart';
+import 'package:queryflow/src/executor/postgresql/postgresql_executor.dart';
+import 'package:queryflow/src/executor/postgresql/postgresql_pool_executor.dart';
 import 'package:queryflow/src/logger/query_logger.dart';
 import 'package:queryflow/src/table/table_model.dart';
 import 'package:queryflow/src/table/table_syncronizer.dart';
@@ -18,13 +22,14 @@ import 'src/builders/select/matchers/where_matchers.dart';
 
 export 'package:queryflow/src/builders/builders.dart';
 export 'package:queryflow/src/builders/select/matchers/where_matchers.dart';
+export 'package:queryflow/src/database_type.dart';
 export 'package:queryflow/src/event/event_model.dart';
 export 'package:queryflow/src/event/event_synchronizer.dart';
 export 'package:queryflow/src/table/table_model.dart';
 export 'package:queryflow/src/type/query_type_adapter.dart';
 export 'package:queryflow/src/view/view_model.dart';
 
-/// A fluent SQL query builder and executor for MySQL databases.
+/// A fluent SQL query builder and executor for MySQL and PostgreSQL databases.
 ///
 /// Queryflow provides a simple and intuitive API for building and executing
 /// SQL queries without writing raw SQL strings, offering methods for select,
@@ -32,9 +37,21 @@ export 'package:queryflow/src/view/view_model.dart';
 ///
 /// Example:
 /// ```dart
-/// final db = Queryflow(
+/// // MySQL
+/// final mysqlDb = Queryflow(
+///   databaseType: DatabaseType.mysql,
 ///   host: 'localhost',
 ///   port: 3306,
+///   userName: 'username',
+///   password: 'password',
+///   databaseName: 'mydb',
+/// );
+///
+/// // PostgreSQL
+/// final postgresDb = Queryflow(
+///   databaseType: DatabaseType.postgresql,
+///   host: 'localhost',
+///   port: 5432,
 ///   userName: 'username',
 ///   password: 'password',
 ///   databaseName: 'mydb',
@@ -49,6 +66,7 @@ export 'package:queryflow/src/view/view_model.dart';
 /// ```
 class Queryflow implements QueryflowMethods, QueryflowExecuteTransation {
   late Executor _executor;
+  late SqlDialect _dialect;
 
   late QueryTypeRetriver _queryTypeRetriver;
 
@@ -57,20 +75,24 @@ class Queryflow implements QueryflowMethods, QueryflowExecuteTransation {
   late EventSynchronizer _eventSynchronizer;
   final bool debug;
   final QueryLogger _logger;
+  final DatabaseType databaseType;
 
   /// Creates a new Queryflow instance for database operations.
   ///
   /// Parameters:
+  /// - [databaseType]: The type of database (MySQL or PostgreSQL)
   /// - [host]: The database server host (string or InternetAddress)
   /// - [port]: The database server port
   /// - [userName]: Database user name for authentication
   /// - [password]: Database password for authentication
   /// - [databaseName]: Optional name of the database to use
-  /// - [collation]: Character set and collation (defaults to 'utf8mb4_general_ci')
+  /// - [collation]: Character set and collation for MySQL (defaults to 'utf8mb4_general_ci')
   /// - [secure]: Whether to use SSL/TLS for the connection
-  /// - [securityContext]: Optional security context for SSL connections
+  /// - [securityContext]: Optional security context for SSL connections (MySQL only)
+  /// - [useSSL]: Whether to use SSL for PostgreSQL connections
   /// - [executor]: Optional custom executor implementation
   Queryflow({
+    this.databaseType = DatabaseType.mysql,
     required dynamic host,
     required int port,
     required String userName,
@@ -78,6 +100,7 @@ class Queryflow implements QueryflowMethods, QueryflowExecuteTransation {
     String? databaseName,
     String collation = 'utf8mb4_general_ci',
     bool secure = true,
+    bool useSSL = false,
     SecurityContext? securityContext,
     Executor? executor,
     List<TypeAdapter>? typeAdapters,
@@ -89,10 +112,13 @@ class Queryflow implements QueryflowMethods, QueryflowExecuteTransation {
     QueryLogger? logger,
   }) : _logger = logger ?? QueryLoggerDefault() {
     _queryTypeRetriver = QueryTypeRetriver(typeAdapters ?? []);
+    _dialect = SqlDialect.create(databaseType);
+
     if (executor != null) {
       _executor = executor;
-    } else if (maxConnections > 1) {
-      _executor = MySqlPoolExecutor(
+    } else {
+      _executor = _createExecutor(
+        databaseType: databaseType,
         host: host,
         port: port,
         userName: userName,
@@ -100,21 +126,9 @@ class Queryflow implements QueryflowMethods, QueryflowExecuteTransation {
         databaseName: databaseName,
         collation: collation,
         secure: secure,
+        useSSL: useSSL,
         securityContext: securityContext,
         maxConnections: maxConnections,
-        logger: _logger,
-        debug: debug,
-      );
-    } else {
-      _executor = MySqlExecutor(
-        host: host,
-        port: port,
-        userName: userName,
-        password: password,
-        databaseName: databaseName,
-        collation: collation,
-        secure: secure,
-        securityContext: securityContext,
         debug: debug,
         logger: _logger,
       );
@@ -139,6 +153,80 @@ class Queryflow implements QueryflowMethods, QueryflowExecuteTransation {
       queryflow: this,
       logger: _logger,
     );
+  }
+
+  /// Creates the appropriate executor based on database type
+  static Executor _createExecutor({
+    required DatabaseType databaseType,
+    required dynamic host,
+    required int port,
+    required String userName,
+    required String password,
+    String? databaseName,
+    String collation = 'utf8mb4_general_ci',
+    bool secure = true,
+    bool useSSL = false,
+    SecurityContext? securityContext,
+    int maxConnections = 1,
+    bool debug = false,
+    required QueryLogger logger,
+  }) {
+    switch (databaseType) {
+      case DatabaseType.mysql:
+        if (maxConnections > 1) {
+          return MySqlPoolExecutor(
+            host: host,
+            port: port,
+            userName: userName,
+            password: password,
+            databaseName: databaseName,
+            collation: collation,
+            secure: secure,
+            securityContext: securityContext,
+            maxConnections: maxConnections,
+            logger: logger,
+            debug: debug,
+          );
+        } else {
+          return MySqlExecutor(
+            host: host,
+            port: port,
+            userName: userName,
+            password: password,
+            databaseName: databaseName,
+            collation: collation,
+            secure: secure,
+            securityContext: securityContext,
+            debug: debug,
+            logger: logger,
+          );
+        }
+      case DatabaseType.postgresql:
+        if (maxConnections > 1) {
+          return PostgreSqlPoolExecutor(
+            host: host,
+            port: port,
+            userName: userName,
+            password: password,
+            databaseName: databaseName,
+            useSSL: useSSL,
+            maxConnections: maxConnections,
+            logger: logger,
+            debug: debug,
+          );
+        } else {
+          return PostgreSqlExecutor(
+            host: host,
+            port: port,
+            userName: userName,
+            password: password,
+            databaseName: databaseName,
+            useSSL: useSSL,
+            logger: logger,
+            debug: debug,
+          );
+        }
+    }
   }
 
   /// Synchronizes the database schema with the defined table models.
@@ -198,6 +286,7 @@ class Queryflow implements QueryflowMethods, QueryflowExecuteTransation {
       table,
       _queryTypeRetriver,
       fields: fields,
+      dialect: _dialect,
     );
   }
 
@@ -210,6 +299,7 @@ class Queryflow implements QueryflowMethods, QueryflowExecuteTransation {
       table,
       _queryTypeRetriver,
       fields: fields,
+      dialect: _dialect,
     );
   }
 
@@ -231,7 +321,7 @@ class Queryflow implements QueryflowMethods, QueryflowExecuteTransation {
   /// ```
   @override
   InsertBuilder insert(String table, Map<String, dynamic> fields) {
-    return InsertBuilderImpl(_executor, table, fields);
+    return InsertBuilderImpl(_executor, table, fields, dialect: _dialect);
   }
 
   /// Creates an UPDATE query builder for the specified table.
@@ -257,6 +347,7 @@ class Queryflow implements QueryflowMethods, QueryflowExecuteTransation {
       _executor,
       table,
       fields,
+      dialect: _dialect,
     );
   }
 
@@ -265,6 +356,7 @@ class Queryflow implements QueryflowMethods, QueryflowExecuteTransation {
     return DeleteBuilderImpl(
       _executor,
       table,
+      dialect: _dialect,
     );
   }
 
@@ -330,6 +422,7 @@ class Queryflow implements QueryflowMethods, QueryflowExecuteTransation {
       (executor) => queryflow(
         Queryflow(
           executor: executor,
+          databaseType: databaseType,
           host: 'null',
           port: 0,
           userName: '',
