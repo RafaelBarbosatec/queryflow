@@ -1,3 +1,4 @@
+import 'package:queryflow/src/dialect/sql_dialect.dart';
 import 'package:queryflow/src/executor/executor.dart';
 import 'package:queryflow/src/logger/query_logger.dart';
 import 'package:queryflow/src/table/table_model.dart';
@@ -7,11 +8,13 @@ class TableSyncronizer {
   final String databaseName;
   final List<TableModel> tables;
   final QueryLogger? logger;
+  final SqlDialect dialect;
 
   TableSyncronizer({
     required this.executor,
     required this.tables,
     required this.databaseName,
+    required this.dialect,
     this.logger,
   });
 
@@ -70,7 +73,7 @@ class TableSyncronizer {
   }
 
   Future<void> _createTable(TableModel table) async {
-    final sql = table.toCreateSql();
+    final sql = table.toCreateSql(dialect);
     try {
       await executor.execute(sql);
       logger?.s("Created table '${table.name}'");
@@ -150,9 +153,9 @@ class TableSyncronizer {
       );
     }
     for (final data in dataList) {
-      await executor.executePrepared(table.toInsertSql(), data);
+      await executor.executePrepared(table.toInsertSql(dialect), data);
       logger?.s(
-        "Inserted data[${dataList.indexOf(data)}] into table '${table.name}'",
+        "Inserted data[{dataList.indexOf(data)}] into table '{table.name}'",
       );
     }
   }
