@@ -24,7 +24,8 @@ abstract class SqlDialect {
   String getPrimaryKeySyntax(String columnName);
 
   /// Gets the syntax for foreign key constraints
-  String getForeignKeySyntax(String columnName, String referencedTable, String referencedColumn);
+  String getForeignKeySyntax(
+      String columnName, String referencedTable, String referencedColumn);
 
   /// Gets the LIMIT clause syntax
   String getLimitSyntax(int? limit, int? offset);
@@ -34,6 +35,9 @@ abstract class SqlDialect {
 
   /// Gets the date format function
   String getDateFormat(String column, String format);
+
+  /// Gets the query to retrieve the last inserted ID
+  String getLastInsertIdQuery();
 
   /// Creates a factory for SQL dialects
   static SqlDialect create(DatabaseType type) {
@@ -110,7 +114,8 @@ class MySqlDialect extends SqlDialect {
   String getPrimaryKeySyntax(String columnName) => 'PRIMARY KEY';
 
   @override
-  String getForeignKeySyntax(String columnName, String referencedTable, String referencedColumn) {
+  String getForeignKeySyntax(
+      String columnName, String referencedTable, String referencedColumn) {
     return 'FOREIGN KEY (`$columnName`) REFERENCES `$referencedTable`(`$referencedColumn`)';
   }
 
@@ -125,7 +130,13 @@ class MySqlDialect extends SqlDialect {
   String getCurrentTimestamp() => 'NOW()';
 
   @override
-  String getDateFormat(String column, String format) => "DATE_FORMAT($column, '$format')";
+  String getDateFormat(String column, String format) =>
+      "DATE_FORMAT($column, '$format')";
+
+  @override
+  String getLastInsertIdQuery() {
+    return 'SELECT LAST_INSERT_ID() as id';
+  }
 }
 
 /// PostgreSQL dialect implementation
@@ -191,7 +202,8 @@ class PostgreSqlDialect extends SqlDialect {
   String getPrimaryKeySyntax(String columnName) => 'PRIMARY KEY';
 
   @override
-  String getForeignKeySyntax(String columnName, String referencedTable, String referencedColumn) {
+  String getForeignKeySyntax(
+      String columnName, String referencedTable, String referencedColumn) {
     return 'FOREIGN KEY ("$columnName") REFERENCES "$referencedTable"("$referencedColumn")';
   }
 
@@ -207,5 +219,11 @@ class PostgreSqlDialect extends SqlDialect {
   String getCurrentTimestamp() => 'NOW()';
 
   @override
-  String getDateFormat(String column, String format) => "TO_CHAR($column, '$format')";
+  String getDateFormat(String column, String format) =>
+      "TO_CHAR($column, '$format')";
+
+  @override
+  String getLastInsertIdQuery() {
+    return 'SELECT lastval() as id';
+  }
 }

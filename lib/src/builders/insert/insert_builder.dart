@@ -1,6 +1,5 @@
-import 'package:queryflow/src/executor/executor.dart';
 import 'package:queryflow/src/dialect/sql_dialect.dart';
-import 'package:queryflow/src/database_type.dart';
+import 'package:queryflow/src/executor/executor.dart';
 
 /// Defines a contract for building and executing SQL INSERT operations.
 ///
@@ -68,7 +67,9 @@ class InsertBuilderImpl extends InsertBuilderBase {
 
     // Use dialect to quote identifiers if available
     final tableName = dialect?.quoteIdentifier(table) ?? table;
-    final columnNames = fields.keys.map((key) => dialect?.quoteIdentifier(key) ?? key).join(', ');
+    final columnNames = fields.keys
+        .map((key) => dialect?.quoteIdentifier(key) ?? key)
+        .join(', ');
 
     _params = fields.values.toList();
     String queryParams = _params.map((_) => '?').join(', ');
@@ -83,7 +84,7 @@ class InsertBuilderImpl extends InsertBuilderBase {
         await executor.executePrepared(query, _params);
 
         // Use different syntax for getting last inserted ID based on dialect
-        final lastIdQuery = _getLastInsertIdQuery();
+        final lastIdQuery = dialect?.getLastInsertIdQuery() ?? '';
         final id = await executor.execute(lastIdQuery);
 
         if (id.isNotEmpty) {
@@ -98,13 +99,5 @@ class InsertBuilderImpl extends InsertBuilderBase {
       },
     );
     return result.first['id'] as int;
-  }
-
-  String _getLastInsertIdQuery() {
-    if (dialect?.databaseType == DatabaseType.postgresql) {
-      return 'SELECT lastval() as id';
-    }
-    // Default MySQL syntax
-    return 'SELECT LAST_INSERT_ID() as id';
   }
 }
