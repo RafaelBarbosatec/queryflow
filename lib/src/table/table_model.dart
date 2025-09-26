@@ -103,10 +103,8 @@ class TableModel {
     List<String> values = [];
 
     columns.forEach((columnName, columnType) {
-      if (!columnType.isAutoIncrement) {
-        columnNames.add(d.quoteIdentifier(columnName));
-        values.add('?');
-      }
+      columnNames.add(d.quoteIdentifier(columnName));
+      values.add('?');
     });
 
     sql.writeAll(columnNames, ', ');
