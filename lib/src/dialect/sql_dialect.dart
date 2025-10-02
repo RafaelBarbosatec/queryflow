@@ -42,6 +42,9 @@ abstract class SqlDialect {
   /// Gets the default schema name for the database
   String getDefaultSchema(String databaseName);
 
+  /// Gets the placeholder for prepared statements
+  String getPlaceholder(int index);
+
   /// Creates a factory for SQL dialects
   static SqlDialect create(DatabaseType type) {
     switch (type) {
@@ -60,6 +63,9 @@ class MySqlDialect extends SqlDialect {
 
   @override
   String getDefaultSchema(String databaseName) => databaseName;
+
+  @override
+  String getPlaceholder(int index) => '?';
 
   @override
   String quoteIdentifier(String identifier) => '`$identifier`';
@@ -152,6 +158,9 @@ class PostgreSqlDialect extends SqlDialect {
 
   @override
   String getDefaultSchema(String databaseName) => 'public';
+
+  @override
+  String getPlaceholder(int index) => '\$$index';
 
   @override
   String quoteIdentifier(String identifier) => '"$identifier"';
