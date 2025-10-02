@@ -153,6 +153,7 @@ class Queryflow implements QueryflowMethods, QueryflowExecuteTransation {
       databaseName: databaseName ?? '',
       queryflow: this,
       logger: _logger,
+      dialect: _dialect,
     );
   }
 
