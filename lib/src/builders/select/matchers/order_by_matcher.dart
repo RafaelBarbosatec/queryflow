@@ -6,8 +6,6 @@ import 'package:queryflow/src/dialect/sql_dialect.dart';
 class OrderByMatcher extends EndMatcher {
   final List<String> fields;
   final OrderByType type;
-  @override
-  SqlDialect? dialect;
 
   OrderByMatcher({
     required this.fields,

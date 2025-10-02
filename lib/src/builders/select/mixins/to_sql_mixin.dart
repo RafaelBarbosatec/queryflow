@@ -4,9 +4,6 @@ import 'package:queryflow/src/builders/select/matchers/where_matcher.dart';
 import 'package:queryflow/src/builders/select/select_builder.dart';
 
 mixin ToSqlMixin<T> on SelectBuilderBase<T> {
-  @override
-  final List<dynamic> params = [];
-
   String buildSelect({required String fields, required String tableName}) {
     return 'SELECT $fields FROM $tableName';
   }
@@ -82,8 +79,8 @@ mixin ToSqlMixin<T> on SelectBuilderBase<T> {
         final w = whereMatchers[i];
         w.setDialect(dialect);
         w.setParamIndex(paramIndex);
-        final result = w.compose('');
-        query += ' ${result.query}';
+        final result = w.compose(query);
+        query += ' ${w.type.value} ${result.query}';
         params.addAll(result.params);
         paramIndex += result.params.length;
       }
@@ -102,12 +99,13 @@ mixin ToSqlMixin<T> on SelectBuilderBase<T> {
   @override
   String toSql() {
     String sql = toPreparedSql();
-    for (var i = params.length - 1; i >= 0; i--) {
-      var param = '${params[i]}';
-      if (params[i] is String || params[i] is DateTime) {
+    final allParams = [...params]; // Cria uma cópia dos parâmetros
+    
+    for (var i = 0; i < allParams.length; i++) {
+      var param = '${allParams[i]}';
+      if (allParams[i] is String || allParams[i] is DateTime) {
         param = "'$param'";
       }
-      // For PostgreSQL parameters ($1, $2, etc)
       var placeholder = dialect?.getPlaceholder(i + 1) ?? '?';
       sql = sql.replaceAll(placeholder, param);
     }

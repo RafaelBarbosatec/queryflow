@@ -44,17 +44,12 @@ abstract class WhereMatcher implements BaseMatcher {
     paramStartIndex = index;
   }
 
-  final _key = 'WHERE';
-
-  /// Returns 'NOT ' if the condition is negated, empty string otherwise
-  String get _not => isNot ? 'NOT ' : '';
-
   /// Returns the appropriate SQL WHERE condition
   ///
   /// @param current The current SQL string being built
   /// @return The SQL condition string
   String addsAgragator(String current) {
-    return '';
+    return !current.toUpperCase().contains('WHERE') ? 'WHERE' : 'AND';
   }
 
   /// Returns the SQL condition for this matcher
@@ -108,10 +103,9 @@ class _ComparatorWhere extends WhereMatcher {
     final placeholder = dialect?.getPlaceholder(paramStartIndex) ?? '?';
     params.add(value); // Add parameter after getting the placeholder
 
-    // Build condition based on whether WHERE exists or not
     final condition = !current.toUpperCase().contains('WHERE')
         ? 'WHERE $quotedField $comparator $placeholder'
-        : 'AND $quotedField $comparator $placeholder';
+        : '$quotedField $comparator $placeholder';
 
     return MatchResult(condition, params);
   }
@@ -187,15 +181,11 @@ class Between extends WhereMatcher {
   /// The upper bound value
   final dynamic end;
 
-  /// The SQL dialect to use
-  @override
-  final SqlDialect? dialect;
-
   /// Creates a BETWEEN condition
   ///
   /// @param start The lower bound value
   /// @param end The upper bound value
-  Between(this.start, this.end, {this.dialect});
+  Between(this.start, this.end);
 
   @override
   MatchResult compose(String current) {
@@ -227,15 +217,11 @@ class BetweenDate extends WhereMatcher {
   /// The end date
   final DateTime end;
 
-  /// The SQL dialect to use
-  @override
-  final SqlDialect? dialect;
-
   /// Creates a date range BETWEEN condition
   ///
   /// @param start The start date
   /// @param end The end date
-  BetweenDate(this.start, this.end, {this.dialect});
+  BetweenDate(this.start, this.end);
 
   @override
   MatchResult compose(String current) {
@@ -259,14 +245,10 @@ class EqualsDate extends WhereMatcher {
   /// The date to match
   final DateTime value;
 
-  /// The SQL dialect to use
-  @override
-  final SqlDialect? dialect;
-
   /// Creates a date equality condition
   ///
   /// @param value The date to match
-  EqualsDate(this.value, {this.dialect});
+  EqualsDate(this.value);
 
   @override
   MatchResult compose(String current) {
@@ -300,14 +282,10 @@ class Like extends WhereMatcher {
   /// The pattern to match with LIKE
   final String value;
 
-  /// The SQL dialect to use
-  @override
-  final SqlDialect? dialect;
-
   /// Creates a LIKE pattern matching condition
   ///
   /// @param value The pattern to match, can include % wildcards
-  Like(this.value, {this.dialect});
+  Like(this.value);
 
   @override
   MatchResult compose(String current) {
@@ -335,14 +313,10 @@ class In extends WhereMatcher {
   /// The list of values to match against
   final List<String> value;
 
-  /// The SQL dialect to use
-  @override
-  final SqlDialect? dialect;
-
   /// Creates an IN condition
   ///
   /// @param value The list of values to match against
-  In(this.value, {this.dialect});
+  In(this.value);
 
   @override
   MatchResult compose(String current) {

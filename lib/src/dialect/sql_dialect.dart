@@ -183,8 +183,9 @@ class PostgreSqlDialect extends SqlDialect {
     if (value is String) return "'${value.replaceAll("'", "''")}'";
     if (value is DateTime) return "'${value.toIso8601String()}'";
     if (value is bool) return value ? 'TRUE' : 'FALSE';
-    if (value is DateTime)
+    if (value is DateTime) {
       return "TIMEZONE('UTC', '${value.toIso8601String()}'::timestamptz)";
+    }
     return value.toString();
   }
 

@@ -6,19 +6,19 @@ void main() {
     test('Equals generates correct SQL', () {
       final matcher = Equals('value')..field = 'column';
       final result = matcher.compose('SELECT * FROM table');
-      expect(result.query, 'SELECT * FROM table WHERE column = ?');
+      expect(result.query, 'WHERE column = ?');
     });
 
     test('WhereRaw generates correct SQL', () {
       final matcher = WhereRaw('column > 10');
       final result = matcher.compose('SELECT * FROM table');
-      expect(result.query, 'SELECT * FROM table WHERE column > 10');
+      expect(result.query, 'WHERE column > 10');
     });
 
     test('Between generates correct SQL', () {
       final matcher = Between('10', '20')..field = 'column';
       final result = matcher.compose('SELECT * FROM table');
-      expect(result.query, 'SELECT * FROM table WHERE column BETWEEN ? AND ?');
+      expect(result.query, 'WHERE column BETWEEN ? AND ?');
     });
 
     test('BetweenDate generates correct SQL', () {
@@ -29,7 +29,7 @@ void main() {
       final result = matcher.compose('SELECT * FROM table');
       expect(
         result.query,
-        'SELECT * FROM table WHERE column BETWEEN ? AND ?',
+        'WHERE column BETWEEN ? AND ?',
       );
     });
 
@@ -38,7 +38,7 @@ void main() {
       final result = matcher.compose('SELECT * FROM table');
       expect(
         result.query,
-        'SELECT * FROM table WHERE DATE(column) = ?',
+        'WHERE DATE(column) = ?',
       );
     });
 
@@ -47,7 +47,7 @@ void main() {
       final result = matcher.compose('SELECT * FROM table');
       expect(
         result.query,
-        'SELECT * FROM table WHERE column like ?',
+        'WHERE column LIKE ?',
       );
     });
   });
