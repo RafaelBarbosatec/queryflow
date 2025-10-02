@@ -66,9 +66,9 @@ class TableSyncronizer {
     final result = await executor.executePrepared(
       '''SELECT TABLE_NAME 
         FROM INFORMATION_SCHEMA.TABLES 
-        WHERE TABLE_NAME = ? 
-        AND TABLE_SCHEMA = ?;''',
-      [name, schemaName],
+        WHERE TABLE_SCHEMA = ? 
+        AND TABLE_NAME = ?;''',
+      [schemaName, name],
     );
     return result.isNotEmpty;
   }
@@ -92,9 +92,9 @@ class TableSyncronizer {
     return executor.executePrepared(
       '''SELECT COLUMN_NAME 
         FROM INFORMATION_SCHEMA.COLUMNS 
-        WHERE TABLE_NAME = ? 
-        AND TABLE_SCHEMA = ?;''',
-      [name, schemaName],
+        WHERE TABLE_SCHEMA = ? 
+        AND TABLE_NAME = ?;''',
+      [schemaName, name],
     ).then((result) {
       return result.map((e) => e['COLUMN_NAME'].toString()).toList();
     });

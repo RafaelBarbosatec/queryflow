@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:queryflow/queryflow.dart';
+import 'package:queryflow/src/dialect/sql_dialect.dart';
 import 'package:queryflow/src/logger/query_logger.dart';
 
 class EventSynchronizer {
@@ -8,11 +9,13 @@ class EventSynchronizer {
   final String databaseName;
   final QueryLogger? logger;
   final QueryflowMethods queryflow;
+  final SqlDialect dialect;
 
   EventSynchronizer({
     required this.events,
     required this.databaseName,
     required this.queryflow,
+    required this.dialect,
     this.logger,
   });
 
@@ -42,12 +45,15 @@ class EventSynchronizer {
   }
 
   Future<void> _ensureEventSchedulerEnabled() async {
-    final result =
-        await queryflow.execute('SHOW VARIABLES LIKE "event_scheduler"');
-    if (result.isNotEmpty && result.first['Value'] != 'ON') {
-      await queryflow.execute('SET GLOBAL event_scheduler = ON');
-      logger?.i('Event scheduler enabled');
+    if (dialect.databaseType == DatabaseType.mysql) {
+      final result =
+          await queryflow.execute('SHOW VARIABLES LIKE "event_scheduler"');
+      if (result.isNotEmpty && result.first['Value'] != 'ON') {
+        await queryflow.execute('SET GLOBAL event_scheduler = ON');
+        logger?.i('Event scheduler enabled');
+      }
     }
+    // PostgreSQL não precisa de event scheduler, usa o próprio sistema de eventos
   }
 
   Future<void> createEvent(EventModel event) async {
