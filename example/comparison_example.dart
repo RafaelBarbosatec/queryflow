@@ -1,3 +1,5 @@
+// ignore_for_file: avoid_print
+
 import 'package:queryflow/queryflow.dart';
 
 class Product {
@@ -37,12 +39,13 @@ class Product {
   }
 
   @override
-  String toString() => 'Product(id: $id, name: $name, price: \$${price.toStringAsFixed(2)}, active: $active)';
+  String toString() =>
+      'Product(id: $id, name: $name, price: \$${price.toStringAsFixed(2)}, active: $active)';
 }
 
 Future<void> testDatabase(String dbName, Queryflow queryflow) async {
   print('\n🔧 Testing $dbName Database');
-  print('${'=' * (20 + dbName.length)}');
+  print('=' * (20 + dbName.length));
 
   try {
     // Synchronize schema
@@ -81,8 +84,7 @@ Future<void> testDatabase(String dbName, Queryflow queryflow) async {
     final activeProducts = await queryflow
         .selectModel<Product>()
         .where('active', Equals(true))
-        .orderBy(['price'])
-        .fetch();
+        .orderBy(['price']).fetch();
 
     for (final product in activeProducts) {
       print('  • $product');
@@ -131,13 +133,13 @@ Future<void> testDatabase(String dbName, Queryflow queryflow) async {
       final stats = rawResult.first;
       print('\n📈 Product Statistics:');
       print('  Total: ${stats['total_count']}');
-      print('  Average Price: \$${(stats['avg_price'] as num).toStringAsFixed(2)}');
+      print(
+          '  Average Price: \$${(stats['avg_price'] as num).toStringAsFixed(2)}');
       print('  Max Price: \$${(stats['max_price'] as num).toStringAsFixed(2)}');
       print('  Min Price: \$${(stats['min_price'] as num).toStringAsFixed(2)}');
     }
 
     print('✅ $dbName test completed successfully!');
-
   } catch (e, stackTrace) {
     print('❌ Error in $dbName test: $e');
     print('Stack trace: $stackTrace');
@@ -147,7 +149,8 @@ Future<void> testDatabase(String dbName, Queryflow queryflow) async {
 void main() async {
   print('🚀 Queryflow Database Comparison Example');
   print('========================================');
-  print('This example demonstrates Queryflow working with both MySQL and PostgreSQL');
+  print(
+      'This example demonstrates Queryflow working with both MySQL and PostgreSQL');
 
   // MySQL Configuration
   final mysqlDb = Queryflow(
@@ -228,7 +231,6 @@ void main() async {
 
     print('\n🎉 All database tests completed!');
     print('Both MySQL and PostgreSQL work seamlessly with Queryflow!');
-
   } catch (e) {
     print('\n❌ Main error: $e');
   } finally {

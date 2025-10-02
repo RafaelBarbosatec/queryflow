@@ -1,3 +1,5 @@
+// ignore_for_file: avoid_print
+
 import 'package:queryflow/queryflow.dart';
 
 class User {
@@ -147,11 +149,11 @@ void main() async {
 
     // Test raw query
     print('\n🔧 Testing raw SQL query:');
-    final rawResult = await mysqlDb.execute('SELECT COUNT(*) as total FROM users');
+    final rawResult =
+        await mysqlDb.execute('SELECT COUNT(*) as total FROM users');
     print('Raw query result: $rawResult');
 
     print('\n🎉 All MySQL tests completed successfully!');
-
   } catch (e, stackTrace) {
     print('❌ Error occurred: $e');
     print('Stack trace: $stackTrace');
