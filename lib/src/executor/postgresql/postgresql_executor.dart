@@ -57,10 +57,18 @@ class PostgreSqlExecutor implements Executor {
     List<dynamic> params,
   ) async {
     await connect();
-    _log("Query: $query\nParams: $params");
+
+    // Convert MySQL-style placeholders (?) to PostgreSQL placeholders ($1, $2, etc.)
+    var index = 1;
+    var modifiedQuery = query;
+    while (modifiedQuery.contains('?')) {
+      modifiedQuery = modifiedQuery.replaceFirst('?', '\$${index++}');
+    }
+
+    _log("Query: $modifiedQuery\nParams: $params");
 
     final result = await _connection!.execute(
-      query,
+      modifiedQuery,
       parameters: params,
     );
 

@@ -1,3 +1,4 @@
+import '../database_type.dart';
 import '../dialect/sql_dialect.dart';
 
 abstract class TableColumnType {
@@ -24,27 +25,34 @@ abstract class TableColumnType {
 
   String getTypeName([SqlDialect? dialect]) {
     if (this is TypeVarchar) {
-      return dialect?.getSqlType('varchar', options: {'length': (this as TypeVarchar).length})
-        ?? 'VARCHAR(${(this as TypeVarchar).length})';
+      return dialect?.getSqlType('varchar',
+              options: {'length': (this as TypeVarchar).length}) ??
+          'VARCHAR(${(this as TypeVarchar).length})';
     }
     if (this is TypeText) {
       return dialect?.getSqlType('text') ?? 'TEXT';
     }
     if (this is TypeInt) {
-      return dialect?.getSqlType('int') ?? _getIntTypeName((this as TypeInt).length);
+      return dialect?.getSqlType('int') ??
+          _getIntTypeName((this as TypeInt).length);
     }
     if (this is TypeDouble) {
       return dialect?.getSqlType('double') ?? 'DOUBLE';
     }
     if (this is TypeFloat) {
       final precision = (this as TypeFloat).precision;
-      return dialect?.getSqlType('float', options: precision != null ? {'precision': precision} : null)
-        ?? (precision != null ? 'FLOAT($precision)' : 'FLOAT');
+      return dialect?.getSqlType('float',
+              options: precision != null ? {'precision': precision} : null) ??
+          (precision != null ? 'FLOAT($precision)' : 'FLOAT');
     }
     if (this is TypeBool) {
       return dialect?.getSqlType('boolean') ?? 'BOOLEAN';
     }
     if (this is TypeDateTime) {
+      if (dialect?.databaseType == DatabaseType.postgresql &&
+          (this as TypeDateTime).onUpdate == 'CURRENT_TIMESTAMP') {
+        return 'TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP';
+      }
       return dialect?.getSqlType('datetime') ?? 'DATETIME';
     }
     if (this is TypeDate) {
@@ -58,7 +66,7 @@ abstract class TableColumnType {
     }
     if (this is TypeEnum) {
       return dialect?.getSqlType('enum') ??
-        'ENUM(${(this as TypeEnum).values.map((e) => "'$e'").join(', ')})';
+          'ENUM(${(this as TypeEnum).values.map((e) => "'$e'").join(', ')})';
     }
     if (this is TypeTime) {
       return dialect?.getSqlType('time') ?? 'TIME';

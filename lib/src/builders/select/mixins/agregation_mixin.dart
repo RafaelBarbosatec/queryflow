@@ -7,7 +7,7 @@ mixin AgregationMixin<T> on SelectBuilderBase<T> {
       toPreparedSql(type: SqlAgregateType.count),
       params,
     );
-    return result[0]['numerOf'] ?? 0;
+    return result[0]['numerof'] ?? 0;
   }
 
   @override
@@ -17,7 +17,7 @@ mixin AgregationMixin<T> on SelectBuilderBase<T> {
       toPreparedSql(type: SqlAgregateType.max),
       params,
     );
-    return num.tryParse(result[0]['numerOf'].toString()) ?? 0;
+    return num.tryParse(result[0]['numerof'].toString()) ?? 0;
   }
 
   @override
@@ -27,7 +27,7 @@ mixin AgregationMixin<T> on SelectBuilderBase<T> {
       toPreparedSql(type: SqlAgregateType.min),
       params,
     );
-    return num.tryParse(result[0]['numerOf'].toString()) ?? 0;
+    return num.tryParse(result[0]['numerof'].toString()) ?? 0;
   }
 
   @override
@@ -37,7 +37,7 @@ mixin AgregationMixin<T> on SelectBuilderBase<T> {
       toPreparedSql(type: SqlAgregateType.sum),
       params,
     );
-    return num.tryParse(result[0]['numerOf'].toString()) ?? 0;
+    return num.tryParse(result[0]['numerof'].toString()) ?? 0;
   }
 
   @override
@@ -47,7 +47,7 @@ mixin AgregationMixin<T> on SelectBuilderBase<T> {
       toPreparedSql(type: SqlAgregateType.avg),
       params,
     );
-    return num.tryParse(result[0]['numerOf'].toString()) ?? 0;
+    return num.tryParse(result[0]['numerof'].toString()) ?? 0;
   }
 
   void _sumValidation() {

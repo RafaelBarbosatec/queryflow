@@ -1,3 +1,4 @@
+import 'package:queryflow/src/database_type.dart';
 import 'package:queryflow/src/dialect/sql_dialect.dart';
 import 'package:queryflow/src/executor/executor.dart';
 import 'package:queryflow/src/logger/query_logger.dart';
@@ -21,6 +22,28 @@ class TableSyncronizer {
   Future<void> syncronize({bool dropTable = false}) async {
     logger?.i('Start syncronizing tables');
     try {
+      // Para PostgreSQL, vamos tentar criar o banco de dados
+      if (dialect.databaseType == DatabaseType.postgresql &&
+          databaseName != 'postgres') {
+        try {
+          // Primeiro verifica se o banco já existe
+          final result = await executor.executePrepared(
+            '''SELECT 1 FROM pg_database WHERE datname = ${dialect.getPlaceholder(1)}''',
+            [databaseName],
+          );
+
+          if (result.isEmpty) {
+            // O banco não existe, vamos criá-lo
+            await executor.execute('CREATE DATABASE $databaseName');
+            logger?.s("Created database '$databaseName'");
+          } else {
+            logger?.i("Database '$databaseName' already exists");
+          }
+        } catch (e) {
+          logger?.e("Error checking/creating database: $e");
+        }
+      }
+
       if (dropTable) {
         for (final t in tables.reversed) {
           await _execDropTable(t.name);
@@ -62,15 +85,20 @@ class TableSyncronizer {
   }
 
   Future<bool> _tableExists(String name) async {
-    final schemaName = dialect.getDefaultSchema(databaseName);
-    final result = await executor.executePrepared(
-      '''SELECT TABLE_NAME 
-        FROM INFORMATION_SCHEMA.TABLES 
-        WHERE TABLE_SCHEMA = ${dialect.getPlaceholder(1)} 
-        AND TABLE_NAME = ${dialect.getPlaceholder(2)};''',
-      [schemaName, name],
-    );
-    return result.isNotEmpty;
+    try {
+      final schemaName = dialect.getDefaultSchema(databaseName);
+      final result = await executor.executePrepared(
+        '''SELECT TABLE_NAME 
+          FROM INFORMATION_SCHEMA.TABLES 
+          WHERE TABLE_SCHEMA = ${dialect.getPlaceholder(1)} 
+          AND TABLE_NAME = ${dialect.getPlaceholder(2)};''',
+        [schemaName, name],
+      );
+      return result.isNotEmpty;
+    } catch (e) {
+      logger?.e("Error checking if table exists: $e");
+      return false;
+    }
   }
 
   Future<void> _createTable(TableModel table) async {

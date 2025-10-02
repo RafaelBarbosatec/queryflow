@@ -1,11 +1,8 @@
 import '../database_type.dart';
 
-/// Abstract base class for SQL dialects
-///
-/// This class provides the interface for different SQL dialects
-/// to implement database-specific SQL generation logic.
+/// SQL dialect interface that provides database-specific SQL generation logic.
 abstract class SqlDialect {
-  /// The database type this dialect supports
+  /// The type of database this dialect is for
   DatabaseType get databaseType;
 
   /// Quotes an identifier (table name, column name, etc.)
@@ -44,6 +41,9 @@ abstract class SqlDialect {
 
   /// Gets the placeholder for prepared statements
   String getPlaceholder(int index);
+
+  /// Gets the database-specific cast expression
+  String getCastExpression(String expression, String type);
 
   /// Creates a factory for SQL dialects
   static SqlDialect create(DatabaseType type) {
@@ -149,6 +149,18 @@ class MySqlDialect extends SqlDialect {
   String getLastInsertIdQuery() {
     return 'SELECT LAST_INSERT_ID() as id';
   }
+
+  @override
+  String getCastExpression(String expression, String type) {
+    switch (type.toUpperCase()) {
+      case 'INTEGER':
+        return 'CAST($expression AS SIGNED)';
+      case 'FLOAT':
+        return 'CAST($expression AS DECIMAL)';
+      default:
+        return 'CAST($expression AS $type)';
+    }
+  }
 }
 
 /// PostgreSQL dialect implementation
@@ -171,6 +183,8 @@ class PostgreSqlDialect extends SqlDialect {
     if (value is String) return "'${value.replaceAll("'", "''")}'";
     if (value is DateTime) return "'${value.toIso8601String()}'";
     if (value is bool) return value ? 'TRUE' : 'FALSE';
+    if (value is DateTime)
+      return "TIMEZONE('UTC', '${value.toIso8601String()}'::timestamptz)";
     return value.toString();
   }
 
@@ -214,7 +228,7 @@ class PostgreSqlDialect extends SqlDialect {
   }
 
   @override
-  String getAutoIncrementSyntax() => '';
+  String getAutoIncrementSyntax() => 'SERIAL';
 
   @override
   String getPrimaryKeySyntax(String columnName) => 'PRIMARY KEY';
@@ -243,5 +257,10 @@ class PostgreSqlDialect extends SqlDialect {
   @override
   String getLastInsertIdQuery() {
     return 'SELECT lastval() as id';
+  }
+
+  @override
+  String getCastExpression(String expression, String type) {
+    return 'CAST($expression AS $type)';
   }
 }

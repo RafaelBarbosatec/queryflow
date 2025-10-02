@@ -72,7 +72,9 @@ class InsertBuilderImpl extends InsertBuilderBase {
         .join(', ');
 
     _params = fields.values.toList();
-    String queryParams = _params.map((_) => '?').join(', ');
+    String queryParams = List.generate(
+            _params.length, (i) => dialect?.getPlaceholder(i + 1) ?? '?')
+        .join(', ');
     return 'INSERT INTO $tableName ($columnNames) VALUES ($queryParams)';
   }
 

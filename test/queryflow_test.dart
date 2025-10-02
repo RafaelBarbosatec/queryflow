@@ -17,6 +17,7 @@ void main() {
         userName: "admin",
         password: "12345678",
         databaseName: "boleiro",
+        debug: true,
         typeAdapters: [
           UserModel.adapter,
           ProfileModel.adapter,

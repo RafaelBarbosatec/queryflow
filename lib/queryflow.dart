@@ -486,16 +486,31 @@ class Queryflow implements QueryflowMethods, QueryflowExecuteTransation {
   /// await db.updateModel(user);
   /// ```
   @override
-  Future<void> updateModel<T>(T model) {
+  Future<void> updateModel<T>(T model) async {
     final adapter = _queryTypeRetriver.getQueryType<T>();
     final data = adapter.toMap(model);
 
-    return update(adapter.table, data)
-        .where(
-          adapter.primaryKeyColumn,
-          Equals(data[adapter.primaryKeyColumn]),
-        )
-        .execute();
+    // Get the primary key field and value
+    final pkColumn = adapter.primaryKeyColumn;
+    final pkValue = data[pkColumn];
+
+    // Create a map without the primary key for the SET clause
+    final updateFields = Map<String, dynamic>.from(data);
+    updateFields.remove(pkColumn);
+
+    // Create and execute the update builder
+    final updateBuilder = UpdateBuilderImpl(
+      _executor,
+      adapter.table,
+      updateFields,
+      dialect: _dialect,
+    );
+
+    // Add where condition for primary key
+    updateBuilder.where(pkColumn, Equals(pkValue));
+
+    // Execute the update
+    await updateBuilder.execute();
   }
 
   Future<void> close() {

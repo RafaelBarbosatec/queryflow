@@ -54,12 +54,12 @@ mixin OrderByMixin<T> on SelectBuilderBase<T> {
     List<String> fields, [
     OrderByType type = OrderByType.desc,
   ]) {
-    matchers.add(
-      OrderByMatcher(
-        fields: fields,
-        type: type,
-      ),
+    final matcher = OrderByMatcher(
+      fields: fields,
+      type: type,
     );
+    matcher.setDialect(dialect);
+    matchers.add(matcher);
     return this;
   }
 }

@@ -18,6 +18,7 @@ void main() {
         password: "12345678",
         databaseName: "boleiro",
         databaseType: DatabaseType.postgresql,
+        debug: true,
         typeAdapters: [
           UserModel.adapter,
           ProfileModel.adapter,
@@ -25,18 +26,6 @@ void main() {
         tables: [
           UserModel.table,
           ProfileModel.table,
-        ],
-        events: [
-          EventModel.raw(
-            name: 'event_test',
-            statement: '''
-UPDATE profile_table SET age = age + 1 
-WHERE age < 100
-''',
-            schedule: EventSchedule.every,
-            intervalType: EventIntervalType.day,
-            comment: 'teste teste teste',
-          )
         ],
       );
       await queryflow.syncronize(dropTable: true);
@@ -251,9 +240,7 @@ WHERE age < 100
 
   test('Update', () async {
     await queryflow
-        .update(UserModel.table.name, {'name': 'Davi'})
-        .where('id', Equals(1))
-        .execute();
+        .update(UserModel.table.name, {'name': 'Davi', 'id': 1}).execute();
     final result = await queryflow
         .select(UserModel.table.name)
         .where('id', Equals(1))

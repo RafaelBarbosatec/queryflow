@@ -54,7 +54,11 @@ class TableModel {
         columnDef += ' NOT NULL';
       }
       if (columnType.isAutoIncrement) {
-        columnDef += ' ${d.getAutoIncrementSyntax()}';
+        if (d.databaseType == DatabaseType.postgresql) {
+          columnDef = columnDef.replaceFirst('INTEGER', 'SERIAL');
+        } else {
+          columnDef += ' ${d.getAutoIncrementSyntax()}';
+        }
       }
       if (columnType.defaultValue != null) {
         if (_isString(columnType)) {
@@ -64,7 +68,17 @@ class TableModel {
         }
       }
       if (columnType.onUpdate != null) {
-        columnDef += ' ON UPDATE ${columnType.onUpdate}';
+        if (d.databaseType == DatabaseType.postgresql) {
+          if (columnType.onUpdate == 'CURRENT_TIMESTAMP') {
+            // In PostgreSQL, we'll make the column type TIMESTAMPTZ with a default value
+            columnDef = columnDef.replaceAll(
+              'TIMESTAMP',
+              'TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP',
+            );
+          }
+        } else {
+          columnDef += ' ON UPDATE ${columnType.onUpdate}';
+        }
       }
       columnDefinitions.add(columnDef);
     });

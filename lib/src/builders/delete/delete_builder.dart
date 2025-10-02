@@ -1,8 +1,8 @@
 import 'package:queryflow/src/builders/delete/mixins/delete_where_mixin.dart';
 import 'package:queryflow/src/builders/matcher.dart';
 import 'package:queryflow/src/builders/select/matchers/where_matcher.dart';
-import 'package:queryflow/src/executor/executor.dart';
 import 'package:queryflow/src/dialect/sql_dialect.dart';
+import 'package:queryflow/src/executor/executor.dart';
 
 /// Defines a contract for building and executing SQL DELETE operations.
 ///
@@ -74,10 +74,23 @@ class DeleteBuilderImpl extends DeleteBuilderBase with DeleteWhereMixin {
     final tableName = dialect?.quoteIdentifier(table) ?? table;
 
     String query = 'DELETE FROM $tableName';
-    for (final w in whereList) {
-      final result = w.compose(query);
-      query = result.query;
+    if (whereList.isNotEmpty) {
+      final firstWhere = whereList.first;
+      firstWhere.type = WhereMatcherType.and;
+      firstWhere.setDialect(dialect);
+      firstWhere.setParamIndex(1);
+      final result = firstWhere.compose('');
+      query = '$query ${result.query.replaceFirst('AND', 'WHERE')}';
       _params.addAll(result.params);
+
+      for (var i = 1; i < whereList.length; i++) {
+        final w = whereList.elementAt(i);
+        w.setDialect(dialect);
+        w.setParamIndex(_params.length + 1);
+        final result = w.compose('');
+        query = '$query ${result.query}';
+        _params.addAll(result.params);
+      }
     }
     return query;
   }
