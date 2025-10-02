@@ -62,12 +62,13 @@ class TableSyncronizer {
   }
 
   Future<bool> _tableExists(String name) async {
+    final schemaName = dialect.getDefaultSchema(databaseName);
     final result = await executor.executePrepared(
       '''SELECT TABLE_NAME 
         FROM INFORMATION_SCHEMA.TABLES 
-        WHERE TABLE_SCHEMA = ? 
-        AND TABLE_NAME = ?;''',
-      [databaseName, name],
+        WHERE TABLE_NAME = ? 
+        AND TABLE_SCHEMA = ?;''',
+      [name, schemaName],
     );
     return result.isNotEmpty;
   }
@@ -87,12 +88,13 @@ class TableSyncronizer {
   }
 
   Future<List<String>> _getTableColumns(String name) {
+    final schemaName = dialect.getDefaultSchema(databaseName);
     return executor.executePrepared(
       '''SELECT COLUMN_NAME 
         FROM INFORMATION_SCHEMA.COLUMNS 
-        WHERE TABLE_SCHEMA = ? 
-        AND TABLE_NAME = ?;''',
-      [databaseName, name],
+        WHERE TABLE_NAME = ? 
+        AND TABLE_SCHEMA = ?;''',
+      [name, schemaName],
     ).then((result) {
       return result.map((e) => e['COLUMN_NAME'].toString()).toList();
     });
@@ -105,17 +107,23 @@ class TableSyncronizer {
         )
         .columns[column];
     if (columnType != null) {
+      final quotedTable = dialect.quoteIdentifier(name);
+      final quotedColumn = dialect.quoteIdentifier(column);
       await executor.execute(
-        '''ALTER TABLE `$name` 
-          ADD COLUMN `$column` ${columnType.typeName};''',
+        '''ALTER TABLE $quotedTable 
+          ADD COLUMN $quotedColumn ${columnType.typeName};''',
       );
       if (columnType.foreignKey != null) {
         final key = columnType.foreignKey!.getKeyName;
+        final quotedRefTable =
+            dialect.quoteIdentifier(columnType.foreignKey!.table);
+        final quotedRefColumn =
+            dialect.quoteIdentifier(columnType.foreignKey!.column);
         await executor.execute(
-          '''ALTER TABLE `$name` 
-            ADD CONSTRAINT `$key` 
-            FOREIGN KEY (`$column`) 
-            REFERENCES `${columnType.foreignKey!.table}` (`${columnType.foreignKey!.column}`);''',
+          '''ALTER TABLE $quotedTable 
+            ADD CONSTRAINT $key 
+            FOREIGN KEY ($quotedColumn) 
+            REFERENCES $quotedRefTable ($quotedRefColumn);''',
         );
       }
     } else {
@@ -125,8 +133,9 @@ class TableSyncronizer {
 
   Future<void> _execDropTable(String tableName) {
     try {
+      final quotedTable = dialect.quoteIdentifier(tableName);
       return executor.execute(
-        '''DROP TABLE IF EXISTS `$tableName`;''',
+        '''DROP TABLE IF EXISTS $quotedTable;''',
       );
     } catch (e) {
       logger?.e('DROP TABLE: $e');
@@ -136,9 +145,11 @@ class TableSyncronizer {
 
   Future<void> _removeColumn(String name, existColumn) {
     try {
+      final quotedTable = dialect.quoteIdentifier(name);
+      final quotedColumn = dialect.quoteIdentifier(existColumn);
       return executor.execute(
-        '''ALTER TABLE `$name` 
-        DROP COLUMN `$existColumn`;''',
+        '''ALTER TABLE $quotedTable 
+        DROP COLUMN $quotedColumn;''',
       );
     } catch (e) {
       logger?.e('ALTER TABLE: $e');

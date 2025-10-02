@@ -39,6 +39,9 @@ abstract class SqlDialect {
   /// Gets the query to retrieve the last inserted ID
   String getLastInsertIdQuery();
 
+  /// Gets the default schema name for the database
+  String getDefaultSchema(String databaseName);
+
   /// Creates a factory for SQL dialects
   static SqlDialect create(DatabaseType type) {
     switch (type) {
@@ -54,6 +57,9 @@ abstract class SqlDialect {
 class MySqlDialect extends SqlDialect {
   @override
   DatabaseType get databaseType => DatabaseType.mysql;
+
+  @override
+  String getDefaultSchema(String databaseName) => databaseName;
 
   @override
   String quoteIdentifier(String identifier) => '`$identifier`';
@@ -143,6 +149,9 @@ class MySqlDialect extends SqlDialect {
 class PostgreSqlDialect extends SqlDialect {
   @override
   DatabaseType get databaseType => DatabaseType.postgresql;
+
+  @override
+  String getDefaultSchema(String databaseName) => 'public';
 
   @override
   String quoteIdentifier(String identifier) => '"$identifier"';
