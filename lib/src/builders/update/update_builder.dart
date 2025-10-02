@@ -69,8 +69,8 @@ class UpdateBuilderImpl extends UpdateBuilderBase with UpdateWhereMixin {
       firstWhere.type = WhereMatcherType.and;
       firstWhere.setDialect(dialect);
       firstWhere.setParamIndex(paramIndex); // Continue parameter sequence
-      final result = firstWhere.compose('');
-      query = '$query ${result.query.replaceFirst('AND', 'WHERE')}';
+      final result = firstWhere.compose();
+      query = '$query WHERE ${result.query}';
       _params.addAll(result.params);
     }
 

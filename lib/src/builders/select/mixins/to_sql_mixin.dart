@@ -58,7 +58,7 @@ mixin ToSqlMixin<T> on SelectBuilderBase<T> {
     for (final join in joinMatchers) {
       join.setDialect(dialect);
       join.setParamIndex(paramIndex);
-      final j = join.compose('');
+      final j = join.compose();
       query = '$query ${j.query}';
       params.addAll(j.params);
       paramIndex += j.params.length;
@@ -69,8 +69,8 @@ mixin ToSqlMixin<T> on SelectBuilderBase<T> {
       var firstWhere = whereMatchers[0];
       firstWhere.setDialect(dialect);
       firstWhere.setParamIndex(paramIndex);
-      var result = firstWhere.compose('');
-      query += ' ${result.query}';
+      var result = firstWhere.compose();
+      query += ' WHERE ${result.query}';
       params.addAll(result.params);
       paramIndex += result.params.length;
 
@@ -79,8 +79,10 @@ mixin ToSqlMixin<T> on SelectBuilderBase<T> {
         final w = whereMatchers[i];
         w.setDialect(dialect);
         w.setParamIndex(paramIndex);
-        final result = w.compose(query);
+        final result = w.compose();
+
         query += ' ${w.type.value} ${result.query}';
+
         params.addAll(result.params);
         paramIndex += result.params.length;
       }
@@ -89,7 +91,7 @@ mixin ToSqlMixin<T> on SelectBuilderBase<T> {
     // Add ORDER BY, LIMIT, etc.
     for (final end in endMatchers) {
       end.setDialect(dialect);
-      final e = end.compose('');
+      final e = end.compose();
       query += ' ${e.query}';
       params.addAll(e.params);
     }
@@ -100,14 +102,14 @@ mixin ToSqlMixin<T> on SelectBuilderBase<T> {
   String toSql() {
     String sql = toPreparedSql();
     final allParams = [...params]; // Cria uma cópia dos parâmetros
-    
+
     for (var i = 0; i < allParams.length; i++) {
       var param = '${allParams[i]}';
       if (allParams[i] is String || allParams[i] is DateTime) {
         param = "'$param'";
       }
       var placeholder = dialect?.getPlaceholder(i + 1) ?? '?';
-      sql = sql.replaceAll(placeholder, param);
+      sql = sql.replaceFirst(placeholder, param);
     }
     return sql;
   }

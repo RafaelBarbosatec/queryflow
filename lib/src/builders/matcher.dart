@@ -18,5 +18,5 @@ abstract class BaseMatcher {
     paramStartIndex = index;
   }
 
-  MatchResult compose(String current);
+  MatchResult compose();
 }

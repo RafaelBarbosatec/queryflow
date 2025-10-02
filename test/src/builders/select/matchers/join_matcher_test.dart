@@ -8,10 +8,10 @@ void main() {
       join.table = 'users';
       join.selectTable = 'orders';
 
-      final result = join.compose('SELECT * FROM orders');
+      final result = join.compose();
       expect(
         result.query,
-        'SELECT * FROM orders INNER JOIN users ON orders.id = users.user_id',
+        'INNER JOIN users ON orders.id = users.user_id',
       );
     });
 
@@ -20,10 +20,10 @@ void main() {
       join.table = 'users';
       join.selectTable = 'orders';
 
-      final result = join.compose('SELECT * FROM orders');
+      final result = join.compose();
       expect(
         result.query,
-        'SELECT * FROM orders LEFT JOIN users ON orders.id = users.user_id',
+        'LEFT JOIN users ON orders.id = users.user_id',
       );
     });
 
@@ -32,10 +32,10 @@ void main() {
       join.table = 'users';
       join.selectTable = 'orders';
 
-      final result = join.compose('SELECT * FROM orders');
+      final result = join.compose();
       expect(
         result.query,
-        'SELECT * FROM orders RIGHT JOIN users ON orders.id = users.user_id',
+        'RIGHT JOIN users ON orders.id = users.user_id',
       );
     });
 
@@ -44,17 +44,17 @@ void main() {
       join.table = 'users';
       join.selectTable = 'orders';
 
-      final result = join.compose('SELECT * FROM orders');
+      final result = join.compose();
       expect(
         result.query,
-        'SELECT * FROM orders FULL OUTER JOIN users ON orders.id = users.user_id',
+        'FULL OUTER JOIN users ON orders.id = users.user_id',
       );
     });
 
     test('JoinRaw composes correct SQL', () {
       final join = JoinRaw('CROSS JOIN users');
-      final result = join.compose('SELECT * FROM orders');
-      expect(result.query, 'SELECT * FROM orders CROSS JOIN users');
+      final result = join.compose();
+      expect(result.query, 'CROSS JOIN users');
     });
   });
 }

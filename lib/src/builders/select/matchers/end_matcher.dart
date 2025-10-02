@@ -8,8 +8,8 @@ class EndMatcher implements BaseMatcher {
   });
 
   @override
-  MatchResult compose(String current) {
-    return MatchResult('$current $raw');
+  MatchResult compose() {
+    return MatchResult(raw);
   }
 
   @override

@@ -18,7 +18,7 @@ class OrderByMatcher extends EndMatcher {
   }
 
   @override
-  MatchResult compose(String current) {
+  MatchResult compose() {
     final quotedFields = fields.map((f) => dialect?.quoteIdentifier(f) ?? f);
     final orderType = type.value;
     return MatchResult(

@@ -71,7 +71,7 @@ abstract class JoinMatcher implements BaseMatcher {
   }
 
   @override
-  MatchResult compose(String current) {
+  MatchResult compose() {
     String prefix = '${type.value} JOIN';
     String aliasPart = alias != null ? ' AS $alias' : '';
     final table1 = dialect?.quoteIdentifier(selectTable) ?? selectTable;
@@ -79,7 +79,7 @@ abstract class JoinMatcher implements BaseMatcher {
     final field1 = dialect?.quoteIdentifier(firstField) ?? firstField;
     final field2 = dialect?.quoteIdentifier(secondField) ?? secondField;
     return MatchResult(
-      '$current $prefix $table2$aliasPart ON $table1.$field1 = ${alias ?? table2}.$field2',
+      '$prefix $table2$aliasPart ON $table1.$field1 = ${alias ?? table2}.$field2',
     );
   }
 }
@@ -146,7 +146,7 @@ class JoinRaw extends JoinMatcher {
   /// [current] is the current SQL query string to which the raw clause will be appended.
   /// Returns a [MatchResult] containing the updated query string.
   @override
-  MatchResult compose(String current) {
-    return MatchResult('$current $value');
+  MatchResult compose() {
+    return MatchResult(value);
   }
 }

@@ -79,15 +79,15 @@ class DeleteBuilderImpl extends DeleteBuilderBase with DeleteWhereMixin {
       firstWhere.type = WhereMatcherType.and;
       firstWhere.setDialect(dialect);
       firstWhere.setParamIndex(1);
-      final result = firstWhere.compose('');
-      query = '$query ${result.query.replaceFirst('AND', 'WHERE')}';
+      final result = firstWhere.compose();
+      query = '$query WHERE ${result.query}';
       _params.addAll(result.params);
 
       for (var i = 1; i < whereList.length; i++) {
         final w = whereList.elementAt(i);
         w.setDialect(dialect);
         w.setParamIndex(_params.length + 1);
-        final result = w.compose('');
+        final result = w.compose();
         query = '$query ${result.query}';
         _params.addAll(result.params);
       }

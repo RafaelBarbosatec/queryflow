@@ -5,14 +5,14 @@ void main() {
   group('EndMatcher Tests', () {
     test('compose appends raw SQL correctly', () {
       final matcher = EndMatcher(raw: 'ORDER BY column DESC');
-      final result = matcher.compose('SELECT * FROM table');
-      expect(result.query, 'SELECT * FROM table ORDER BY column DESC');
+      final result = matcher.compose();
+      expect(result.query, 'ORDER BY column DESC');
     });
 
     test('compose works with empty current string', () {
       final matcher = EndMatcher(raw: 'LIMIT 10');
-      final result = matcher.compose('');
-      expect(result.query, ' LIMIT 10');
+      final result = matcher.compose();
+      expect(result.query, 'LIMIT 10');
     });
   });
 }

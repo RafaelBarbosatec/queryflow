@@ -44,9 +44,9 @@ class LimitMatcher extends EndMatcher {
   }) : super(raw: '');
 
   @override
-  MatchResult compose(String current) {
+  MatchResult compose() {
     return MatchResult(
-      '$current LIMIT $limitValue${offset != null ? ' OFFSET $offset' : ''}',
+      'LIMIT $limitValue${offset != null ? ' OFFSET $offset' : ''}',
     );
   }
 }
