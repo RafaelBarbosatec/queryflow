@@ -93,19 +93,11 @@ class _ComparatorWhere extends WhereMatcher {
   /// The value to compare against
   final dynamic value;
 
-  /// The SQL dialect to use
-  @override
-  final SqlDialect? dialect;
-
   /// Creates a comparison WHERE condition
   ///
   /// @param value The value to compare against
   /// @param comparator The comparison operator symbol
-  _ComparatorWhere(
-    this.value,
-    this.comparator, {
-    this.dialect,
-  });
+  _ComparatorWhere(this.value, this.comparator);
 
   @override
   MatchResult compose(String current) {
