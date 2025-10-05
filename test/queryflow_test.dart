@@ -11,13 +11,12 @@ void main() {
 
   setUpAll(() async {
     if (!initilized) {
-      queryflow = Queryflow(
+      queryflow = Queryflow.mysql(
         host: "127.0.0.1",
         port: 3306,
         userName: "admin",
         password: "12345678",
         databaseName: "boleiro",
-        debug: true,
         typeAdapters: [
           UserModel.adapter,
           ProfileModel.adapter,
@@ -184,7 +183,7 @@ WHERE age < 100
       expect(query[0]['name'], 'Ana');
     });
 
-    test('Select GreaterThan', () async {
+    test('Select LessThan', () async {
       var query = await queryflow
           .select(UserModel.table.name)
           .join(ProfileModel.table.name, InnerJoin('id', 'user_id'))

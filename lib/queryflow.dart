@@ -91,7 +91,7 @@ class Queryflow implements QueryflowMethods, QueryflowExecuteTransation {
   /// - [securityContext]: Optional security context for SSL connections (MySQL only)
   /// - [useSSL]: Whether to use SSL for PostgreSQL connections
   /// - [executor]: Optional custom executor implementation
-  Queryflow({
+  Queryflow._internal({
     this.databaseType = DatabaseType.mysql,
     required dynamic host,
     required int port,
@@ -154,6 +154,78 @@ class Queryflow implements QueryflowMethods, QueryflowExecuteTransation {
       queryflow: this,
       logger: _logger,
       dialect: _dialect,
+    );
+  }
+
+  factory Queryflow.mysql({
+    required dynamic host,
+    required int port,
+    required String userName,
+    required String password,
+    String? databaseName,
+    String collation = 'utf8mb4_general_ci',
+    bool secure = true,
+    SecurityContext? securityContext,
+    Executor? executor,
+    List<TypeAdapter>? typeAdapters,
+    List<TableModel> tables = const [],
+    List<ViewModel> views = const [],
+    List<EventModel> events = const [],
+    int maxConnections = 1,
+    bool debug = false,
+    QueryLogger? logger,
+  }) {
+    return Queryflow._internal(
+      databaseType: DatabaseType.mysql,
+      host: host,
+      port: port,
+      userName: userName,
+      password: password,
+      databaseName: databaseName,
+      collation: collation,
+      secure: secure,
+      securityContext: securityContext,
+      executor: executor,
+      typeAdapters: typeAdapters,
+      tables: tables,
+      views: views,
+      events: events,
+      maxConnections: maxConnections,
+      debug: debug,
+      logger: logger,
+    );
+  }
+
+  factory Queryflow.postgresql({
+    required dynamic host,
+    required int port,
+    required String userName,
+    required String password,
+    String? databaseName,
+    bool useSSL = false,
+    Executor? executor,
+    List<TypeAdapter>? typeAdapters,
+    List<TableModel> tables = const [],
+    List<ViewModel> views = const [],
+    int maxConnections = 1,
+    bool debug = false,
+    QueryLogger? logger,
+  }) {
+    return Queryflow._internal(
+      databaseType: DatabaseType.postgresql,
+      host: host,
+      port: port,
+      userName: userName,
+      password: password,
+      databaseName: databaseName,
+      useSSL: useSSL,
+      executor: executor,
+      typeAdapters: typeAdapters,
+      tables: tables,
+      views: views,
+      maxConnections: maxConnections,
+      debug: debug,
+      logger: logger,
     );
   }
 
@@ -422,7 +494,7 @@ class Queryflow implements QueryflowMethods, QueryflowExecuteTransation {
   ) {
     return _executor.executeTransation(
       (executor) => queryflow(
-        Queryflow(
+        Queryflow._internal(
           executor: executor,
           databaseType: databaseType,
           host: 'null',
