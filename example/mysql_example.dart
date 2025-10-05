@@ -36,8 +36,7 @@ class User {
 
 void main() async {
   // MySQL example (default database type)
-  final mysqlDb = Queryflow(
-    databaseType: DatabaseType.mysql, // Can be omitted since it's the default
+  final mysqlDb = Queryflow.mysql(
     host: 'localhost',
     port: 3306,
     userName: 'root',

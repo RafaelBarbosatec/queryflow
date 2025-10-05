@@ -36,8 +36,7 @@ class User {
 
 void main() async {
   // PostgreSQL example
-  final postgresDb = Queryflow(
-    databaseType: DatabaseType.postgresql,
+  final postgresDb = Queryflow.postgresql(
     host: 'localhost',
     port: 5432,
     userName: 'postgres',

@@ -153,8 +153,7 @@ void main() async {
       'This example demonstrates Queryflow working with both MySQL and PostgreSQL');
 
   // MySQL Configuration
-  final mysqlDb = Queryflow(
-    databaseType: DatabaseType.mysql,
+  final mysqlDb = Queryflow.mysql(
     host: 'localhost',
     port: 3306,
     userName: 'root',
@@ -188,8 +187,7 @@ void main() async {
   );
 
   // PostgreSQL Configuration
-  final postgresDb = Queryflow(
-    databaseType: DatabaseType.postgresql,
+  final postgresDb = Queryflow.postgresql(
     host: 'localhost',
     port: 5432,
     userName: 'postgres',

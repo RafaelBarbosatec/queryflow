@@ -5,7 +5,7 @@ import 'dart:io';
 import 'package:queryflow/queryflow.dart';
 
 void main() async {
-  Queryflow queryflow = Queryflow(
+  Queryflow queryflow = Queryflow.mysql(
     host: "127.0.0.1",
     port: 3306,
     userName: "admin",
