@@ -139,7 +139,7 @@ class TableSyncronizer {
       final quotedColumn = dialect.quoteIdentifier(column);
       await executor.execute(
         '''ALTER TABLE $quotedTable 
-          ADD COLUMN $quotedColumn ${columnType.typeName};''',
+          ADD COLUMN $quotedColumn ${columnType.getTypeName(dialect)};''',
       );
       if (columnType.foreignKey != null) {
         final key = columnType.foreignKey!.getKeyName;

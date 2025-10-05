@@ -1,4 +1,5 @@
 import '../database_type.dart';
+import 'sql_type.dart';
 
 /// SQL dialect interface that provides database-specific SQL generation logic.
 abstract class SqlDialect {
@@ -12,7 +13,7 @@ abstract class SqlDialect {
   String formatValue(dynamic value);
 
   /// Gets the SQL type mapping for a given generic type
-  String getSqlType(String genericType, {Map<String, dynamic>? options});
+  String getSqlType(SqlType type, {Map<String, dynamic>? options});
 
   /// Gets the auto-increment syntax for primary keys
   String getAutoIncrementSyntax();
@@ -80,42 +81,50 @@ class MySqlDialect extends SqlDialect {
   }
 
   @override
-  String getSqlType(String genericType, {Map<String, dynamic>? options}) {
-    switch (genericType.toLowerCase()) {
-      case 'int':
-      case 'integer':
-        return 'INT';
-      case 'bigint':
+  String getSqlType(SqlType type, {Map<String, dynamic>? options}) {
+    switch (type) {
+      case SqlType.int:
+      case SqlType.integer:
+        final length = options?['length'];
+        return length != null ? 'INT($length)' : 'INT';
+      case SqlType.bigint:
         return 'BIGINT';
-      case 'varchar':
+      case SqlType.varchar:
         final length = options?['length'] ?? 255;
         return 'VARCHAR($length)';
-      case 'text':
+      case SqlType.text:
         return 'TEXT';
-      case 'datetime':
+      case SqlType.datetime:
         return 'DATETIME';
-      case 'timestamp':
+      case SqlType.timestamp:
         return 'TIMESTAMP';
-      case 'date':
+      case SqlType.date:
         return 'DATE';
-      case 'time':
+      case SqlType.time:
         return 'TIME';
-      case 'boolean':
-      case 'bool':
+      case SqlType.boolean:
+      case SqlType.bool:
         return 'TINYINT(1)';
-      case 'decimal':
-      case 'numeric':
+      case SqlType.decimal:
+      case SqlType.numeric:
         final precision = options?['precision'] ?? 10;
         final scale = options?['scale'] ?? 2;
         return 'DECIMAL($precision,$scale)';
-      case 'float':
+      case SqlType.float:
         return 'FLOAT';
-      case 'double':
+      case SqlType.double:
         return 'DOUBLE';
-      case 'json':
+      case SqlType.json:
         return 'JSON';
-      default:
-        return 'TEXT';
+      case SqlType.year:
+        return 'YEAR';
+      case SqlType.blob:
+        return 'BLOB';
+      case SqlType.enum_:
+        final values = options?['values'] as List<String>?;
+        return values != null
+            ? 'ENUM(${values.map((e) => "'$e'").join(', ')})'
+            : 'TEXT';
     }
   }
 
@@ -190,41 +199,43 @@ class PostgreSqlDialect extends SqlDialect {
   }
 
   @override
-  String getSqlType(String genericType, {Map<String, dynamic>? options}) {
-    switch (genericType.toLowerCase()) {
-      case 'int':
-      case 'integer':
+  String getSqlType(SqlType type, {Map<String, dynamic>? options}) {
+    switch (type) {
+      case SqlType.int:
+      case SqlType.integer:
+      case SqlType.year:
         return 'INTEGER';
-      case 'bigint':
+      case SqlType.bigint:
         return 'BIGINT';
-      case 'varchar':
+      case SqlType.varchar:
         final length = options?['length'];
         return length != null ? 'VARCHAR($length)' : 'TEXT';
-      case 'text':
+      case SqlType.text:
+      case SqlType.enum_:
         return 'TEXT';
-      case 'datetime':
-      case 'timestamp':
+      case SqlType.datetime:
+      case SqlType.timestamp:
         return 'TIMESTAMP';
-      case 'date':
+      case SqlType.date:
         return 'DATE';
-      case 'time':
+      case SqlType.time:
         return 'TIME';
-      case 'boolean':
-      case 'bool':
+      case SqlType.boolean:
+      case SqlType.bool:
         return 'BOOLEAN';
-      case 'decimal':
-      case 'numeric':
+      case SqlType.decimal:
+      case SqlType.numeric:
         final precision = options?['precision'] ?? 10;
         final scale = options?['scale'] ?? 2;
         return 'NUMERIC($precision,$scale)';
-      case 'float':
+      case SqlType.float:
         return 'REAL';
-      case 'double':
+      case SqlType.double:
         return 'DOUBLE PRECISION';
-      case 'json':
+      case SqlType.json:
         return 'JSONB';
-      default:
-        return 'TEXT';
+      case SqlType.blob:
+        return 'BYTEA';
     }
   }
 
