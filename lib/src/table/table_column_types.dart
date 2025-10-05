@@ -129,7 +129,7 @@ class TypeText extends TableColumnType {
 class TypeInt extends TableColumnType {
   final int length;
   TypeInt({
-    this.length = 11,
+    this.length = 4,
     super.isPrimaryKey = false,
     super.isAutoIncrement = false,
     super.isNotNull = false,

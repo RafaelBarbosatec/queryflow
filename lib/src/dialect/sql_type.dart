@@ -1,8 +1,6 @@
 /// SQL type enum to represent generic SQL types that can be mapped to specific database types
 enum SqlType {
   int,
-  integer,
-  bigint,
   varchar,
   text,
   datetime,
@@ -27,10 +25,6 @@ extension SqlTypeExtension on SqlType {
     switch (this) {
       case SqlType.int:
         return 'int';
-      case SqlType.integer:
-        return 'integer';
-      case SqlType.bigint:
-        return 'bigint';
       case SqlType.varchar:
         return 'varchar';
       case SqlType.text:

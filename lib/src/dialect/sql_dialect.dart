@@ -84,11 +84,15 @@ class MySqlDialect extends SqlDialect {
   String getSqlType(SqlType type, {Map<String, dynamic>? options}) {
     switch (type) {
       case SqlType.int:
-      case SqlType.integer:
         final length = options?['length'];
-        return length != null ? 'INT($length)' : 'INT';
-      case SqlType.bigint:
-        return 'BIGINT';
+        if (length != null) {
+          if (length <= 1) return 'TINYINT';
+          if (length == 2) return 'SMALLINT';
+          if (length == 3) return 'MEDIUMINT';
+          if (length == 4) return 'INT';
+          return 'INT($length)';
+        }
+        return 'INT';
       case SqlType.varchar:
         final length = options?['length'] ?? 255;
         return 'VARCHAR($length)';
@@ -202,17 +206,24 @@ class PostgreSqlDialect extends SqlDialect {
   String getSqlType(SqlType type, {Map<String, dynamic>? options}) {
     switch (type) {
       case SqlType.int:
-      case SqlType.integer:
+        final length = options?['length'];
+        if (length != null) {
+          if (length <= 1) return 'SMALLINT';
+          if (length <= 4) return 'INTEGER';
+        }
+        return 'BIGINT';
       case SqlType.year:
         return 'INTEGER';
-      case SqlType.bigint:
-        return 'BIGINT';
       case SqlType.varchar:
         final length = options?['length'];
         return length != null ? 'VARCHAR($length)' : 'TEXT';
       case SqlType.text:
-      case SqlType.enum_:
         return 'TEXT';
+      case SqlType.enum_:
+        final values = options?['values'] as List<String>?;
+        return values != null
+            ? 'ENUM(${values.map((e) => "'$e'").join(', ')})'
+            : 'TEXT';
       case SqlType.datetime:
       case SqlType.timestamp:
         return 'TIMESTAMP';
