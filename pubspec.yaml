@@ -1,5 +1,5 @@
 name: queryflow
-description: "Queryflow is a lightweight and flexible Query Builder designed to simplify the process of building and executing SQL queries."
+description: "Queryflow is a lightweight and flexible Query Builder designed to simplify the process of building and executing SQL queries to MySQL and PostgreSQL."
 version: 0.5.0
 homepage: https://github.com/RafaelBarbosatec/queryflow
 
