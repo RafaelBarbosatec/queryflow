@@ -570,19 +570,12 @@ class Queryflow implements QueryflowMethods, QueryflowExecuteTransation {
     final updateFields = Map<String, dynamic>.from(data);
     updateFields.remove(pkColumn);
 
-    // Create and execute the update builder
-    final updateBuilder = UpdateBuilderImpl(
-      _executor,
-      adapter.table,
-      updateFields,
-      dialect: _dialect,
-    );
-
-    // Add where condition for primary key
-    updateBuilder.where(pkColumn, Equals(pkValue));
-
-    // Execute the update
-    await updateBuilder.execute();
+    return update(adapter.table, updateFields)
+        .where(
+          adapter.primaryKeyColumn,
+          Equals(pkValue),
+        )
+        .execute();
   }
 
   Future<void> close() {
