@@ -1,3 +1,5 @@
+import 'package:queryflow/src/dialect/mysql_dialect.dart';
+
 import '../database_type.dart';
 import '../dialect/sql_dialect.dart';
 import 'table_column_types.dart';
@@ -54,11 +56,7 @@ class TableModel {
         columnDef += ' NOT NULL';
       }
       if (columnType.isAutoIncrement) {
-        if (d.databaseType == DatabaseType.postgresql) {
-          columnDef = columnDef.replaceFirst('INTEGER', 'SERIAL');
-        } else {
-          columnDef += ' ${d.getAutoIncrementSyntax()}';
-        }
+        columnDef = d.getAutoIncrementSyntax(columnDef);
       }
       if (columnType.defaultValue != null) {
         if (_isString(columnType)) {
@@ -67,18 +65,8 @@ class TableModel {
           columnDef += ' DEFAULT ${columnType.defaultValue}';
         }
       }
-      if (columnType.onUpdate != null) {
-        if (d.databaseType == DatabaseType.postgresql) {
-          if (columnType.onUpdate == 'CURRENT_TIMESTAMP') {
-            // In PostgreSQL, we'll make the column type TIMESTAMPTZ with a default value
-            columnDef = columnDef.replaceAll(
-              'TIMESTAMP',
-              'TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP',
-            );
-          }
-        } else {
-          columnDef += ' ON UPDATE ${columnType.onUpdate}';
-        }
+      if (columnType.onUpdate != null && d is MySqlDialect) {
+        columnDef += ' ON UPDATE ${columnType.onUpdate}';
       }
       columnDefinitions.add(columnDef);
     });
@@ -98,7 +86,7 @@ class TableModel {
     sql.write('\n)');
 
     // Só adiciona opções específicas do MySQL se o dialect for MySQL
-    if (d.databaseType == DatabaseType.mysql) {
+    if (d is MySqlDialect) {
       sql.write(' ENGINE=$engine');
       sql.write(' AUTO_INCREMENT=$outomaticIncrement');
       sql.write(' DEFAULT CHARSET=$charset');

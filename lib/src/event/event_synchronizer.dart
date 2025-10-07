@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:queryflow/queryflow.dart';
+import 'package:queryflow/src/dialect/mysql_dialect.dart';
 import 'package:queryflow/src/dialect/sql_dialect.dart';
 import 'package:queryflow/src/logger/query_logger.dart';
 
@@ -20,6 +21,9 @@ class EventSynchronizer {
   });
 
   Future<void> synchronize() async {
+    if (dialect is! MySqlDialect) {
+      return; // Eventos são suportados apenas no MySQL
+    }
     logger?.i('Start synchronizing events');
     try {
       // Verificar se o Event Scheduler está habilitado
@@ -45,15 +49,13 @@ class EventSynchronizer {
   }
 
   Future<void> _ensureEventSchedulerEnabled() async {
-    if (dialect.databaseType == DatabaseType.mysql) {
-      final result =
-          await queryflow.execute('SHOW VARIABLES LIKE "event_scheduler"');
-      if (result.isNotEmpty && result.first['Value'] != 'ON') {
-        await queryflow.execute('SET GLOBAL event_scheduler = ON');
-        logger?.i('Event scheduler enabled');
-      }
+    final result = await queryflow.execute(
+      'SHOW VARIABLES LIKE "event_scheduler"',
+    );
+    if (result.isNotEmpty && result.first['Value'] != 'ON') {
+      await queryflow.execute('SET GLOBAL event_scheduler = ON');
+      logger?.i('Event scheduler enabled');
     }
-    // PostgreSQL não precisa de event scheduler, usa o próprio sistema de eventos
   }
 
   Future<void> createEvent(EventModel event) async {

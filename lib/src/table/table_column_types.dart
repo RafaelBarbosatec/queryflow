@@ -1,4 +1,3 @@
-import '../database_type.dart';
 import '../dialect/sql_dialect.dart';
 import '../dialect/sql_type.dart';
 
@@ -52,10 +51,6 @@ abstract class TableColumnType {
       return dialect.getSqlType(SqlType.bool);
     }
     if (this is TypeDateTime) {
-      if (dialect.databaseType == DatabaseType.postgresql &&
-          (this as TypeDateTime).onUpdate == 'CURRENT_TIMESTAMP') {
-        return 'TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP';
-      }
       return dialect.getSqlType(SqlType.datetime);
     }
     if (this is TypeDate) {
