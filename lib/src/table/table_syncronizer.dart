@@ -18,7 +18,10 @@ class TableSyncronizer {
     this.logger,
   });
 
-  Future<void> syncronize({bool dropTable = false}) async {
+  Future<void> syncronize({
+    bool dropTable = false,
+    bool updateColumns = false,
+  }) async {
     logger?.i('Start syncronizing tables');
     try {
       if (dropTable) {
@@ -32,6 +35,7 @@ class TableSyncronizer {
         if (!tableExists) {
           await _createTable(table);
         } else {
+          if (!updateColumns) continue;
           final existingColumns = await _getTableColumns(table.name);
           for (var column in table.columns.keys) {
             if (!existingColumns.contains(column)) {
