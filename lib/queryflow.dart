@@ -489,10 +489,10 @@ class Queryflow implements QueryflowMethods, QueryflowExecuteTransation {
   /// });
   /// ```
   @override
-  Future<List<Map<String, dynamic>>> executeTransation(
-    Future<List<Map<String, dynamic>>> Function(QueryflowMethods) queryflow,
+  Future<T> executeTransation<T>(
+    Future<T> Function(QueryflowMethods) queryflow,
   ) {
-    return _executor.executeTransation(
+    return _executor.executeTransation<T>(
       (executor) => queryflow(
         Queryflow._internal(
           executor: executor,
@@ -600,8 +600,8 @@ abstract class QueryflowExecuteTransation {
   ///   a Future with the result of the transaction operations.
   ///
   /// Returns a Future that resolves to the result of the executed transaction.
-  Future<List<Map<String, dynamic>>> executeTransation(
-    Future<List<Map<String, dynamic>>> Function(QueryflowMethods) queryflow,
+  Future<T> executeTransation<T>(
+    Future<T> Function(QueryflowMethods) queryflow,
   );
 }
 

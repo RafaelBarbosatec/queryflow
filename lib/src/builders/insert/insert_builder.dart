@@ -80,7 +80,7 @@ class InsertBuilderImpl extends InsertBuilderBase {
 
   @override
   Future<int> execute() async {
-    final result = await executor.executeTransation(
+    return executor.executeTransation<int>(
       (executor) async {
         final query = toSql();
         await executor.executePrepared(query, _params);
@@ -90,16 +90,10 @@ class InsertBuilderImpl extends InsertBuilderBase {
         final id = await executor.execute(lastIdQuery);
 
         if (id.isNotEmpty) {
-          final idValue = id.first['id'];
-          return [
-            {'id': idValue}
-          ];
+          return int.parse(id.first['id'].toString());
         }
-        return [
-          {'id': 0}
-        ];
+        return 0;
       },
     );
-    return result.first['id'] as int;
   }
 }

@@ -21,6 +21,22 @@ void main() async {
   );
   await queryflow.syncronize(dropTable: true);
 
+  await queryflow.executeTransation((queryflow) async {
+    await queryflow.insertModel<User>(
+      User(
+        name: 'Transaction User 1',
+        date: DateTime.now(),
+      ),
+    );
+
+    await queryflow.insertModel<User>(
+      User(
+        name: 'Transaction User 2',
+        date: DateTime.now(),
+      ),
+    );
+  });
+
   var table1Id = await queryflow.insertModel<User>(
     User(
       name: 'Rafael',

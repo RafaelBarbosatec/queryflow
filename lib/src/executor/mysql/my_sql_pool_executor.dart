@@ -83,8 +83,8 @@ class MySqlPoolExecutor implements Executor {
   }
 
   @override
-  Future<List<Map<String, dynamic>>> executeTransation(
-    Future<List<Map<String, dynamic>>> Function(Executor executor) transaction,
+  Future<T> executeTransation<T>(
+    Future<T> Function(Executor executor) transaction,
   ) async {
     return await _conn.transactional((conn) async {
       return transaction(

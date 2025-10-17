@@ -43,7 +43,6 @@ dependencies:
 Run `dart pub get` to fetch the dependencies.
 
 ## Usage
-
 ### Initialize Queryflow
 
 To start using Queryflow, initialize it with your database connection details using the appropriate named constructor:
@@ -198,6 +197,33 @@ await queryflow
 ```dart
 final customQuery = await queryflow.execute('SELECT * FROM users WHERE age > 18');
 print(customQuery);
+```
+
+### Transactions
+
+Queryflow supports database transactions. Use `executeTransation` to run multiple operations atomically — if any operation throws, the transaction is rolled back.
+
+Example:
+
+```dart
+// run multiple operations inside a transaction
+await queryflow.executeTransation((queryflow) async {
+  await queryflow.insertModel<User>(
+    User(
+      name: 'Transaction User 1',
+      date: DateTime.now(),
+    ),
+  );
+
+  await queryflow.insertModel<User>(
+    User(
+      name: 'Transaction User 2',
+      date: DateTime.now(),
+    ),
+  );
+});
+
+// If any insert inside the callback throws, both inserts will be rolled back.
 ```
 
 ### Working with Models

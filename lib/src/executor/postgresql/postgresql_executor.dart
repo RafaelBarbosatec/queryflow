@@ -117,8 +117,8 @@ class PostgreSqlExecutor implements Executor {
   }
 
   @override
-  Future<List<Map<String, dynamic>>> executeTransation(
-    Future<List<Map<String, dynamic>>> Function(Executor executor) transaction,
+  Future<T> executeTransation<T>(
+    Future<T> Function(Executor executor) transaction,
   ) async {
     await connect();
 
@@ -206,10 +206,10 @@ class PostgreSqlExecutorTransaction implements Executor {
   }
 
   @override
-  Future<List<Map<String, dynamic>>> executeTransation(
-    Future<List<Map<String, dynamic>>> Function(Executor executor) transaction,
+  Future<T> executeTransation<T>(
+    Future<T> Function(Executor executor) transaction,
   ) {
-    return Future.value([]);
+    return Future.value(null);
   }
 
   void _log(Object? message) {
