@@ -8,8 +8,8 @@ void main() {
         fields: ['column1'],
         type: OrderByType.asc,
       );
-      final result = matcher.compose('SELECT * FROM table');
-      expect(result.query, 'SELECT * FROM table ORDER BY column1 ASC');
+      final result = matcher.compose();
+      expect(result.query, 'ORDER BY column1 ASC');
     });
 
     test('compose generates correct SQL for multiple fields', () {
@@ -17,10 +17,10 @@ void main() {
         fields: ['column1', 'column2'],
         type: OrderByType.desc,
       );
-      final result = matcher.compose('SELECT * FROM table');
+      final result = matcher.compose();
       expect(
         result.query,
-        'SELECT * FROM table ORDER BY column1, column2 DESC',
+        'ORDER BY column1, column2 DESC',
       );
     });
 
@@ -29,8 +29,8 @@ void main() {
         fields: ['column1'],
         type: OrderByType.asc,
       );
-      final result = matcher.compose('');
-      expect(result.query, ' ORDER BY column1 ASC');
+      final result = matcher.compose();
+      expect(result.query, 'ORDER BY column1 ASC');
     });
   });
 }

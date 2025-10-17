@@ -35,5 +35,12 @@ jobs:
           mysql database: 'boleiro'
           mysql user: 'admin'
           mysql password: '12345678'
+      - name: Start PostgreSQL
+        uses: harmon758/postgresql-action@v1.0.0
+        with:
+          postgresql version: '14'
+          postgresql db: 'boleiro'
+          postgresql user: 'admin'
+          postgresql password: '12345678'
       - name: Test
         run: dart test

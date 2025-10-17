@@ -1,3 +1,4 @@
+import 'package:queryflow/src/dialect/sql_dialect.dart';
 import 'package:queryflow/src/executor/executor.dart';
 
 /// Defines a contract for building and executing SQL INSERT operations.
@@ -27,11 +28,15 @@ abstract class InsertBuilderBase implements InsertBuilder {
   /// A map of column names to values to be inserted.
   final Map<String, dynamic> fields;
 
+  /// The SQL dialect to use for generating database-specific SQL.
+  final SqlDialect? dialect;
+
   /// Creates a new [InsertBuilderBase] instance.
   ///
   /// [table] is the database table name to insert into.
   /// [fields] is a map of column names to values to insert.
-  InsertBuilderBase(this.table, this.fields);
+  /// [dialect] is the SQL dialect to use for database-specific syntax.
+  InsertBuilderBase(this.table, this.fields, {this.dialect});
 }
 
 /// Concrete implementation of [InsertBuilderBase] for executing SQL INSERT operations.
@@ -49,8 +54,9 @@ class InsertBuilderImpl extends InsertBuilderBase {
   InsertBuilderImpl(
     this.executor,
     super.table,
-    super.fields,
-  );
+    super.fields, {
+    super.dialect,
+  });
 
   /// List of parameter values for the prepared statement.
   List _params = [];
@@ -58,30 +64,36 @@ class InsertBuilderImpl extends InsertBuilderBase {
   @override
   String toSql() {
     _params.clear();
-    final fieldsString = fields.keys.join(', ');
+
+    // Use dialect to quote identifiers if available
+    final tableName = dialect?.quoteIdentifier(table) ?? table;
+    final columnNames = fields.keys
+        .map((key) => dialect?.quoteIdentifier(key) ?? key)
+        .join(', ');
+
     _params = fields.values.toList();
-    String queryParams = _params.map((_) => '?').join(', ');
-    return 'INSERT INTO $table ($fieldsString) VALUES ($queryParams)';
+    String queryParams = List.generate(
+            _params.length, (i) => dialect?.getPlaceholder(i + 1) ?? '?')
+        .join(', ');
+    return 'INSERT INTO $tableName ($columnNames) VALUES ($queryParams)';
   }
 
   @override
   Future<int> execute() async {
-    final result = await executor.executeTransation(
+    return executor.executeTransation<int>(
       (executor) async {
         final query = toSql();
         await executor.executePrepared(query, _params);
-        final id = await executor.execute('SELECT LAST_INSERT_ID() as id');
+
+        // Use different syntax for getting last inserted ID based on dialect
+        final lastIdQuery = dialect?.getLastInsertIdQuery() ?? '';
+        final id = await executor.execute(lastIdQuery);
+
         if (id.isNotEmpty) {
-          final idValue = id.first['id'];
-          return [
-            {'id': idValue}
-          ];
+          return int.parse(id.first['id'].toString());
         }
-        return [
-          {'id': 0}
-        ];
+        return 0;
       },
     );
-    return result.first['id'] as int;
   }
 }

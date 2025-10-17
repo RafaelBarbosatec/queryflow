@@ -43,11 +43,11 @@ void main() {
 
       final sql = tableModel.toCreateSql();
       expect(sql, contains('CREATE TABLE `products`'));
-      expect(sql, contains('`id` INT(11) NOT NULL AUTO_INCREMENT'));
+      expect(sql, contains('`id` INT NOT NULL AUTO_INCREMENT'));
       expect(sql, contains('`name` VARCHAR(255) NOT NULL'));
       expect(sql, contains('`price` DOUBLE DEFAULT 0.0'));
-      expect(sql, contains('`in_stock` BOOLEAN DEFAULT true'));
-      expect(sql, contains('PRIMARY KEY (id)'));
+      expect(sql, contains('`in_stock` TINYINT(1) DEFAULT true'));
+      expect(sql, contains('PRIMARY KEY (`id`)'));
       expect(sql, contains('ENGINE=InnoDB'));
     });
 
@@ -63,7 +63,7 @@ void main() {
 
       final sql = tableModel.toCreateSql();
       expect(sql, contains('CREATE TABLE `order_items`'));
-      expect(sql, contains('PRIMARY KEY (order_id, product_id)'));
+      expect(sql, contains('PRIMARY KEY (`order_id`, `product_id`)'));
     });
 
     test('toCreateSql includes foreign key constraints', () {
@@ -90,10 +90,10 @@ void main() {
       final sql = tableModel.toCreateSql();
       expect(sql, contains('CONSTRAINT `fk_comments_user_id_users_id`'));
       expect(
-          sql, contains('FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)'));
+          sql, contains('CONSTRAINT `fk_comments_user_id_users_id` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`)'));
       expect(sql, contains('CONSTRAINT `fk_comments_post_id_posts_id`'));
       expect(
-          sql, contains('FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`)'));
+          sql, contains('CONSTRAINT `fk_comments_post_id_posts_id` FOREIGN KEY (`post_id`) REFERENCES `posts`(`id`)'));
     });
 
     test('toCreateSql uses custom engine, charset and auto increment', () {

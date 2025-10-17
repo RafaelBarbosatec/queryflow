@@ -38,7 +38,6 @@ class UserModel {
       'last_name': TypeText(),
       'date': TypeDateTime(
         defaultValue: 'CURRENT_TIMESTAMP',
-        onUpdate: 'CURRENT_TIMESTAMP',
       ),
     },
   );

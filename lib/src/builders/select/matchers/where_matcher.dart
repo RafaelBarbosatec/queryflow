@@ -1,4 +1,5 @@
 import 'package:queryflow/src/builders/matcher.dart';
+import 'package:queryflow/src/dialect/sql_dialect.dart';
 
 /// Defines the type of logical operator to use when combining WHERE conditions
 enum WhereMatcherType {
@@ -26,23 +27,21 @@ abstract class WhereMatcher implements BaseMatcher {
   /// The field name to apply the condition to
   String field = '';
 
-  final _key = 'WHERE';
+  /// The SQL dialect to use
+  @override
+  SqlDialect? dialect;
 
-  /// Returns 'NOT ' if the condition is negated, empty string otherwise
-  String get _not => isNot ? 'NOT ' : '';
+  @override
+  void setDialect(SqlDialect? dialect) {
+    this.dialect = dialect;
+  }
 
-  /// Adds the appropriate SQL aggregator (WHERE, AND, OR) to the current SQL string
-  ///
-  /// @param current The current SQL string being built
-  /// @return The updated SQL string with the appropriate aggregator added
-  String addsAgragator(String current) {
-    String agregator = '';
-    if (current.contains(_key)) {
-      agregator = ' ${type.value}';
-    } else {
-      agregator = ' $_key$_not';
-    }
-    return '$current$agregator';
+  @override
+  int paramStartIndex = 1;
+
+  @override
+  void setParamIndex(int index) {
+    paramStartIndex = index;
   }
 }
 
@@ -59,9 +58,9 @@ class WhereRaw extends WhereMatcher {
   WhereRaw(this.value);
 
   @override
-  MatchResult compose(String current) {
+  MatchResult compose() {
     return MatchResult(
-      '${addsAgragator(current)} $value',
+      value,
     );
   }
 }
@@ -80,18 +79,20 @@ class _ComparatorWhere extends WhereMatcher {
   ///
   /// @param value The value to compare against
   /// @param comparator The comparison operator symbol
-  _ComparatorWhere(
-    this.value,
-    this.comparator,
-  );
+  _ComparatorWhere(this.value, this.comparator);
 
   @override
-  MatchResult compose(String current) {
-    List params = [value];
-    return MatchResult(
-      '${addsAgragator(current)} $field $comparator ?',
-      params,
-    );
+  MatchResult compose() {
+    List params = [];
+    final quotedField = dialect?.quoteIdentifier(field) ?? field;
+
+    // Generate the placeholder first, then add the parameter
+    final placeholder = dialect?.getPlaceholder(paramStartIndex) ?? '?';
+    params.add(value); // Add parameter after getting the placeholder
+
+    final condition = '$quotedField $comparator $placeholder';
+
+    return MatchResult(condition, params);
   }
 }
 
@@ -172,10 +173,13 @@ class Between extends WhereMatcher {
   Between(this.start, this.end);
 
   @override
-  MatchResult compose(String current) {
+  MatchResult compose() {
     List params = [start, end];
+    final placeholder1 = dialect?.getPlaceholder(paramStartIndex) ?? '?';
+    final placeholder2 = dialect?.getPlaceholder(paramStartIndex + 1) ?? '?';
+    final quotedField = dialect?.quoteIdentifier(field) ?? field;
     return MatchResult(
-      '${addsAgragator(current)} $field BETWEEN ? AND ?',
+      '$quotedField BETWEEN $placeholder1 AND $placeholder2',
       params,
     );
   }
@@ -198,13 +202,15 @@ class BetweenDate extends WhereMatcher {
   BetweenDate(this.start, this.end);
 
   @override
-  MatchResult compose(String current) {
+  MatchResult compose() {
     final dateStart = start.toIso8601String().split('T').first;
     final dateEnd = end.toIso8601String().split('T').first;
     List params = [dateStart, dateEnd];
-
+    final placeholder1 = dialect?.getPlaceholder(paramStartIndex) ?? '?';
+    final placeholder2 = dialect?.getPlaceholder(paramStartIndex + 1) ?? '?';
+    final quotedField = dialect?.quoteIdentifier(field) ?? field;
     return MatchResult(
-      "${addsAgragator(current)} $field BETWEEN ? AND ?",
+      "$quotedField BETWEEN $placeholder1 AND $placeholder2",
       params,
     );
   }
@@ -223,11 +229,13 @@ class EqualsDate extends WhereMatcher {
   EqualsDate(this.value);
 
   @override
-  MatchResult compose(String current) {
-    final date = value.toIso8601String().split('T').first;
-    List params = [date];
+  MatchResult compose() {
+    final dateStr = value.toIso8601String().split('T').first;
+    List params = [dateStr];
+    final placeholder = dialect?.getPlaceholder(paramStartIndex) ?? '?';
+    final quotedField = dialect?.quoteIdentifier(field) ?? field;
     return MatchResult(
-      "${addsAgragator(current)} DATE($field) = ?",
+      "DATE($quotedField) = $placeholder",
       params,
     );
   }
@@ -251,10 +259,12 @@ class Like extends WhereMatcher {
   Like(this.value);
 
   @override
-  MatchResult compose(String current) {
+  MatchResult compose() {
     final params = [value];
+    final placeholder = dialect?.getPlaceholder(paramStartIndex) ?? '?';
+    final quotedField = dialect?.quoteIdentifier(field) ?? field;
     return MatchResult(
-      '${addsAgragator(current)} $field like ?',
+      '$quotedField LIKE $placeholder',
       params,
     );
   }
@@ -273,10 +283,14 @@ class In extends WhereMatcher {
   In(this.value);
 
   @override
-  MatchResult compose(String current) {
+  MatchResult compose() {
     final params = value;
+    final placeholders = List.generate(
+      params.length,
+      (i) => dialect?.getPlaceholder(paramStartIndex + i) ?? '?',
+    ).join(',');
     return MatchResult(
-      '${addsAgragator(current)} $field IN (${value.map((e) => '?').join(',')})',
+      '$field IN ($placeholders)',
       params,
     );
   }
@@ -284,18 +298,20 @@ class In extends WhereMatcher {
 
 class IsNull extends WhereMatcher {
   @override
-  MatchResult compose(String current) {
+  MatchResult compose() {
+    final quotedField = dialect?.quoteIdentifier(field) ?? field;
     return MatchResult(
-      '${addsAgragator(current)} $field IS NULL',
+      '$quotedField IS NULL',
     );
   }
 }
 
 class IsNotNull extends WhereMatcher {
   @override
-  MatchResult compose(String current) {
+  MatchResult compose() {
+    final quotedField = dialect?.quoteIdentifier(field) ?? field;
     return MatchResult(
-      '${addsAgragator(current)} $field IS NOT NULL',
+      '$quotedField IS NOT NULL',
     );
   }
 }

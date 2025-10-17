@@ -1,3 +1,7 @@
+import 'package:queryflow/src/dialect/mysql_dialect.dart';
+
+import '../database_type.dart';
+import '../dialect/sql_dialect.dart';
 import 'table_column_types.dart';
 
 export 'table_column_types.dart';
@@ -31,37 +35,40 @@ class TableModel {
     return name;
   }
 
-  String toCreateSql() {
-    StringBuffer sql = StringBuffer('CREATE TABLE `$name` (\n');
+  String toCreateSql([SqlDialect? dialect]) {
+    final d = dialect ?? SqlDialect.create(DatabaseType.mysql);
+    StringBuffer sql =
+        StringBuffer('CREATE TABLE ${d.quoteIdentifier(name)} (\n');
     List<String> columnDefinitions = [];
     List<String> primaryKeys = [];
     Map<String, TableColumnType> foreignKeys = {};
 
     columns.forEach((columnName, columnType) {
-      String columnDefinition = '`$columnName` ${columnType.typeName}';
+      String columnDef =
+          '${d.quoteIdentifier(columnName)} ${columnType.getTypeName(d)}';
       if (columnType.foreignKey != null) {
         foreignKeys.addAll({columnName: columnType});
       }
       if (columnType.isPrimaryKey) {
-        primaryKeys.add(columnName);
+        primaryKeys.add(d.quoteIdentifier(columnName));
       }
       if (columnType.isNotNull || columnType.isPrimaryKey) {
-        columnDefinition += ' NOT NULL';
+        columnDef += ' NOT NULL';
       }
       if (columnType.isAutoIncrement) {
-        columnDefinition += ' AUTO_INCREMENT';
+        columnDef = d.getAutoIncrementSyntax(columnDef);
       }
       if (columnType.defaultValue != null) {
         if (_isString(columnType)) {
-          columnDefinition += ' DEFAULT \'${columnType.defaultValue}\'';
+          columnDef += " DEFAULT '${columnType.defaultValue}'";
         } else {
-          columnDefinition += ' DEFAULT ${columnType.defaultValue}';
+          columnDef += ' DEFAULT ${columnType.defaultValue}';
         }
       }
-      if (columnType.onUpdate != null) {
-        columnDefinition += ' ON UPDATE ${columnType.onUpdate}';
+      if (columnType.onUpdate != null && d is MySqlDialect) {
+        columnDef += ' ON UPDATE ${columnType.onUpdate}';
       }
-      columnDefinitions.add(columnDefinition);
+      columnDefinitions.add(columnDef);
     });
 
     if (primaryKeys.isNotEmpty) {
@@ -69,17 +76,21 @@ class TableModel {
     }
 
     foreignKeys.forEach((columnName, columnType) {
-      final foreignKey = columnType.foreignKey!;
+      final fk = columnType.foreignKey!;
       columnDefinitions.add(
-        'CONSTRAINT `${foreignKey.getKeyName(name, columnName)}` FOREIGN KEY (`$columnName`) REFERENCES `${foreignKey.table}` (`${foreignKey.column}`)',
+        'CONSTRAINT ${d.quoteIdentifier(fk.getKeyName(name, columnName))} ${d.getForeignKeySyntax(columnName, fk.table, fk.column)}',
       );
     });
 
     sql.writeAll(columnDefinitions, ', \n');
     sql.write('\n)');
-    sql.write(' ENGINE=$engine');
-    sql.write(' AUTO_INCREMENT=$outomaticIncrement');
-    sql.write(' DEFAULT CHARSET=$charset');
+
+    // Só adiciona opções específicas do MySQL se o dialect for MySQL
+    if (d is MySqlDialect) {
+      sql.write(' ENGINE=$engine');
+      sql.write(' AUTO_INCREMENT=$outomaticIncrement');
+      sql.write(' DEFAULT CHARSET=$charset');
+    }
     sql.write(';');
     return sql.toString();
   }
@@ -87,13 +98,14 @@ class TableModel {
   int get columnsToInsert =>
       columns.values.where((e) => e.isAutoIncrement == false).length;
 
-  String toInsertSql() {
-    StringBuffer sql = StringBuffer('INSERT INTO `$name` (');
+  String toInsertSql([SqlDialect? dialect]) {
+    final d = dialect ?? SqlDialect.create(DatabaseType.mysql);
+    StringBuffer sql = StringBuffer('INSERT INTO ${d.quoteIdentifier(name)} (');
     List<String> columnNames = [];
     List<String> values = [];
 
     columns.forEach((columnName, columnType) {
-      columnNames.add('`$columnName`');
+      columnNames.add(d.quoteIdentifier(columnName));
       values.add('?');
     });
 

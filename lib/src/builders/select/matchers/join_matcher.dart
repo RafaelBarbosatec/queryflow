@@ -1,4 +1,5 @@
 import 'package:queryflow/src/builders/matcher.dart';
+import 'package:queryflow/src/dialect/sql_dialect.dart';
 
 /// Specifies the type of SQL join.
 enum JoinMatcherType {
@@ -52,12 +53,33 @@ abstract class JoinMatcher implements BaseMatcher {
   ///
   /// [current] is the current SQL query string to which the join clause will be appended.
   /// Returns a [MatchResult] containing the updated query string.
+  /// The SQL dialect to use
   @override
-  MatchResult compose(String current) {
+  SqlDialect? dialect;
+
+  @override
+  int paramStartIndex = 1;
+
+  @override
+  void setParamIndex(int index) {
+    paramStartIndex = index;
+  }
+
+  @override
+  void setDialect(SqlDialect? dialect) {
+    this.dialect = dialect;
+  }
+
+  @override
+  MatchResult compose() {
     String prefix = '${type.value} JOIN';
     String aliasPart = alias != null ? ' AS $alias' : '';
+    final table1 = dialect?.quoteIdentifier(selectTable) ?? selectTable;
+    final table2 = dialect?.quoteIdentifier(table) ?? table;
+    final field1 = dialect?.quoteIdentifier(firstField) ?? firstField;
+    final field2 = dialect?.quoteIdentifier(secondField) ?? secondField;
     return MatchResult(
-      '$current $prefix $table$aliasPart ON $selectTable.$firstField = ${alias ?? table}.$secondField',
+      '$prefix $table2$aliasPart ON $table1.$field1 = ${alias ?? table2}.$field2',
     );
   }
 }
@@ -124,7 +146,7 @@ class JoinRaw extends JoinMatcher {
   /// [current] is the current SQL query string to which the raw clause will be appended.
   /// Returns a [MatchResult] containing the updated query string.
   @override
-  MatchResult compose(String current) {
-    return MatchResult('$current $value');
+  MatchResult compose() {
+    return MatchResult(value);
   }
 }

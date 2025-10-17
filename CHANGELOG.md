@@ -1,3 +1,9 @@
+## 0.5.0
+
+* Adds postgresql support
+* BREAKING-CHANGE: New constructor. now use Queryflow.mysql() or Queryflow.postgresql()
+* Simplify 'executeTransation'
+
 ## 0.4.0
 
 * Adds Event Synchronizer

@@ -1,3 +1,4 @@
+import 'package:queryflow/src/dialect/sql_dialect.dart';
 import 'package:queryflow/src/executor/executor.dart';
 import 'package:queryflow/src/logger/query_logger.dart';
 import 'package:queryflow/src/table/table_model.dart';
@@ -7,11 +8,13 @@ class TableSyncronizer {
   final String databaseName;
   final List<TableModel> tables;
   final QueryLogger? logger;
+  final SqlDialect dialect;
 
   TableSyncronizer({
     required this.executor,
     required this.tables,
     required this.databaseName,
+    required this.dialect,
     this.logger,
   });
 
@@ -59,18 +62,24 @@ class TableSyncronizer {
   }
 
   Future<bool> _tableExists(String name) async {
-    final result = await executor.executePrepared(
-      '''SELECT TABLE_NAME 
-        FROM INFORMATION_SCHEMA.TABLES 
-        WHERE TABLE_SCHEMA = ? 
-        AND TABLE_NAME = ?;''',
-      [databaseName, name],
-    );
-    return result.isNotEmpty;
+    try {
+      final schemaName = dialect.getDefaultSchema(databaseName);
+      final result = await executor.executePrepared(
+        '''SELECT TABLE_NAME 
+          FROM INFORMATION_SCHEMA.TABLES 
+          WHERE TABLE_SCHEMA = ${dialect.getPlaceholder(1)} 
+          AND TABLE_NAME = ${dialect.getPlaceholder(2)};''',
+        [schemaName, name],
+      );
+      return result.isNotEmpty;
+    } catch (e) {
+      logger?.e("Error checking if table exists: $e");
+      return false;
+    }
   }
 
   Future<void> _createTable(TableModel table) async {
-    final sql = table.toCreateSql();
+    final sql = table.toCreateSql(dialect);
     try {
       await executor.execute(sql);
       logger?.s("Created table '${table.name}'");
@@ -84,12 +93,13 @@ class TableSyncronizer {
   }
 
   Future<List<String>> _getTableColumns(String name) {
+    final schemaName = dialect.getDefaultSchema(databaseName);
     return executor.executePrepared(
       '''SELECT COLUMN_NAME 
         FROM INFORMATION_SCHEMA.COLUMNS 
-        WHERE TABLE_SCHEMA = ? 
-        AND TABLE_NAME = ?;''',
-      [databaseName, name],
+        WHERE TABLE_SCHEMA = ${dialect.getPlaceholder(1)} 
+        AND TABLE_NAME = ${dialect.getPlaceholder(2)};''',
+      [schemaName, name],
     ).then((result) {
       return result.map((e) => e['COLUMN_NAME'].toString()).toList();
     });
@@ -102,17 +112,23 @@ class TableSyncronizer {
         )
         .columns[column];
     if (columnType != null) {
+      final quotedTable = dialect.quoteIdentifier(name);
+      final quotedColumn = dialect.quoteIdentifier(column);
       await executor.execute(
-        '''ALTER TABLE `$name` 
-          ADD COLUMN `$column` ${columnType.typeName};''',
+        '''ALTER TABLE $quotedTable 
+          ADD COLUMN $quotedColumn ${columnType.getTypeName(dialect)};''',
       );
       if (columnType.foreignKey != null) {
         final key = columnType.foreignKey!.getKeyName;
+        final quotedRefTable =
+            dialect.quoteIdentifier(columnType.foreignKey!.table);
+        final quotedRefColumn =
+            dialect.quoteIdentifier(columnType.foreignKey!.column);
         await executor.execute(
-          '''ALTER TABLE `$name` 
-            ADD CONSTRAINT `$key` 
-            FOREIGN KEY (`$column`) 
-            REFERENCES `${columnType.foreignKey!.table}` (`${columnType.foreignKey!.column}`);''',
+          '''ALTER TABLE $quotedTable 
+            ADD CONSTRAINT $key 
+            FOREIGN KEY ($quotedColumn) 
+            REFERENCES $quotedRefTable ($quotedRefColumn);''',
         );
       }
     } else {
@@ -122,8 +138,9 @@ class TableSyncronizer {
 
   Future<void> _execDropTable(String tableName) {
     try {
+      final quotedTable = dialect.quoteIdentifier(tableName);
       return executor.execute(
-        '''DROP TABLE IF EXISTS `$tableName`;''',
+        '''DROP TABLE IF EXISTS $quotedTable;''',
       );
     } catch (e) {
       logger?.e('DROP TABLE: $e');
@@ -133,9 +150,11 @@ class TableSyncronizer {
 
   Future<void> _removeColumn(String name, existColumn) {
     try {
+      final quotedTable = dialect.quoteIdentifier(name);
+      final quotedColumn = dialect.quoteIdentifier(existColumn);
       return executor.execute(
-        '''ALTER TABLE `$name` 
-        DROP COLUMN `$existColumn`;''',
+        '''ALTER TABLE $quotedTable 
+        DROP COLUMN $quotedColumn;''',
       );
     } catch (e) {
       logger?.e('ALTER TABLE: $e');
@@ -150,9 +169,9 @@ class TableSyncronizer {
       );
     }
     for (final data in dataList) {
-      await executor.executePrepared(table.toInsertSql(), data);
+      await executor.executePrepared(table.toInsertSql(dialect), data);
       logger?.s(
-        "Inserted data[${dataList.indexOf(data)}] into table '${table.name}'",
+        "Inserted data[{dataList.indexOf(data)}] into table '{table.name}'",
       );
     }
   }

@@ -1,7 +1,21 @@
-import 'package:queryflow/src/builders/select/matchers/where_matchers.dart';
+import 'package:queryflow/src/builders/select/matchers/end_matcher.dart';
+import 'package:queryflow/src/builders/select/matchers/join_matcher.dart';
+import 'package:queryflow/src/builders/select/matchers/where_matcher.dart';
 import 'package:queryflow/src/builders/select/select_builder.dart';
 
 mixin ToSqlMixin<T> on SelectBuilderBase<T> {
+  String buildSelect({required String fields, required String tableName}) {
+    return 'SELECT $fields FROM $tableName';
+  }
+
+  String buildAggregate({
+    required String function,
+    required String fields,
+    required String tableName,
+  }) {
+    return 'SELECT $function($fields) AS numerof FROM $tableName';
+  }
+
   @override
   String toPreparedSql({
     SqlAgregateType type = SqlAgregateType.none,
@@ -9,42 +23,76 @@ mixin ToSqlMixin<T> on SelectBuilderBase<T> {
     String fieldsP = '*';
     params.clear();
     if (fields.isNotEmpty) {
-      fieldsP = fields.join(', ');
+      fieldsP = fields.map((f) => dialect?.quoteIdentifier(f) ?? f).join(', ');
     }
-    String query = "SELECT $fieldsP FROM $table";
+
+    final tableName = dialect?.quoteIdentifier(table) ?? table;
+    String query;
     switch (type) {
       case SqlAgregateType.count:
-        query = 'SELECT COUNT($fieldsP) as numerOf FROM $table';
+        query = 'SELECT COUNT($fieldsP) AS numerof FROM $tableName';
+        break;
       case SqlAgregateType.max:
-        query = 'SELECT MAX($fieldsP) as numerOf FROM $table';
+        query = 'SELECT MAX($fieldsP) AS numerof FROM $tableName';
+        break;
       case SqlAgregateType.min:
-        query = 'SELECT MIN($fieldsP) as numerOf FROM $table';
+        query = 'SELECT MIN($fieldsP) AS numerof FROM $tableName';
+        break;
       case SqlAgregateType.sum:
-        query = 'SELECT SUM($fieldsP) as numerOf FROM $table';
+        query = 'SELECT SUM($fieldsP) AS numerof FROM $tableName';
+        break;
       case SqlAgregateType.avg:
-        query = 'SELECT AVG($fieldsP) as numerOf FROM $table';
-      case SqlAgregateType.none:
+        query = 'SELECT AVG($fieldsP) AS numerof FROM $tableName';
+        break;
+      default:
+        query = 'SELECT $fieldsP FROM $tableName';
     }
 
     final joinMatchers = matchers.whereType<JoinMatcher>().toList();
     final whereMatchers = matchers.whereType<WhereMatcher>().toList();
-    final andMatchers = matchers.whereType<EndMatcher>().toList();
+    final endMatchers = matchers.whereType<EndMatcher>().toList();
 
+    int paramIndex = 1;
+
+    // Add JOINs first
     for (final join in joinMatchers) {
-      final j = join.compose(query);
-      query = j.query;
+      join.setDialect(dialect);
+      join.setParamIndex(paramIndex);
+      final j = join.compose();
+      query = '$query ${j.query}';
       params.addAll(j.params);
+      paramIndex += j.params.length;
     }
 
-    for (final where in whereMatchers) {
-      final w = where.compose(query);
-      query = w.query;
-      params.addAll(w.params);
+    // Add WHERE clause with proper handling of conditions
+    if (whereMatchers.isNotEmpty) {
+      var firstWhere = whereMatchers[0];
+      firstWhere.setDialect(dialect);
+      firstWhere.setParamIndex(paramIndex);
+      var result = firstWhere.compose();
+      query += ' WHERE ${result.query}';
+      params.addAll(result.params);
+      paramIndex += result.params.length;
+
+      // Add remaining WHERE clauses
+      for (var i = 1; i < whereMatchers.length; i++) {
+        final w = whereMatchers[i];
+        w.setDialect(dialect);
+        w.setParamIndex(paramIndex);
+        final result = w.compose();
+
+        query += ' ${w.type.value} ${result.query}';
+
+        params.addAll(result.params);
+        paramIndex += result.params.length;
+      }
     }
 
-    for (final end in andMatchers) {
-      final e = end.compose(query);
-      query = e.query;
+    // Add ORDER BY, LIMIT, etc.
+    for (final end in endMatchers) {
+      end.setDialect(dialect);
+      final e = end.compose();
+      query += ' ${e.query}';
       params.addAll(e.params);
     }
     return query;
@@ -53,14 +101,15 @@ mixin ToSqlMixin<T> on SelectBuilderBase<T> {
   @override
   String toSql() {
     String sql = toPreparedSql();
-    int i = 0;
-    while (sql.contains('?')) {
-      var param = '${params[i]}';
-      if (params[i] is String || params[i] is DateTime) {
-        param = "'${params[i]}'";
+    final allParams = [...params]; // Cria uma cópia dos parâmetros
+
+    for (var i = 0; i < allParams.length; i++) {
+      var param = '${allParams[i]}';
+      if (allParams[i] is String || allParams[i] is DateTime) {
+        param = "'$param'";
       }
-      sql = sql.replaceFirst('?', param);
-      i++;
+      var placeholder = dialect?.getPlaceholder(i + 1) ?? '?';
+      sql = sql.replaceFirst(placeholder, param);
     }
     return sql;
   }

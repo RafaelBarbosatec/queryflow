@@ -48,11 +48,10 @@ mixin WhereMixin<T> on SelectBuilderBase<T> {
     WhereMatcher matcher, {
     WhereMatcherType type = WhereMatcherType.and,
   }) {
-    matchers.add(
-      matcher
-        ..field = field
-        ..type = type,
-    );
+    matcher.setDialect(dialect);
+    matcher.field = field;
+    matcher.type = type;
+    matchers.add(matcher);
     return this;
   }
 
@@ -75,12 +74,11 @@ mixin WhereMixin<T> on SelectBuilderBase<T> {
     WhereMatcher matcher, {
     WhereMatcherType type = WhereMatcherType.and,
   }) {
-    matchers.add(
-      matcher
-        ..field = field
-        ..type = type
-        ..isNot = true,
-    );
+    matcher.setDialect(dialect);
+    matcher.field = field;
+    matcher.type = type;
+    matcher.isNot = true;
+    matchers.add(matcher);
     return this;
   }
 

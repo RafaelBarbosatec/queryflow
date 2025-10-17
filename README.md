@@ -5,7 +5,7 @@
 
 # Queryflow
 
-Queryflow is a lightweight and flexible Dart package designed to simplify the process of building and executing SQL queries. It provides a fluent API for constructing queries. Queryflow is particularly useful for Dart and Flutter developers working with MySQL databases.
+Queryflow is a lightweight and flexible Dart package designed to simplify the process of building and executing SQL queries. It provides a fluent API for constructing queries. Queryflow is particularly useful for Dart and Flutter developers working with MySQL and PostgreSQL databases.
 
 ## Features
 
@@ -17,7 +17,7 @@ Queryflow is a lightweight and flexible Dart package designed to simplify the pr
 - **ORDER BY Functionality**: Sort results in ascending or descending order.
 - **Aggregate Functions**: Perform calculations like `COUNT`, `SUM`, `MAX`, `MIN`, and `AVG`.
 - **Raw SQL Execution**: Execute custom SQL queries for complex scenarios.
-- **MySQL Integration**: Seamless compatibility with MySQL databases.
+- **Multiple Database Support**: Seamless compatibility with MySQL and PostgreSQL databases.
 - **Type-Safe Query Building**: Minimize SQL syntax errors with type-safe constructs.
 - **Model Integration**: Map database records to Dart objects using type adapters.
 - **Schema Management**: Define and synchronize database schemas programmatically with `TableModel`.
@@ -30,7 +30,7 @@ Queryflow is a lightweight and flexible Dart package designed to simplify the pr
 ### Prerequisites
 
 - Dart SDK version `>=3.0.0 <4.0.0`.
-- A MySQL database to connect to.
+- A MySQL or PostgreSQL database to connect to.
 
 Add the following dependency to your `pubspec.yaml` file:
 
@@ -43,19 +43,33 @@ dependencies:
 Run `dart pub get` to fetch the dependencies.
 
 ## Usage
-
 ### Initialize Queryflow
 
-To start using Queryflow, initialize it with your database connection details:
+To start using Queryflow, initialize it with your database connection details using the appropriate named constructor:
 
+For MySQL:
 ```dart
 import 'package:queryflow/queryflow.dart';
 
 void main() async {
-  final queryflow = Queryflow(
+  final queryflow = Queryflow.mysql(
     host: 'localhost',
     port: 3306,
     userName: 'root',
+    password: 'password',
+    databaseName: 'example_db',
+  );
+```
+
+For PostgreSQL:
+```dart
+import 'package:queryflow/queryflow.dart';
+
+void main() async {
+  final queryflow = Queryflow.postgresql(
+    host: 'localhost',
+    port: 5432,
+    userName: 'postgres',
     password: 'password',
     databaseName: 'example_db',
   );
@@ -183,6 +197,33 @@ await queryflow
 ```dart
 final customQuery = await queryflow.execute('SELECT * FROM users WHERE age > 18');
 print(customQuery);
+```
+
+### Transactions
+
+Queryflow supports database transactions. Use `executeTransation` to run multiple operations atomically — if any operation throws, the transaction is rolled back.
+
+Example:
+
+```dart
+// run multiple operations inside a transaction
+await queryflow.executeTransation((queryflow) async {
+  await queryflow.insertModel<User>(
+    User(
+      name: 'Transaction User 1',
+      date: DateTime.now(),
+    ),
+  );
+
+  await queryflow.insertModel<User>(
+    User(
+      name: 'Transaction User 2',
+      date: DateTime.now(),
+    ),
+  );
+});
+
+// If any insert inside the callback throws, both inserts will be rolled back.
 ```
 
 ### Working with Models
