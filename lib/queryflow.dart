@@ -11,6 +11,8 @@ import 'package:queryflow/src/executor/mysql/my_sql_pool_executor.dart';
 import 'package:queryflow/src/executor/postgresql/postgresql_executor.dart';
 import 'package:queryflow/src/executor/postgresql/postgresql_pool_executor.dart';
 import 'package:queryflow/src/logger/query_logger.dart';
+import 'package:queryflow/src/migration/migration.dart';
+import 'package:queryflow/src/migration/migration_manager.dart';
 import 'package:queryflow/src/table/table_model.dart';
 import 'package:queryflow/src/table/table_syncronizer.dart';
 import 'package:queryflow/src/type/query_type_adapter.dart';
@@ -76,6 +78,7 @@ class Queryflow implements QueryflowMethods, QueryflowExecuteTransation {
   final bool debug;
   final QueryLogger _logger;
   final DatabaseType databaseType;
+  final String? databaseName;
 
   /// Creates a new Queryflow instance for database operations.
   ///
@@ -97,7 +100,7 @@ class Queryflow implements QueryflowMethods, QueryflowExecuteTransation {
     required int port,
     required String userName,
     required String password,
-    String? databaseName,
+    this.databaseName,
     String collation = 'utf8mb4_general_ci',
     bool secure = true,
     bool useSSL = false,
@@ -332,6 +335,32 @@ class Queryflow implements QueryflowMethods, QueryflowExecuteTransation {
     );
     await _viewSyncronizer.syncronize();
     await _eventSynchronizer.synchronize();
+  }
+
+  /// Apply a list of migrations (ordered by version ascending).
+  Future<void> migrate(List<Migration> migrations) async {
+    final manager = MigrationManager(
+      executor: _executor,
+      dialect: _dialect,
+      logger: _logger,
+      databaseName: databaseName ?? '',
+    );
+    await manager.migrate(migrations);
+  }
+
+  /// Rollback migrations until (and excluding) [toVersion].
+  ///
+  /// Provide the same [migrations] list used to apply migrations so the manager
+  /// knows how to call each migration.down(). Versions must be comparable strings
+  /// (use timestamps like YYYYMMDDHHMMSS).
+  Future<void> rollbackTo(String toVersion, List<Migration> migrations) async {
+    final manager = MigrationManager(
+      executor: _executor,
+      dialect: _dialect,
+      logger: _logger,
+      databaseName: databaseName ?? '',
+    );
+    await manager.rollbackTo(toVersion, migrations);
   }
 
   /// Creates a SELECT query builder for the specified table.
