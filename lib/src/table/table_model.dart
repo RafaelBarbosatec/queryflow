@@ -58,6 +58,9 @@ class TableModel {
       if (columnType.isAutoIncrement) {
         columnDef = d.getAutoIncrementSyntax(columnDef);
       }
+      if (columnType.isUnique && !columnType.isPrimaryKey) {
+        columnDef += ' UNIQUE';
+      }
       if (columnType.defaultValue != null) {
         if (_isString(columnType)) {
           columnDef += " DEFAULT '${columnType.defaultValue}'";

@@ -73,13 +73,13 @@ void main() {
           'id': TypeInt(isPrimaryKey: true, isAutoIncrement: true),
           'content': TypeText(),
           'user_id': TypeInt(
-            foreignKey: ForeingKey(
+            foreignKey: ForeignKey(
               table: 'users',
               column: 'id',
             ),
           ),
           'post_id': TypeInt(
-            foreignKey: ForeingKey(
+            foreignKey: ForeignKey(
               table: 'posts',
               column: 'id',
             ),

@@ -38,7 +38,7 @@ class ProfileModel {
         isPrimaryKey: true,
       ),
       'user_id': TypeInt(
-        foreignKey: ForeingKey(table: 'user_table', column: 'id'),
+        foreignKey: ForeignKey(table: 'user_table', column: 'id'),
       ),
       'age': TypeInt(),
       'ocupation': TypeVarchar(),
