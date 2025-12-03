@@ -34,7 +34,7 @@ void main() {
     });
   });
 
-  group('ForeingKey', () {
+  group('ForeignKey', () {
     test('should generate key name when not provided', () {
       final foreignKey = ForeignKey(table: 'users', column: 'id');
       expect(
