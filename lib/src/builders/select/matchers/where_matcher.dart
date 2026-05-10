@@ -84,13 +84,12 @@ class _ComparatorWhere extends WhereMatcher {
   @override
   MatchResult compose() {
     List params = [];
-    final quotedField = dialect?.quoteIdentifier(field) ?? field;
 
     // Generate the placeholder first, then add the parameter
     final placeholder = dialect?.getPlaceholder(paramStartIndex) ?? '?';
     params.add(value); // Add parameter after getting the placeholder
 
-    final condition = '$quotedField $comparator $placeholder';
+    final condition = '$field $comparator $placeholder';
 
     return MatchResult(condition, params);
   }
@@ -177,9 +176,8 @@ class Between extends WhereMatcher {
     List params = [start, end];
     final placeholder1 = dialect?.getPlaceholder(paramStartIndex) ?? '?';
     final placeholder2 = dialect?.getPlaceholder(paramStartIndex + 1) ?? '?';
-    final quotedField = dialect?.quoteIdentifier(field) ?? field;
     return MatchResult(
-      '$quotedField BETWEEN $placeholder1 AND $placeholder2',
+      '$field BETWEEN $placeholder1 AND $placeholder2',
       params,
     );
   }
@@ -208,9 +206,8 @@ class BetweenDate extends WhereMatcher {
     List params = [dateStart, dateEnd];
     final placeholder1 = dialect?.getPlaceholder(paramStartIndex) ?? '?';
     final placeholder2 = dialect?.getPlaceholder(paramStartIndex + 1) ?? '?';
-    final quotedField = dialect?.quoteIdentifier(field) ?? field;
     return MatchResult(
-      "$quotedField BETWEEN $placeholder1 AND $placeholder2",
+      "$field BETWEEN $placeholder1 AND $placeholder2",
       params,
     );
   }
@@ -233,9 +230,9 @@ class EqualsDate extends WhereMatcher {
     final dateStr = value.toIso8601String().split('T').first;
     List params = [dateStr];
     final placeholder = dialect?.getPlaceholder(paramStartIndex) ?? '?';
-    final quotedField = dialect?.quoteIdentifier(field) ?? field;
+
     return MatchResult(
-      "DATE($quotedField) = $placeholder",
+      "DATE($field) = $placeholder",
       params,
     );
   }
@@ -262,9 +259,8 @@ class Like extends WhereMatcher {
   MatchResult compose() {
     final params = [value];
     final placeholder = dialect?.getPlaceholder(paramStartIndex) ?? '?';
-    final quotedField = dialect?.quoteIdentifier(field) ?? field;
     return MatchResult(
-      '$quotedField LIKE $placeholder',
+      '$field LIKE $placeholder',
       params,
     );
   }
@@ -299,9 +295,8 @@ class In extends WhereMatcher {
 class IsNull extends WhereMatcher {
   @override
   MatchResult compose() {
-    final quotedField = dialect?.quoteIdentifier(field) ?? field;
     return MatchResult(
-      '$quotedField IS NULL',
+      '$field IS NULL',
     );
   }
 }
@@ -309,9 +304,8 @@ class IsNull extends WhereMatcher {
 class IsNotNull extends WhereMatcher {
   @override
   MatchResult compose() {
-    final quotedField = dialect?.quoteIdentifier(field) ?? field;
     return MatchResult(
-      '$quotedField IS NOT NULL',
+      '$field IS NOT NULL',
     );
   }
 }

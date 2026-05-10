@@ -9,9 +9,8 @@ class GroupByMatcher extends EndMatcher {
   }) : super(raw: '');
   @override
   MatchResult compose() {
-    final quotedFields = fields.map((f) => dialect?.quoteIdentifier(f) ?? f);
     return MatchResult(
-      'GROUP BY ${quotedFields.join(', ')}',
+      'GROUP BY ${fields.join(', ')}',
     );
   }
 }

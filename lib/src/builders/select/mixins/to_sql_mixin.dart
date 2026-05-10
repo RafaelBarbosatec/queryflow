@@ -23,7 +23,7 @@ mixin ToSqlMixin<T> on SelectBuilderBase<T> {
     String fieldsP = '*';
     params.clear();
     if (fields.isNotEmpty) {
-      fieldsP = fields.map((f) => dialect?.quoteIdentifier(f) ?? f).join(', ');
+      fieldsP = fields.join(', ');
     }
 
     final tableName = dialect?.quoteIdentifier(table) ?? table;
