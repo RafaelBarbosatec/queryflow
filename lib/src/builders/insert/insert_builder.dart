@@ -67,9 +67,7 @@ class InsertBuilderImpl extends InsertBuilderBase {
 
     // Use dialect to quote identifiers if available
     final tableName = dialect?.quoteIdentifier(table) ?? table;
-    final columnNames = fields.keys
-        .map((key) => dialect?.quoteIdentifier(key) ?? key)
-        .join(', ');
+    final columnNames = fields.keys.join(', ');
 
     _params = fields.values.toList();
     String queryParams = List.generate(

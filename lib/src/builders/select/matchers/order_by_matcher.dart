@@ -19,10 +19,9 @@ class OrderByMatcher extends EndMatcher {
 
   @override
   MatchResult compose() {
-    final quotedFields = fields.map((f) => dialect?.quoteIdentifier(f) ?? f);
     final orderType = type.value;
     return MatchResult(
-      'ORDER BY ${quotedFields.join(', ')} $orderType',
+      'ORDER BY ${fields.join(', ')} $orderType',
     );
   }
 }

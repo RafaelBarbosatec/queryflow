@@ -1,3 +1,6 @@
+## 0.5.2
+* Fix quotedFields
+
 ## 0.5.1
 * Improve foreign key constraint name generation to avoid overly long identifiers
 * Adds Unique property in foreign key

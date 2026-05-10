@@ -10,7 +10,12 @@ class MySqlDialect extends SqlDialect {
   String getPlaceholder(int index) => '?';
 
   @override
-  String quoteIdentifier(String identifier) => '`$identifier`';
+  String quoteIdentifier(String identifier) {
+    if (identifier.contains('.')) {
+      return identifier.split('.').map((part) => '`$part`').join('.');
+    }
+    return '`$identifier`';
+  }
 
   @override
   String formatValue(dynamic value) {
@@ -78,7 +83,8 @@ class MySqlDialect extends SqlDialect {
   }
 
   @override
-  String getAutoIncrementSyntax(String columnDef) => '$columnDef AUTO_INCREMENT';
+  String getAutoIncrementSyntax(String columnDef) =>
+      '$columnDef AUTO_INCREMENT';
 
   @override
   String getPrimaryKeySyntax(String columnName) => 'PRIMARY KEY';

@@ -10,7 +10,12 @@ class PostgreSqlDialect extends SqlDialect {
   String getPlaceholder(int index) => '\$$index';
 
   @override
-  String quoteIdentifier(String identifier) => '"$identifier"';
+  String quoteIdentifier(String identifier) {
+    if(identifier.contains('.')) {
+      return identifier.split('.').map((part) => '"$part"').join('.');
+    }
+    return '"$identifier"';
+  }
 
   @override
   String formatValue(dynamic value) {
