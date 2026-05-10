@@ -1,6 +1,6 @@
 ## 0.5.1
 * Improve foreign key constraint name generation to avoid overly long identifiers
-* Adds Unique propertie in foreign key
+* Adds Unique property in foreign key
 
 ## 0.5.0
 
