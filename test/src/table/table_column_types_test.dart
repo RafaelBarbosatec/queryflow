@@ -34,9 +34,9 @@ void main() {
     });
   });
 
-  group('ForeingKey', () {
+  group('ForeignKey', () {
     test('should generate key name when not provided', () {
-      final foreignKey = ForeingKey(table: 'users', column: 'id');
+      final foreignKey = ForeignKey(table: 'users', column: 'id');
       expect(
         foreignKey.getKeyName('profile', 'user_id'),
         equals('fk_profile_user_id_users_id'),
@@ -44,7 +44,7 @@ void main() {
     });
 
     test('should use provided key name', () {
-      final foreignKey = ForeingKey(
+      final foreignKey = ForeignKey(
         table: 'users',
         column: 'id',
         keyName: 'custom_key',
@@ -217,7 +217,7 @@ void main() {
         isAutoIncrement: true,
         isNotNull: false,
         defaultValue: 0,
-        foreignKey: ForeingKey(table: 'other_table', column: 'id'),
+        foreignKey: ForeignKey(table: 'other_table', column: 'id'),
       );
 
       expect(intType.length, equals(4));

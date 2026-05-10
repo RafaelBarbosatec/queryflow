@@ -4,10 +4,11 @@ import '../dialect/sql_type.dart';
 abstract class TableColumnType {
   final bool isPrimaryKey;
   final bool isAutoIncrement;
+  final bool isUnique;
   final bool isNotNull;
   final dynamic defaultValue;
   final dynamic onUpdate;
-  final ForeingKey? foreignKey;
+  final ForeignKey? foreignKey;
 
   TableColumnType({
     required this.isPrimaryKey,
@@ -15,6 +16,7 @@ abstract class TableColumnType {
     required this.isNotNull,
     required this.defaultValue,
     required this.onUpdate,
+    required this.isUnique,
     this.foreignKey,
   }) : assert(
           !isAutoIncrement || isPrimaryKey,
@@ -78,12 +80,12 @@ abstract class TableColumnType {
   }
 }
 
-class ForeingKey {
+class ForeignKey {
   final String table;
   final String column;
   final String? keyName;
 
-  ForeingKey({
+  ForeignKey({
     required this.table,
     required this.column,
     this.keyName,
@@ -101,6 +103,7 @@ class TypeVarchar extends TableColumnType {
     super.isPrimaryKey = false,
     super.isAutoIncrement = false,
     super.isNotNull = false,
+    super.isUnique = false,
     super.defaultValue,
     super.onUpdate,
     super.foreignKey,
@@ -115,6 +118,7 @@ class TypeText extends TableColumnType {
     super.isPrimaryKey = false,
     super.isAutoIncrement = false,
     super.isNotNull = false,
+    super.isUnique = false,
     super.defaultValue,
     super.onUpdate,
     super.foreignKey,
@@ -128,6 +132,7 @@ class TypeInt extends TableColumnType {
     super.isPrimaryKey = false,
     super.isAutoIncrement = false,
     super.isNotNull = false,
+    super.isUnique = false,
     super.defaultValue,
     super.onUpdate,
     super.foreignKey,
@@ -142,6 +147,7 @@ class TypeDouble extends TableColumnType {
     super.isPrimaryKey = false,
     super.isAutoIncrement = false,
     super.isNotNull = false,
+    super.isUnique = false,
     super.defaultValue,
     super.onUpdate,
   });
@@ -152,6 +158,7 @@ class TypeBool extends TableColumnType {
     super.isPrimaryKey = false,
     super.isAutoIncrement = false,
     super.isNotNull = false,
+    super.isUnique = false,
     super.defaultValue,
     super.onUpdate,
   });
@@ -162,6 +169,7 @@ class TypeDateTime extends TableColumnType {
     super.isPrimaryKey = false,
     super.isAutoIncrement = false,
     super.isNotNull = false,
+    super.isUnique = false,
     super.defaultValue,
     super.onUpdate,
   });
@@ -172,6 +180,7 @@ class TypeBlob extends TableColumnType {
     super.isPrimaryKey = false,
     super.isAutoIncrement = false,
     super.isNotNull = false,
+    super.isUnique = false,
     super.defaultValue,
     super.onUpdate,
   });
@@ -184,6 +193,7 @@ class TypeFloat extends TableColumnType {
     super.isPrimaryKey = false,
     super.isAutoIncrement = false,
     super.isNotNull = false,
+    super.isUnique = false,
     super.defaultValue,
     super.onUpdate,
   });
@@ -194,6 +204,7 @@ class TypeDate extends TableColumnType {
     super.isPrimaryKey = false,
     super.isAutoIncrement = false,
     super.isNotNull = false,
+    super.isUnique = false,
     super.defaultValue,
     super.onUpdate,
   });
@@ -204,6 +215,7 @@ class TypeTimestamp extends TableColumnType {
     super.isPrimaryKey = false,
     super.isAutoIncrement = false,
     super.isNotNull = false,
+    super.isUnique = false,
     super.defaultValue,
     super.onUpdate,
   });
@@ -214,6 +226,7 @@ class TypeTime extends TableColumnType {
     super.isPrimaryKey = false,
     super.isAutoIncrement = false,
     super.isNotNull = false,
+    super.isUnique = false,
     super.defaultValue,
     super.onUpdate,
   });
@@ -224,6 +237,7 @@ class TypeYear extends TableColumnType {
     super.isPrimaryKey = false,
     super.isAutoIncrement = false,
     super.isNotNull = false,
+    super.isUnique = false,
     super.defaultValue,
     super.onUpdate,
   });
@@ -236,6 +250,7 @@ class TypeEnum extends TableColumnType {
     super.isPrimaryKey = false,
     super.isAutoIncrement = false,
     super.isNotNull = false,
+    super.isUnique = false,
     super.defaultValue,
     super.onUpdate,
   });
