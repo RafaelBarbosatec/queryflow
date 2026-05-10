@@ -1,5 +1,6 @@
 import '../dialect/sql_dialect.dart';
 import '../dialect/sql_type.dart';
+import 'foreign_key_name_generator.dart';
 
 abstract class TableColumnType {
   final bool isPrimaryKey;
@@ -92,7 +93,16 @@ class ForeignKey {
   });
 
   String getKeyName(String currentTable, String currentColumn) {
-    return keyName ?? 'fk_${currentTable}_${currentColumn}_${table}_$column';
+    if (keyName != null) {
+      return keyName!;
+    }
+
+    return ForeignKeyNameGenerator.generate(
+      currentTable,
+      currentColumn,
+      table,
+      column,
+    );
   }
 }
 
