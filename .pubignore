@@ -1,3 +1,6 @@
 # docs.page sources are served from GitHub, not from the pub archive.
 docs/
 docs.json
+
+# Development roadmap; available in the GitHub repository.
+ROADMAP.md

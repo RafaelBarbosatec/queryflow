@@ -225,6 +225,9 @@ for the database setup.
 Issues and pull requests are welcome:
 [github.com/RafaelBarbosatec/queryflow](https://github.com/RafaelBarbosatec/queryflow).
 
+See [ROADMAP.md](https://github.com/RafaelBarbosatec/queryflow/blob/main/ROADMAP.md)
+for planned improvements and known limitations.
+
 ## License
 
 MIT — see [LICENSE](LICENSE).
