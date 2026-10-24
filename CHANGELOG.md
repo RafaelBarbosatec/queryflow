@@ -1,3 +1,15 @@
+## 0.7.0
+* Upgrade `mysql_dart` from `1.2.1` to `3.0.3`
+* BREAKING: require Dart `>=3.6.0` (minimum supported by `mysql_dart 3.x`)
+* MySQL driver improvements: MySQL 9 / `caching_sha2_password` support, JSON
+  columns, safer prepared-statement handling, FIFO concurrency on a single
+  connection, faster packet/result decoding, and better reconnect handling
+* Compatible with the removal of `MySQLConnectionPool.prepare`; pooled prepared
+  statements continue to run inside `withConnection`
+* Zero dates (`0000-00-00`) are returned as `null` by default instead of an
+  invalid rolled-over `DateTime`
+* No public Queryflow API changes
+
 ## 0.6.0
 * Fix `UPDATE` ignoring every `WHERE` condition after the first one
 * Fix `DELETE` concatenating conditions without `AND`/`OR` and losing `OR`

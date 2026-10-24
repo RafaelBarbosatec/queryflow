@@ -89,6 +89,11 @@ await db.execute(
 
 ## Model errors
 
+### Zero dates come back as null
+
+`mysql_dart 3.x` converts `0000-00-00` to `null` by default. If you need a
+strict error instead, avoid zero dates or handle `null` in your model.
+
 ### A datetime column cannot be parsed
 
 `mysql_dart` and `postgres` return `DateTime` for date/time columns. If your

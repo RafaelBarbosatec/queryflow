@@ -147,6 +147,9 @@ with raw DDL. For JSON operators, use raw SQL. On PostgreSQL, remember that
 Decide whether you need local wall-clock times (`DATETIME`) or instants
 (`TIMESTAMPTZ`) and keep the same convention across both databases.
 
+With `mysql_dart 3.x`, zero dates (`0000-00-00`) are returned as `null` by
+default. Avoid zero dates in new schemas; use `NULL` instead.
+
 ## Events
 
 MySQL supports `EventModel` scheduled events. PostgreSQL does not have an
