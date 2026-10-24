@@ -1,4 +1,4 @@
-## Unreleased
+## 0.6.0
 * Fix `UPDATE` ignoring every `WHERE` condition after the first one
 * Fix `DELETE` concatenating conditions without `AND`/`OR` and losing `OR`
 * Implement `notWhere` negation for every `WhereMatcher`
@@ -36,6 +36,7 @@
 * Logging is silent by default; pass `debug: true` to enable query logs
 * Use `lints` instead of `flutter_lints`, pin the `test` dependency and update
   CI to run with the Dart SDK
+* Add professional documentation at https://docs.page/RafaelBarbosatec/queryflow
 
 ## 0.5.2
 * Fix quotedFields

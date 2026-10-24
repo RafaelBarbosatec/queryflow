@@ -1,0 +1,99 @@
+---
+title: Connection pooling
+description: Choose between a single connection and a pool, and manage connection lifecycle.
+---
+
+# Connection pooling
+
+`Queryflow` uses a single connection by default. Set `maxConnections` above `1`
+to use a pool.
+
+<Tabs groupId="database">
+  <TabItem label="MySQL" value="mysql">
+    ```dart
+    final db = Queryflow.mysql(
+      host: 'localhost',
+      port: 3306,
+      userName: 'root',
+      password: 'secret',
+      databaseName: 'app',
+      maxConnections: 10,
+    );
+    ```
+  </TabItem>
+  <TabItem label="PostgreSQL" value="postgresql">
+    ```dart
+    final db = Queryflow.postgresql(
+      host: 'localhost',
+      port: 5432,
+      userName: 'postgres',
+      password: 'secret',
+      databaseName: 'app',
+      maxConnections: 10,
+    );
+    ```
+  </TabItem>
+</Tabs>
+
+| `maxConnections` | Executor | Use when |
+| --- | --- | --- |
+| `1` (default) | Single connection | Scripts, tests, low concurrency. |
+| `> 1` | Pool | Servers, Flutter apps with concurrent requests. |
+
+## How the pool behaves
+
+- Connections are opened lazily.
+- A transaction pins one connection for its duration.
+- Prepared statements on the MySQL pool run on the connection that prepared
+  them.
+- `close()` is idempotent and releases all connections.
+- After `close()`, the next query creates a new pool/connection.
+
+```dart
+await db.execute('SELECT 1');
+await db.close();
+await db.close();           // no-op
+await db.execute('SELECT 1'); // reconnects
+```
+
+## Choosing a size
+
+Start with a small pool and measure. More connections are not always faster:
+
+- The database server has a connection limit.
+- Too many connections increase memory usage and context switching.
+- Keep the pool size aligned with the concurrency of your application.
+
+For a Flutter mobile app, a single connection is usually enough. For a backend
+service, start with 5–10 connections per isolate and tune from there.
+
+## Concurrency caveats
+
+- A single `Queryflow` instance is backed by one connection or pool. Do not
+  share it across isolates without creating a separate instance per isolate.
+- Do not call `close()` while queries or transactions are in flight.
+- Use `executeTransaction()` for operations that must run on one connection.
+- The MySQL driver uses prepared statements for most queries. The pool keeps
+  prepare/execute/deallocate bound to the same connection.
+
+## Closing
+
+```dart
+await db.close();
+```
+
+Call `close()` in your application shutdown path, or in a `finally` block:
+
+```dart
+final db = Queryflow.postgresql(/* ... */);
+try {
+  // use db
+} finally {
+  await db.close();
+}
+```
+
+## Next
+
+- [Transactions](/guides/transactions)
+- [Logging & debugging](/guides/logging)

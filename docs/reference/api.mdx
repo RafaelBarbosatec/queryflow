@@ -1,0 +1,115 @@
+---
+title: Public API
+description: A map of the public classes and methods exported by Queryflow.
+---
+
+# Public API
+
+Everything below is exported from `package:queryflow/queryflow.dart`. For
+generated Dart API docs, see
+[pub.dev/documentation/queryflow](https://pub.dev/documentation/queryflow/latest/).
+
+## `Queryflow`
+
+Create a connection with `Queryflow.mysql()` or `Queryflow.postgresql()`.
+
+| Member | Returns | Description |
+| --- | --- | --- |
+| `select(table, [fields])` | `SelectBuilder<Map<String, dynamic>>` | Starts a SELECT. |
+| `selectModel<T>([fields])` | `SelectBuilder<T>` | Starts a SELECT using the adapter's table. |
+| `insert(table, fields, {primaryKey})` | `InsertBuilder` | Starts an INSERT. |
+| `update(table, fields)` | `UpdateBuilder` | Starts an UPDATE. |
+| `delete(table)` | `DeleteBuilder` | Starts a DELETE. |
+| `insertModel<T>(model)` | `Future<int>` | Inserts a model and returns its key. |
+| `updateModel<T>(model)` | `Future<void>` | Updates a model by primary key. |
+| `deleteModel<T>(model)` | `Future<void>` | Deletes a model by primary key. |
+| `execute(query)` | `Future<List<Map<String, dynamic>>>` | Runs raw SQL. |
+| `executePrepared(query, [params])` | `Future<List<Map<String, dynamic>>>` | Runs parameterized SQL. |
+| `executeTransaction(callback)` | `Future<T>` | Runs a transaction. |
+| `synchronize({dropTable, dropObsoleteColumns})` | `Future<void>` | Synchronizes tables, views, and events. |
+| `createEvent(event)` | `Future<void>` | Creates an event (MySQL). |
+| `close()` | `Future<void>` | Releases the connection or pool. |
+
+Deprecated aliases: `executeTransation()` and `syncronize()`.
+
+### Connection options
+
+| Option | MySQL | PostgreSQL |
+| --- | --- | --- |
+| `host`, `port`, `userName`, `password`, `databaseName` | Yes | Yes |
+| `secure`, `securityContext`, `collation` | Yes | — |
+| `useSSL` | — | Yes |
+| `typeAdapters` | Yes | Yes |
+| `tables`, `views` | Yes | Yes |
+| `events` | Yes | — |
+| `maxConnections` | Yes | Yes |
+| `debug`, `logger` | Yes | Yes |
+
+## Select builders
+
+| Method | Returns | Notes |
+| --- | --- | --- |
+| `where(field, matcher, {type})` | `SelectBuilderWhere` | Adds a condition. |
+| `notWhere(field, matcher, {type})` | `SelectBuilderWhere` | Negates a condition. |
+| `whereRaw(sql, {type})` | `SelectBuilderWhere` | Adds raw SQL. |
+| `join(table, matcher, {alias})` | `SelectBuilder` | Adds a join. |
+| `joinRaw(sql)` | `SelectBuilder` | Adds a raw join. |
+| `groupBy(fields)` | `SelectBuilderOrderByAndFetch` | Adds `GROUP BY`. |
+| `orderBy(fields, [type])` | `SelectBuilderFetchAndLimit` | Adds `ORDER BY`. |
+| `limit(count, [offset])` | `SelectBuilderFetch` | Adds `LIMIT`/`OFFSET`. |
+| `fetch()` | `Future<List<T>>` | Returns rows/models. |
+| `fetchOne()` | `Future<T?>` | First row/model or `null`. |
+| `fetchAs<R>()` | `Future<List<R>>` | Maps rows with a `TypeAdapter<R>`. |
+| `fetchAsOne<R>()` | `Future<R?>` | First mapped row or `null`. |
+| `count()` | `Future<int>` | `COUNT(...)`. |
+| `max()`, `min()`, `sum()`, `avg()` | `Future<num>` | Require one field. |
+| `toSql()` | `String` | Debug representation. |
+
+Chain order is enforced by the return types: `join → where → groupBy → orderBy
+→ limit → fetch`.
+
+## WHERE matchers
+
+`Equals`, `Different`, `GreaterThan`, `GreaterThanOrEqual`, `LessThan`,
+`LessThanOrEqual`, `Between`, `BetweenDate`, `EqualsDate`, `Like`, `In`,
+`IsNull`, `IsNotNull`, `WhereRaw`.
+
+`WhereMatcherType.and` and `WhereMatcherType.or` select the boolean operator.
+`OrderByType.asc` and `OrderByType.desc` select the sort direction.
+
+## JOIN matchers
+
+`InnerJoin`, `LeftJoin`, `RightJoin`, `FullOuterJoin`, `JoinRaw`.
+
+## Models and adapters
+
+| Class | Purpose |
+| --- | --- |
+| `TypeAdapter<T>` | `fromMap` only; used by `fetchAs<T>()`. |
+| `QueryTypeAdapter<T>` | Adds `table`, `primaryKeyColumn`, and `toMap`; used by the model helpers. |
+| `QueryTypeAdapter<T>.fromMap` | Row-to-model conversion. |
+| `QueryTypeAdapter<T>.toMap` | Model-to-row conversion. |
+
+## Schema
+
+| Class | Purpose |
+| --- | --- |
+| `TableModel` | Table definition: name, columns, options, initial data. |
+| `TypeInt`, `TypeVarchar`, `TypeText`, `TypeBool`, `TypeDouble`, `TypeFloat`, `TypeDateTime`, `TypeDate`, `TypeTimestamp`, `TypeTime`, `TypeYear`, `TypeBlob`, `TypeEnum` | Column types. |
+| `ForeignKey` | Foreign key definition. |
+| `ViewModel.raw`, `ViewModel.builder` | Database view definitions. |
+| `EventModel.raw`, `EventModel.builder` | MySQL event definitions. |
+| `EventSchedule`, `EventIntervalType` | Event scheduling options. |
+
+## Errors
+
+| Error | When |
+| --- | --- |
+| `ArgumentError` | Empty update fields, empty `In` list, missing primary key, invalid column name. |
+| `UnsupportedError` | Nested transaction, non-integer insert key. |
+| Driver exceptions (`MySQLClientException`, `ServerException`) | Connection, SQL, constraint, or permission errors. |
+
+## Next
+
+- [Examples](/reference/examples)
+- [Changelog](/reference/changelog)

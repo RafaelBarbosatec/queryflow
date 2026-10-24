@@ -1,0 +1,94 @@
+---
+title: Installation
+description: Add Queryflow to a Dart or Flutter project and prepare a MySQL or PostgreSQL connection.
+---
+
+# Installation
+
+## Requirements
+
+- Dart SDK `>= 3.0.0 < 4.0.0`
+- A MySQL or PostgreSQL server you can reach over TCP
+- Dart VM or Flutter mobile/desktop
+
+<Warning>
+  Queryflow depends on `dart:io` and socket-based database drivers. It is not
+  compatible with Flutter web.
+</Warning>
+
+## Add the dependency
+
+```bash
+dart pub add queryflow
+```
+
+Or edit `pubspec.yaml` directly:
+
+```yaml
+dependencies:
+  queryflow: ^0.6.0
+```
+
+Then fetch the dependency:
+
+```bash
+dart pub get
+```
+
+For a Flutter project, use `flutter pub add queryflow` and `flutter pub get`.
+
+## Import
+
+Everything used in the guides, including `QueryLogger`, is exported from the
+main library:
+
+```dart
+import 'package:queryflow/queryflow.dart';
+```
+
+## Database users
+
+Use a dedicated database user for your application. Queryflow needs permission
+to read and write rows and, when you call `synchronize()`, permission to create
+and alter tables.
+
+For MySQL scheduled events, the user also needs `EVENT` privileges, and the
+server must have `event_scheduler` enabled.
+
+## Verify the connection
+
+```dart
+import 'package:queryflow/queryflow.dart';
+
+Future<void> main() async {
+  final db = Queryflow.mysql(
+    host: '127.0.0.1',
+    port: 3306,
+    userName: 'root',
+    password: 'secret',
+    databaseName: 'app',
+  );
+
+  final result = await db.execute('SELECT 1 AS ok');
+  print(result); // [{ok: 1}]
+
+  await db.close();
+}
+```
+
+For PostgreSQL, replace the factory and port:
+
+```dart
+final db = Queryflow.postgresql(
+  host: '127.0.0.1',
+  port: 5432,
+  userName: 'postgres',
+  password: 'secret',
+  databaseName: 'app',
+);
+```
+
+## Next
+
+- Follow the [quick start](/quick-start) to build a table and run CRUD operations.
+- Read [Database support](/database-support) for the differences between MySQL and PostgreSQL.

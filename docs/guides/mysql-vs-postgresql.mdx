@@ -1,0 +1,186 @@
+---
+title: MySQL vs PostgreSQL
+description: Practical differences when using Queryflow with MySQL and PostgreSQL.
+---
+
+# MySQL vs PostgreSQL
+
+Queryflow hides most dialect differences, but the databases still behave
+differently. This guide covers the differences you are most likely to hit.
+
+## Connecting
+
+<Tabs groupId="database">
+  <TabItem label="MySQL" value="mysql">
+    ```dart
+    final db = Queryflow.mysql(
+      host: '127.0.0.1',
+      port: 3306,
+      userName: 'root',
+      password: 'secret',
+      databaseName: 'app',
+      secure: true,
+    );
+    ```
+  </TabItem>
+  <TabItem label="PostgreSQL" value="postgresql">
+    ```dart
+    final db = Queryflow.postgresql(
+      host: '127.0.0.1',
+      port: 5432,
+      userName: 'postgres',
+      password: 'secret',
+      databaseName: 'app',
+      useSSL: false,
+    );
+    ```
+  </TabItem>
+</Tabs>
+
+<Info>
+  MySQL 8 defaults to the `caching_sha2_password` authentication plugin. The
+  driver requires a secure connection for that plugin. Keep `secure: true`
+  (the default) or configure TLS, otherwise you may see
+  `Auth plugin caching_sha2_password is supported only with secure connections`.
+</Info>
+
+## Placeholders
+
+```sql
+-- MySQL
+SELECT * FROM users WHERE id = ? AND active = ?
+
+-- PostgreSQL
+SELECT * FROM users WHERE id = $1 AND active = $2
+```
+
+Queryflow generates the correct style automatically. For raw prepared queries,
+PostgreSQL also accepts `?` and converts it before execution.
+
+<Warning>
+  Do not mix `?` and `$n` in the same PostgreSQL query. `?` is also the JSON
+  “key exists” operator, so JSON queries should use `$n` or `execute()`.
+</Warning>
+
+## Insert ids
+
+- MySQL: `LAST_INSERT_ID()`. If you pass the id explicitly, Queryflow returns
+  it without querying.
+- PostgreSQL: `INSERT ... RETURNING *`.
+
+## Auto increment
+
+| Dart | MySQL | PostgreSQL |
+| --- | --- | --- |
+| `TypeInt(isAutoIncrement: true)` | `INT AUTO_INCREMENT` | `SERIAL` |
+| `TypeInt(length: 11, isAutoIncrement: true)` | `INT(11) AUTO_INCREMENT` | `BIGSERIAL` |
+| `TypeInt(length: 1, isAutoIncrement: true)` | `TINYINT AUTO_INCREMENT` | `SMALLSERIAL` |
+
+## Enums
+
+MySQL has inline enums. PostgreSQL does not, so Queryflow creates a `TEXT`
+column with a `CHECK` constraint:
+
+```dart
+'status': TypeEnum(values: ['active', 'inactive']),
+```
+
+```sql
+-- MySQL
+status ENUM('active', 'inactive')
+
+-- PostgreSQL
+status TEXT CHECK (status IN ('active', 'inactive'))
+```
+
+## Full outer joins
+
+```dart
+.join('profiles', FullOuterJoin('id', 'user_id'))
+```
+
+This works on PostgreSQL. MySQL does not support `FULL OUTER JOIN`; the server
+returns a syntax error. Emulate it with a `UNION` of `LEFT` and `RIGHT` joins.
+
+## Identifier case
+
+PostgreSQL folds unquoted identifiers to lower case. This fails if the column
+was created as `"DisplayName"`:
+
+```dart
+.where('DisplayName', Equals('Ada')) // looks for displayname
+```
+
+Use the exact identifier:
+
+```dart
+.where('"DisplayName"', Equals('Ada'))
+```
+
+MySQL's behavior depends on `lower_case_table_names` and the platform.
+
+## `LIKE` and case sensitivity
+
+MySQL's default collation is often case-insensitive. PostgreSQL's `LIKE` is
+case-sensitive. For case-insensitive matching on PostgreSQL:
+
+```dart
+await db.select('users').whereRaw("name ILIKE 'ada%'").fetch();
+```
+
+## JSON
+
+- MySQL uses `JSON`.
+- PostgreSQL uses `JSONB`.
+
+`TableModel` does not expose a JSON column type yet. Create JSON columns
+with raw DDL. For JSON operators, use raw SQL. On PostgreSQL, remember that
+`?` is an operator and should not be used as a placeholder in those queries.
+
+## Dates and time zones
+
+- MySQL `DATETIME` has no time zone; `TIMESTAMP` is converted by the server.
+- PostgreSQL uses `TIMESTAMPTZ`, which stores an instant.
+- Queryflow sends `DateTime` values as ISO 8601 strings.
+- `EqualsDate` and `BetweenDate` operate on dates, not instants.
+
+Decide whether you need local wall-clock times (`DATETIME`) or instants
+(`TIMESTAMPTZ`) and keep the same convention across both databases.
+
+## Events
+
+MySQL supports `EventModel` scheduled events. PostgreSQL does not have an
+equivalent built-in scheduler; use `pg_cron`, an external scheduler, or your
+application.
+
+## Schema management
+
+- `databaseName` is used as the MySQL schema.
+- PostgreSQL uses the `public` schema.
+- `engine`, `charset`, and `outomaticIncrement` are MySQL-only.
+- `ON UPDATE` column clauses are MySQL-only.
+- Both databases support `synchronize()`, but `synchronize()` is not a full
+  migration tool on either.
+
+## Testing both databases
+
+Use the same models and adapters, and create one connection per database:
+
+```dart
+final mysql = Queryflow.mysql(/* ... */);
+final postgres = Queryflow.postgresql(/* ... */);
+
+for (final db in [mysql, postgres]) {
+  await db.synchronize(dropTable: true);
+  // run the same assertions
+  await db.close();
+}
+```
+
+Run this in CI against real database services. The Queryflow repository runs
+its integration tests against MySQL and PostgreSQL containers.
+
+## Next
+
+- [Database support](/database-support)
+- [Troubleshooting](/guides/troubleshooting)

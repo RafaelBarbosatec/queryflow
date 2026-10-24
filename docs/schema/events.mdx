@@ -1,0 +1,159 @@
+---
+title: Events (MySQL)
+description: Schedule and synchronize MySQL events from Dart.
+---
+
+# Events (MySQL)
+
+MySQL supports **scheduled events**: SQL statements that the server runs on a
+schedule. Queryflow can create and update them during `synchronize()`.
+
+<Info>
+  Events are a MySQL feature. `Queryflow.postgresql()` does not expose an
+  `events` parameter, and event synchronization is skipped for PostgreSQL.
+</Info>
+
+## Define an event
+
+```dart
+final cleanup = EventModel.raw(
+  name: 'cleanup_expired_sessions',
+  statement: '''
+    DELETE FROM sessions
+    WHERE expires_at < NOW()
+  ''',
+  schedule: EventSchedule.every,
+  intervalValue: 1,
+  intervalType: EventIntervalType.hour,
+  starts: DateTime.now(),
+  comment: 'Removes expired sessions every hour',
+);
+```
+
+Register it with the MySQL connection:
+
+```dart
+final db = Queryflow.mysql(
+  host: 'localhost',
+  port: 3306,
+  userName: 'root',
+  password: 'secret',
+  databaseName: 'app',
+  tables: [sessions],
+  events: [cleanup],
+);
+
+await db.synchronize();
+```
+
+## Schedules
+
+`EventSchedule.at` runs once:
+
+```dart
+EventModel.raw(
+  name: 'send_launch_email',
+  statement: "INSERT INTO jobs (name) VALUES ('launch-email')",
+  schedule: EventSchedule.at,
+  executeAt: DateTime(2025, 6, 1, 9),
+);
+```
+
+`EventSchedule.every` runs repeatedly:
+
+```dart
+EventModel.raw(
+  name: 'refresh_stats',
+  statement: 'CALL refresh_daily_stats()',
+  schedule: EventSchedule.every,
+  intervalValue: 15,
+  intervalType: EventIntervalType.minute,
+  starts: DateTime.now(),
+  ends: DateTime.now().add(const Duration(days: 30)),
+);
+```
+
+`starts` and `ends` are optional. `executeAt` is required for `at`.
+
+### Interval types
+
+`EventIntervalType` supports:
+
+`year`, `quarter`, `month`, `day`, `hour`, `minute`, `week`, `second`, and the
+compound MySQL intervals `yearMonth`, `dayHour`, `dayMinute`, `daySecond`,
+`hourMinute`, `hourSecond`, `minuteSecond`.
+
+## Enable, disable, and comment
+
+```dart
+EventModel.raw(
+  name: 'maintenance',
+  statement: 'OPTIMIZE TABLE users',
+  schedule: EventSchedule.every,
+  intervalValue: 1,
+  intervalType: EventIntervalType.week,
+  enabled: false,
+  comment: 'Weekly maintenance',
+);
+```
+
+Disabled events are created with `DISABLE`.
+
+## Builder statements
+
+`EventModel.builder` builds the statement with the query builder:
+
+```dart
+EventModel.builder(
+  name: 'archive_old_rows',
+  statement: (builder) {
+    return builder(table: 'sessions', fields: ['id'])
+        .where('expires_at', LessThan(DateTime.now()))
+        .toSql();
+  },
+  schedule: EventSchedule.every,
+  intervalValue: 1,
+  intervalType: EventIntervalType.day,
+);
+```
+
+<Warning>
+  The builder is converted to SQL with `toSql()`, so values are embedded in the
+  event definition. Avoid user-controlled values; use `EventModel.raw` for
+  complex statements.
+</Warning>
+
+## What synchronization does
+
+1. Checks whether the MySQL event scheduler is running and tries to enable it
+   with `SET GLOBAL event_scheduler = ON` when it is off.
+2. Creates events that do not exist.
+3. Recreates events whose statement, status, or comment changed.
+4. Leaves other events untouched.
+
+The scheduler check and updates require a user with the necessary privileges
+(`EVENT` and the ability to change global variables). If the server does not
+allow it, the synchronization error is rethrown.
+
+## Behaviour to know
+
+- Events are stored in the database and survive application restarts.
+- Times are interpreted in the MySQL server time zone.
+- Synchronization compares the statement, `ENABLED`/`DISABLED` status, and
+  comment. Changing only the schedule may not recreate an existing event; drop
+  and recreate it or alter it with SQL.
+- Orphan events are **not** removed automatically. Drop them manually, or use
+  the synchronizer's `dropOrphanEvents()` in an advanced setup.
+- Recreating an event uses `DROP EVENT` + `CREATE EVENT`.
+
+## Prerequisites
+
+- MySQL 5.1 or newer.
+- `event_scheduler = ON` (Queryflow attempts to enable it).
+- A database user with `EVENT` privileges.
+- The event statement must be valid for the database user/schema.
+
+## Next
+
+- [Views](/schema/views)
+- [Synchronization](/schema/synchronization)

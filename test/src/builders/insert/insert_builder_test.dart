@@ -1,7 +1,5 @@
 import 'package:mocktail/mocktail.dart';
 import 'package:queryflow/queryflow.dart';
-import 'package:queryflow/src/dialect/sql_dialect.dart';
-import 'package:queryflow/src/executor/executor.dart';
 import 'package:test/test.dart';
 
 class ExecutorMock extends Mock implements Executor {}

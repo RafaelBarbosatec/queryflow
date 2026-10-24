@@ -1,0 +1,113 @@
+---
+title: Logging & debugging
+description: Enable query logs or plug in a custom QueryLogger.
+---
+
+# Logging & debugging
+
+Logging is **silent by default**. Pass `debug: true` to print queries and
+results, or provide your own logger.
+
+## Enable debug logs
+
+```dart
+final db = Queryflow.mysql(
+  host: 'localhost',
+  port: 3306,
+  userName: 'root',
+  password: 'secret',
+  databaseName: 'app',
+  debug: true,
+);
+```
+
+With `debug: true`, Queryflow logs:
+
+- the SQL sent to the database;
+- the bound parameters;
+- the returned rows;
+- schema synchronization steps and errors.
+
+<Warning>
+  Debug logs can contain sensitive data (emails, tokens, personal information).
+  Do not enable them in production or ship them to third-party logging services
+  without redaction.
+</Warning>
+
+## Custom logger
+
+Implement `QueryLogger` and pass it to the constructor:
+
+```dart
+import 'dart:developer' as developer;
+import 'package:queryflow/queryflow.dart';
+
+class MyLogger implements QueryLogger {
+  @override
+  void d(Object? message) => developer.log('$message', name: 'queryflow');
+
+  @override
+  void i(Object? message) => developer.log('$message', name: 'queryflow');
+
+  @override
+  void s(Object? message) => developer.log('$message', name: 'queryflow');
+
+  @override
+  void e(Object? message) => developer.log(
+        '$message',
+        name: 'queryflow',
+        level: 1000,
+      );
+}
+
+final db = Queryflow.postgresql(
+  host: 'localhost',
+  port: 5432,
+  userName: 'postgres',
+  password: 'secret',
+  databaseName: 'app',
+  logger: MyLogger(),
+  debug: true,
+);
+```
+
+`d` receives query/result logs and is only called when `debug` is `true`. The
+`i`, `s`, and `e` levels receive synchronization information, success messages,
+and errors.
+
+## Silent logger
+
+`QueryLoggerSilent` discards everything. It is the default when `debug` is
+`false`:
+
+```dart
+final db = Queryflow.mysql(
+  host: 'localhost',
+  port: 3306,
+  userName: 'root',
+  password: 'secret',
+  databaseName: 'app',
+  logger: const QueryLoggerSilent(),
+);
+```
+
+## Debugging generated SQL
+
+Use `toSql()` on any builder to inspect the statement with values interpolated:
+
+```dart
+final sql = db
+    .select('users', ['id', 'name'])
+    .where('active', Equals(true))
+    .toSql();
+
+print(sql);
+```
+
+`toSql()` is for inspection only. `fetch()`, `execute()`, and the model helpers
+use prepared statements with bound parameters.
+
+## Next
+
+- [Troubleshooting](/guides/troubleshooting)
+- [Raw SQL](/queries/raw-sql)

@@ -1,0 +1,111 @@
+---
+title: Synchronization
+description: Create missing tables and columns with synchronize(), and learn what it does not change.
+---
+
+# Synchronization
+
+`synchronize()` compares the `TableModel` definitions registered on the
+`Queryflow` instance with the database schema and applies safe changes.
+
+```dart
+final db = Queryflow.postgresql(
+  host: 'localhost',
+  port: 5432,
+  userName: 'postgres',
+  password: 'secret',
+  databaseName: 'app',
+  tables: [users, profiles],
+  views: [userSummaryView],
+);
+
+await db.synchronize();
+```
+
+## What it does
+
+1. Optionally drops configured views and tables when `dropTable: true`.
+2. Creates tables that do not exist.
+3. Adds columns that exist in the `TableModel` but not in the database.
+4. Optionally removes columns that exist in the database but not in the model.
+5. Creates or updates configured views.
+6. Creates or updates MySQL events.
+
+Every step is validated against `INFORMATION_SCHEMA` for the active database.
+
+## Dropping tables
+
+```dart
+await db.synchronize(dropTable: true);
+```
+
+<Warning>
+  `dropTable: true` deletes the configured tables and all their data. It is
+  intended for tests and local development, not production.
+</Warning>
+
+When `dropTable` is `true`, configured views are dropped first. This is
+required on PostgreSQL, which refuses to drop a table while a view depends on
+it. Tables are dropped in reverse declaration order, so define parents before
+children.
+
+## Removing obsolete columns
+
+By default, columns that exist in the database but are not declared in the
+`TableModel` are **kept** to avoid data loss. Remove them explicitly:
+
+```dart
+await db.synchronize(dropObsoleteColumns: true);
+```
+
+## Errors are thrown
+
+Synchronization no longer swallows failures. If a table or view cannot be
+created or altered, the exception propagates:
+
+```dart
+try {
+  await db.synchronize();
+} on Exception catch (error) {
+  // handle schema failure
+}
+```
+
+## Not a migration tool
+
+`synchronize()` is intentionally conservative. It does **not**:
+
+- change the type of an existing column;
+- change `NOT NULL`, `DEFAULT`, or `UNIQUE` on an existing column;
+- rename tables or columns;
+- create or drop indexes;
+- add `ON DELETE` actions;
+- migrate data.
+
+Use it to bootstrap local and test databases. For production, keep explicit
+migrations (SQL files, a migration package, or your deployment tooling) and
+apply them before deploying code that depends on the new schema.
+
+## Initial data
+
+`initalData` rows are inserted only when a table is created. They are not
+re-applied on subsequent synchronizations. See
+[Tables & columns](/schema/table-model#initial-data).
+
+## Multi-database behaviour
+
+| Step | MySQL | PostgreSQL |
+| --- | --- | --- |
+| Schema lookup | `databaseName` | `public` |
+| Identifier quoting | Backticks | Double quotes |
+| Drop dependent views | Views dropped first | Views dropped first, with `CASCADE` |
+| Events | Synchronized | Skipped |
+
+Make sure `databaseName` is set when you use schema synchronization. It is used
+to query `INFORMATION_SCHEMA`.
+
+## Next
+
+- [Tables & columns](/schema/table-model)
+- [Views](/schema/views)
+- [Events (MySQL)](/schema/events)

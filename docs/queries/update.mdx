@@ -1,0 +1,81 @@
+---
+title: UPDATE
+description: Update rows with AND/OR conditions and update models by primary key.
+---
+
+# UPDATE
+
+`update()` starts an `UPDATE` statement. The first argument is the table, the
+second is a map of columns to new values:
+
+```dart
+await db.update('users', {'name': 'Ada Lovelace'})
+    .where('id', Equals(1))
+    .execute();
+```
+
+Column names are quoted with the dialect and values are bound parameters.
+
+## Multiple conditions
+
+Every condition is applied, and `AND`/`OR` is preserved:
+
+```dart
+await db.update('users', {'status': 'inactive'})
+    .where('last_login', LessThan(cutoff))
+    .where('role', Equals('guest'), type: WhereMatcherType.or)
+    .execute();
+```
+
+`notWhere()` and `whereRaw()` are also available. See
+[WHERE conditions](/queries/where).
+
+<Warning>
+  If you omit the `WHERE` clause, the update applies to every row in the table.
+  Always include a condition unless you really intend to update all rows.
+</Warning>
+
+## Empty updates
+
+An empty field map throws `ArgumentError`:
+
+```dart
+await db.update('users', {}).execute(); // ArgumentError
+```
+
+The same guard applies to `updateModel()` when the only field present is the
+primary key.
+
+## Updating models
+
+```dart
+await db.updateModel(
+  User(id: 1, name: 'Ada Lovelace', createdAt: DateTime.now()),
+);
+```
+
+The adapter's `primaryKeyColumn` is removed from the `SET` clause and used in
+the `WHERE` clause. A missing primary key throws `ArgumentError`.
+
+## Expressions
+
+The builder sets columns to literal values. For expressions such as
+`age = age + 1`, use a prepared statement:
+
+```dart
+await db.executePrepared(
+  'UPDATE users SET age = age + 1 WHERE id = ?',
+  [id],
+);
+```
+
+<Info>
+  `execute()` returns `void` because the shape of “affected rows” differs
+  between drivers. If you need the count, use a raw query such as
+  `SELECT ROW_COUNT()` on MySQL or `RETURNING` on PostgreSQL.
+</Info>
+
+## Next
+
+- [DELETE](/queries/delete)
+- [Model CRUD](/models/crud)

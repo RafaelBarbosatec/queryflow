@@ -1,0 +1,118 @@
+---
+title: Examples
+description: Runnable examples included in the Queryflow repository.
+---
+
+# Examples
+
+The repository ships with runnable examples for both databases:
+
+| File | Description |
+| --- | --- |
+| [`example/main.dart`](https://github.com/RafaelBarbosatec/queryflow/blob/main/example/main.dart) | MySQL setup, schema sync, transactions, models. |
+| [`example/mysql_example.dart`](https://github.com/RafaelBarbosatec/queryflow/blob/main/example/mysql_example.dart) | MySQL CRUD and typed queries. |
+| [`example/postgres_example.dart`](https://github.com/RafaelBarbosatec/queryflow/blob/main/example/postgres_example.dart) | PostgreSQL CRUD and typed queries. |
+| [`example/comparison_example.dart`](https://github.com/RafaelBarbosatec/queryflow/blob/main/example/comparison_example.dart) | Runs the same workflow against MySQL and PostgreSQL. |
+
+<Info>
+  The examples use placeholder credentials (`root`/`password`, database
+  `testdb`). Update the host, port, user, password, and database name before
+  running them.
+</Info>
+
+## Run an example
+
+From the repository root:
+
+```bash
+dart pub get
+dart run example/mysql_example.dart
+```
+
+The examples are also a separate package, so you can run them from the
+`example/` directory:
+
+```bash
+cd example
+dart pub get
+dart run mysql_example.dart
+```
+
+## Minimal repository example
+
+```dart
+import 'package:queryflow/queryflow.dart';
+
+class Todo {
+  final int? id;
+  final String title;
+  final bool done;
+
+  Todo({required this.title, this.done = false, this.id});
+
+  Map<String, dynamic> toMap() => {
+        if (id != null) 'id': id,
+        'title': title,
+        'done': done,
+      };
+
+  factory Todo.fromMap(Map<String, dynamic> map) => Todo(
+        id: map['id'] as int?,
+        title: map['title'] as String,
+        done: map['done'] as bool,
+      );
+
+  static final table = TableModel(
+    name: 'todos',
+    columns: {
+      'id': TypeInt(isPrimaryKey: true, isAutoIncrement: true),
+      'title': TypeVarchar(length: 200),
+      'done': TypeBool(isNotNull: true, defaultValue: false),
+    },
+  );
+
+  static final adapter = QueryTypeAdapter<Todo>(
+    table: table.name,
+    primaryKeyColumn: 'id',
+    toMap: (todo) => todo.toMap(),
+    fromMap: Todo.fromMap,
+  );
+}
+
+Future<void> main() async {
+  final db = Queryflow.postgresql(
+    host: '127.0.0.1',
+    port: 5432,
+    userName: 'postgres',
+    password: 'secret',
+    databaseName: 'app',
+    typeAdapters: [Todo.adapter],
+    tables: [Todo.table],
+  );
+
+  try {
+    await db.synchronize();
+
+    final id = await db.insertModel(Todo(title: 'Write docs'));
+    await db.updateModel(Todo(id: id, title: 'Write docs', done: true));
+
+    final pending = await db
+        .selectModel<Todo>()
+        .where('done', Equals(false))
+        .fetch();
+
+    print(pending.length);
+
+    await db.deleteModel(Todo(id: id, title: 'Write docs', done: true));
+  } finally {
+    await db.close();
+  }
+}
+```
+
+## More examples
+
+- [Quick start](/quick-start)
+- [Type adapters](/models/type-adapters)
+- [Schema management](/schema/table-model)
+- [Transactions](/guides/transactions)

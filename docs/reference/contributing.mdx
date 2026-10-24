@@ -1,0 +1,153 @@
+---
+title: Contributing
+description: Set up the repository, run tests against MySQL and PostgreSQL, and preview the docs.
+---
+
+# Contributing
+
+Contributions are welcome. Bug reports, fixes, documentation improvements, and
+new examples are all appreciated.
+
+- Repository: [github.com/RafaelBarbosatec/queryflow](https://github.com/RafaelBarbosatec/queryflow)
+- Issues: [github.com/RafaelBarbosatec/queryflow/issues](https://github.com/RafaelBarbosatec/queryflow/issues)
+
+## Requirements
+
+- Dart `>= 3.0.0 < 4.0.0`
+- MySQL 8 and PostgreSQL 14+ for the integration tests
+- Docker (recommended for the databases)
+- Node.js only if you want to preview the docs locally
+
+## Set up
+
+```bash
+git clone https://github.com/RafaelBarbosatec/queryflow.git
+cd queryflow
+dart pub get
+```
+
+## Databases for integration tests
+
+The integration tests expect:
+
+| Setting | Value |
+| --- | --- |
+| Host | `127.0.0.1` |
+| Database | `boleiro` |
+| User | `admin` |
+| Password | `12345678` |
+| MySQL port | `3306` |
+| PostgreSQL port | `5432` |
+
+### PostgreSQL
+
+The repository includes a `db_postgress/Dockerfile`:
+
+```bash
+docker build -t queryflow-postgres db_postgress
+docker run --name queryflow-postgres \
+  -p 5432:5432 \
+  -d queryflow-postgres
+```
+
+Or use the official image directly:
+
+```bash
+docker run --name queryflow-postgres \
+  -e POSTGRES_DB=boleiro \
+  -e POSTGRES_USER=admin \
+  -e POSTGRES_PASSWORD=12345678 \
+  -p 5432:5432 \
+  -d postgres:16
+```
+
+### MySQL
+
+```bash
+docker run --name queryflow-mysql \
+  -e MYSQL_DATABASE=boleiro \
+  -e MYSQL_USER=admin \
+  -e MYSQL_PASSWORD=12345678 \
+  -e MYSQL_ROOT_PASSWORD=root \
+  -p 3306:3306 \
+  -d mysql:8
+```
+
+MySQL 8 uses `caching_sha2_password`. The tests keep the default `secure: true`
+so the driver can authenticate.
+
+## Run checks
+
+```bash
+dart format .
+dart analyze
+dart test
+```
+
+Unit tests only (no database needed):
+
+```bash
+dart test test/src
+```
+
+Integration tests:
+
+```bash
+dart test test/queryflow_test.dart
+dart test test/queryflow_postgress_test.dart
+dart test test/builders_integration_test.dart
+dart test test/executors_integration_test.dart
+dart test test/schema_sync_test.dart
+```
+
+`dart test` runs everything, including the integration suites.
+
+## Project layout
+
+```text
+lib/
+  queryflow.dart              Public entry point
+  src/
+    builders/                 SELECT, INSERT, UPDATE, DELETE
+    dialect/                  MySQL and PostgreSQL SQL generation
+    executor/                 Connection and pool implementations
+    event/                    MySQL event model and synchronizer
+    table/                    TableModel and column types
+    type/                     TypeAdapter and QueryTypeAdapter
+    view/                     ViewModel and view synchronizer
+    logger/                   QueryLogger implementations
+docs/                         docs.page documentation
+docs.json                     docs.page configuration
+example/                      Runnable examples
+test/                         Unit and integration tests
+```
+
+## Documentation
+
+The documentation site is served from this repository. Start at the
+[introduction](/) or open `https://docs.page/RafaelBarbosatec/queryflow` once
+the site is published.
+
+Edit the Markdown files in `docs/` and the navigation in `docs.json`. To preview
+locally:
+
+```bash
+npx @docs.page/cli preview
+npx @docs.page/cli check
+```
+
+`docs check` validates configuration, internal links, and assets.
+
+## Pull requests
+
+1. Create a branch from `main`.
+2. Keep changes focused and add tests when behaviour changes.
+3. Run `dart format .`, `dart analyze`, and `dart test`.
+4. Describe the problem, the fix, and any behaviour changes in the PR.
+
+For schema or SQL-generation changes, test against both MySQL and PostgreSQL.
+
+## License
+
+Queryflow is released under the MIT License. See
+[LICENSE](https://github.com/RafaelBarbosatec/queryflow/blob/main/LICENSE).

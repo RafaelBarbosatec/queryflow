@@ -1,0 +1,114 @@
+{
+  "$schema": "https://docs.page/schema.json",
+  "name": "Queryflow",
+  "description": "A lightweight, type-safe SQL query builder and schema manager for MySQL and PostgreSQL in Dart.",
+  "logo": {
+    "light": "/assets/logo.svg",
+    "dark": "/assets/logo-dark.svg"
+  },
+  "favicon": "/assets/favicon.svg",
+  "theme": {
+    "primary": "#0EA5E9",
+    "primaryDark": "#38BDF8"
+  },
+  "header": {
+    "links": [
+      {
+        "title": "pub.dev",
+        "href": "https://pub.dev/packages/queryflow"
+      },
+      {
+        "title": "GitHub",
+        "href": "https://github.com/RafaelBarbosatec/queryflow"
+      }
+    ]
+  },
+  "social": {
+    "website": "https://github.com/RafaelBarbosatec/queryflow",
+    "github": "https://github.com/RafaelBarbosatec"
+  },
+  "anchors": [
+    {
+      "title": "pub.dev",
+      "href": "https://pub.dev/packages/queryflow",
+      "icon": "cube"
+    },
+    {
+      "title": "GitHub",
+      "href": "https://github.com/RafaelBarbosatec/queryflow",
+      "icon": "github"
+    },
+    {
+      "title": "API reference",
+      "href": "https://pub.dev/documentation/queryflow/latest/",
+      "icon": "book"
+    }
+  ],
+  "sidebar": [
+    {
+      "group": "Getting started",
+      "icon": "rocket",
+      "pages": [
+        { "title": "Introduction", "href": "/" },
+        { "title": "Installation", "href": "/installation" },
+        { "title": "Quick start", "href": "/quick-start" },
+        { "title": "Database support", "href": "/database-support" }
+      ]
+    },
+    {
+      "group": "Query builder",
+      "icon": "code",
+      "pages": [
+        { "title": "SELECT", "href": "/queries/select" },
+        { "title": "WHERE conditions", "href": "/queries/where" },
+        { "title": "JOINs", "href": "/queries/joins" },
+        { "title": "Sorting, grouping & paging", "href": "/queries/sorting-and-paging" },
+        { "title": "Aggregations", "href": "/queries/aggregations" },
+        { "title": "INSERT", "href": "/queries/insert" },
+        { "title": "UPDATE", "href": "/queries/update" },
+        { "title": "DELETE", "href": "/queries/delete" },
+        { "title": "Raw SQL", "href": "/queries/raw-sql" }
+      ]
+    },
+    {
+      "group": "Models",
+      "icon": "layer-group",
+      "pages": [
+        { "title": "Type adapters", "href": "/models/type-adapters" },
+        { "title": "Model CRUD", "href": "/models/crud" },
+        { "title": "Fetching typed results", "href": "/models/fetching" }
+      ]
+    },
+    {
+      "group": "Schema management",
+      "icon": "table",
+      "pages": [
+        { "title": "Tables & columns", "href": "/schema/table-model" },
+        { "title": "Synchronization", "href": "/schema/synchronization" },
+        { "title": "Views", "href": "/schema/views" },
+        { "title": "Events (MySQL)", "href": "/schema/events" }
+      ]
+    },
+    {
+      "group": "Guides",
+      "icon": "book-open",
+      "pages": [
+        { "title": "Transactions", "href": "/guides/transactions" },
+        { "title": "Connection pooling", "href": "/guides/pooling" },
+        { "title": "Logging & debugging", "href": "/guides/logging" },
+        { "title": "MySQL vs PostgreSQL", "href": "/guides/mysql-vs-postgresql" },
+        { "title": "Troubleshooting", "href": "/guides/troubleshooting" }
+      ]
+    },
+    {
+      "group": "Reference",
+      "icon": "circle-info",
+      "pages": [
+        { "title": "Public API", "href": "/reference/api" },
+        { "title": "Examples", "href": "/reference/examples" },
+        { "title": "Changelog", "href": "/reference/changelog" },
+        { "title": "Contributing", "href": "/reference/contributing" }
+      ]
+    }
+  ]
+}

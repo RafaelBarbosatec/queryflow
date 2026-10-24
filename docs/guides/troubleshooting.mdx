@@ -1,0 +1,196 @@
+---
+title: Troubleshooting
+description: Fix common connection, query, model, schema, and transaction errors.
+---
+
+# Troubleshooting
+
+## Connection errors
+
+### `Auth plugin caching_sha2_password is supported only with secure connections`
+
+MySQL 8 uses `caching_sha2_password` by default. The driver requires TLS for
+that plugin.
+
+```dart
+final db = Queryflow.mysql(
+  // ...
+  secure: true, // default
+);
+```
+
+If your server does not have TLS configured, switch the user to
+`mysql_native_password` or enable TLS on the server.
+
+### `Connection refused` / `SocketException`
+
+- Check the host and port.
+- Make sure the database accepts remote connections.
+- In containers, use the published host port, not the container IP.
+- Verify that the database is running before the Dart process starts.
+
+### The connection works, then fails after being idle
+
+Queryflow reconnects on the next query when it detects a closed connection.
+If a proxy or firewall drops idle connections, reduce the idle timeout or ping
+periodically with `SELECT 1`.
+
+## Query errors
+
+### `No QueryTypeAdapter found for type X`
+
+You used `selectModel<T>()`, `insertModel()`, `updateModel()`, or
+`deleteModel()` without registering a `QueryTypeAdapter<T>`.
+
+```dart
+final db = Queryflow.mysql(
+  // ...
+  typeAdapters: [User.adapter],
+);
+```
+
+### `No TypeAdapter found for type X`
+
+`fetchAs<T>()`/`fetchAsOne<T>()` need a `TypeAdapter<T>` (or a
+`QueryTypeAdapter<T>`) registered in `typeAdapters`.
+
+### `ArgumentError: Update fields cannot be empty`
+
+`update()` and `updateModel()` need at least one column to update. A model that
+contains only its primary key cannot be updated.
+
+### `ArgumentError: The In matcher requires at least one value`
+
+`In([])` is not valid SQL. Skip the condition or use a different matcher.
+
+### `UnsupportedError: InsertBuilder.execute() only supports integer primary keys`
+
+`execute()` returns `Future<int>`. For UUID/string primary keys, insert with
+`executePrepared()` and read the key yourself:
+
+```dart
+// PostgreSQL
+final rows = await db.executePrepared(
+  'INSERT INTO users (id, name) VALUES (?, ?) RETURNING id',
+  ['uuid-value', 'Ada'],
+);
+```
+
+### PostgreSQL JSON queries fail after `executePrepared`
+
+`?` is converted to a placeholder. For JSON operators, use `execute()` with
+`$n` placeholders or a literal value:
+
+```dart
+await db.execute(
+  r"SELECT * FROM events WHERE payload ? 'type'",
+);
+```
+
+## Model errors
+
+### A datetime column cannot be parsed
+
+`mysql_dart` and `postgres` return `DateTime` for date/time columns. If your
+`fromMap` calls `DateTime.parse(map['created_at'] as String)`, it can fail:
+
+```dart
+createdAt: map['created_at'] as DateTime,
+```
+
+If a custom query casts the value to text, handle both types:
+
+```dart
+DateTime toDateTime(dynamic value) {
+  if (value is DateTime) return value;
+  return DateTime.parse(value as String);
+}
+```
+
+### Mixed-case columns are not found on PostgreSQL
+
+PostgreSQL folds unquoted identifiers to lower case. Reference the column with
+quotes where needed:
+
+```dart
+.where('"DisplayName"', Equals('Ada'))
+```
+
+## Schema synchronization errors
+
+### `column "..." of relation "..." already exists`
+
+This usually means the schema check could not read the existing columns. Make
+sure `databaseName` is set and the user can read `INFORMATION_SCHEMA`. In
+current versions, PostgreSQL column names are read case-insensitively.
+
+### `permission denied` during `synchronize()`
+
+The database user needs `CREATE`/`ALTER` permissions on the schema, plus
+`SELECT` on `INFORMATION_SCHEMA`.
+
+### A view blocks `DROP TABLE`
+
+Queryflow drops configured views before tables when `dropTable: true`. If a
+view that is **not** registered in `views` depends on the table, PostgreSQL
+still refuses to drop it. Drop that view manually or use `CASCADE` in a raw
+statement.
+
+### An existing column keeps its old type or default
+
+`synchronize()` only creates missing tables/columns and (optionally) removes
+obsolete columns. It does not alter existing definitions. Use an explicit
+migration.
+
+## Event errors
+
+### Events are not running
+
+- Check `SHOW VARIABLES LIKE 'event_scheduler'`.
+- Ensure `event_scheduler = ON`.
+- The user needs `EVENT` privileges and permission to change global variables.
+- Check `SHOW EVENTS` for the event status.
+
+### Changing the schedule did not update the event
+
+Synchronization compares the statement, status, and comment. If only the
+schedule changed, drop and recreate the event, or `ALTER EVENT` it manually.
+
+## Transactions
+
+### `UnsupportedError: Nested transactions are not supported`
+
+Do not call `executeTransaction()` inside another transaction. Use savepoints
+via raw SQL if you need partial rollback.
+
+### A transaction seems to do nothing
+
+Make sure the callback does not swallow exceptions. Any thrown exception rolls
+the transaction back:
+
+```dart
+await db.executeTransaction((tx) async {
+  await tx.insertModel(user);
+  // throwing here rolls back the insert
+});
+```
+
+## Deprecated APIs
+
+Replace these aliases:
+
+| Deprecated | Use |
+| --- | --- |
+| `syncronize()` | `synchronize()` |
+| `executeTransation()` | `executeTransaction()` |
+
+## Flutter web
+
+Queryflow uses `dart:io` and socket-based drivers. It does not run on Flutter
+web. Use a backend service for web clients.
+
+## Still stuck?
+
+Enable `debug: true` to see the generated SQL and parameters, then open an
+issue with the query, the database type, and the full error message:
+[github.com/RafaelBarbosatec/queryflow/issues](https://github.com/RafaelBarbosatec/queryflow/issues).

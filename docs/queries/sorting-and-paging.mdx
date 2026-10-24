@@ -1,0 +1,109 @@
+---
+title: Sorting, grouping & paging
+description: Order, group, and paginate SELECT results with ORDER BY, GROUP BY, LIMIT, and OFFSET.
+---
+
+# Sorting, grouping & paging
+
+## ORDER BY
+
+`orderBy()` sorts by one or more fields. The second argument applies to every
+field in the list:
+
+```dart
+final users = await db.select('users', ['id', 'name'])
+    .orderBy(['name'], OrderByType.asc)
+    .fetch();
+```
+
+The default direction is `OrderByType.desc`:
+
+```dart
+final newest = await db.select('posts')
+    .orderBy(['published_at'])
+    .fetch();
+```
+
+Multiple fields share the same direction:
+
+```dart
+final rows = await db.select('employees')
+    .orderBy(['department', 'last_name'], OrderByType.asc)
+    .fetch();
+```
+
+<Info>
+  Queryflow appends one direction for the whole list (`ORDER BY a, b ASC`).
+  Per-column directions such as `a ASC, b DESC` are not supported; use
+  `executePrepared()` if you need them.
+</Info>
+
+## GROUP BY
+
+`groupBy()` groups rows before ordering and paging:
+
+```dart
+final rows = await db
+    .select('orders', ['customer_id', 'COUNT(*) AS total'])
+    .groupBy(['customer_id'])
+    .orderBy(['customer_id'], OrderByType.asc)
+    .fetch();
+```
+
+When `groupBy()` is present, order the grouped fields explicitly.
+
+## LIMIT and OFFSET
+
+`limit()` caps the number of rows and optionally skips rows:
+
+```dart
+// first 20 rows
+await db.select('users').limit(20).fetch();
+
+// rows 41-60
+await db.select('users').limit(20, 40).fetch();
+```
+
+The offset is the number of rows to skip. The generated SQL uses
+`LIMIT n OFFSET m`, which both MySQL and PostgreSQL accept.
+
+## Chain order
+
+The builder's return types enforce a useful order:
+
+```text
+join → where → groupBy → orderBy → limit → fetch
+```
+
+In practice:
+
+```dart
+final rows = await db
+    .select('orders', ['customer_id', 'SUM(total) AS revenue'])
+    .join('customers', InnerJoin('id', 'customer_id'))
+    .where('orders.status', Equals('paid'))
+    .groupBy(['customer_id'])
+    .orderBy(['revenue'])
+    .limit(50)
+    .fetch();
+```
+
+If you call `orderBy()` first, the returned builder no longer exposes
+`groupBy()`. Start a new builder if you need a different chain.
+
+## Fetching one row
+
+`fetchOne()` reads the first row of the result. Add `limit(1)` to make the
+intent explicit and avoid transferring rows you will discard:
+
+```dart
+final user = await db.select('users')
+    .where('email', Equals('ada@example.com'))
+    .limit(1)
+    .fetchOne();
+```
+
+## Next
+
+- [Aggregations](/queries/aggregations)
+- [SELECT](/queries/select)

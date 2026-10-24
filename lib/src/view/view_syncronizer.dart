@@ -1,7 +1,5 @@
 import 'package:queryflow/queryflow.dart';
 import 'package:queryflow/src/dialect/postgres_sql_dialect.dart';
-import 'package:queryflow/src/dialect/sql_dialect.dart';
-import 'package:queryflow/src/logger/query_logger.dart';
 import 'package:queryflow/src/utils/row_reader.dart';
 
 class ViewSyncronizer {

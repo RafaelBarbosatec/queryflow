@@ -1,0 +1,193 @@
+---
+title: WHERE conditions
+description: Use comparison, range, null, pattern, and list matchers to filter rows.
+---
+
+# WHERE conditions
+
+`where()` adds a condition to a `SELECT`, `UPDATE`, or `DELETE` statement. It
+takes a field, a matcher, and an optional boolean operator:
+
+```dart
+db.select('users').where(
+  'age',
+  GreaterThan(18),
+  type: WhereMatcherType.and, // default
+);
+```
+
+Conditions are combined with `AND` by default. Pass
+`type: WhereMatcherType.or` to use `OR`:
+
+```dart
+await db.select('users')
+    .where('role', Equals('admin'))
+    .where('role', Equals('owner'), type: WhereMatcherType.or)
+    .fetch();
+```
+
+Every condition is honored. `UPDATE` and `DELETE` also support all matchers.
+
+## Matchers
+
+| Matcher | SQL | Example |
+| --- | --- | --- |
+| `Equals(value)` | `field = ?` | `where('id', Equals(1))` |
+| `Different(value)` | `field != ?` | `where('status', Different('deleted'))` |
+| `GreaterThan(value)` | `field > ?` | `where('age', GreaterThan(18))` |
+| `GreaterThanOrEqual(value)` | `field >= ?` | `where('age', GreaterThanOrEqual(18))` |
+| `LessThan(value)` | `field < ?` | `where('price', LessThan(100))` |
+| `LessThanOrEqual(value)` | `field <= ?` | `where('price', LessThanOrEqual(100))` |
+| `Between(start, end)` | `field BETWEEN ? AND ?` | `where('price', Between(10, 50))` |
+| `EqualsDate(date)` | `DATE(field) = ?` | `where('created_at', EqualsDate(DateTime(2025, 1, 1)))` |
+| `BetweenDate(start, end)` | `field BETWEEN ? AND ?` | `where('created_at', BetweenDate(start, end))` |
+| `Like(pattern)` | `field LIKE ?` | `where('name', Like('A%'))` |
+| `In(values)` | `field IN (?, ...)` | `where('id', In([1, 2, 3]))` |
+| `IsNull()` | `field IS NULL` | `where('deleted_at', IsNull())` |
+| `IsNotNull()` | `field IS NOT NULL` | `where('email', IsNotNull())` |
+
+## Negation
+
+`notWhere()` negates a matcher:
+
+```dart
+await db.select('users').notWhere('role', Equals('guest')).fetch();
+```
+
+The result depends on the matcher:
+
+| Matcher | `notWhere()` SQL |
+| --- | --- |
+| `Equals(1)` | `NOT (field = ?)` |
+| `Different(1)` | `NOT (field != ?)` |
+| `Like('A%')` | `field NOT LIKE ?` |
+| `In([1, 2])` | `field NOT IN (?, ?)` |
+| `Between(1, 10)` | `field NOT BETWEEN ? AND ?` |
+| `IsNull()` | `field IS NOT NULL` |
+| `IsNotNull()` | `field IS NULL` |
+
+## NULL values
+
+Comparing with `= NULL` never matches in SQL. Queryflow translates null
+comparisons automatically:
+
+```dart
+where('deleted_at', Equals(null));    // deleted_at IS NULL
+where('deleted_at', Different(null)); // deleted_at IS NOT NULL
+```
+
+Use `IsNull()` and `IsNotNull()` when you want the intent to be explicit.
+
+## Lists with `In`
+
+`In` accepts numbers, strings, dates, and other values:
+
+```dart
+where('id', In([1, 2, 3]));
+where('status', In(['active', 'pending']));
+```
+
+Passing an empty list throws `ArgumentError` because `IN ()` is not valid SQL.
+
+## Dates
+
+`EqualsDate` compares only the date portion:
+
+```dart
+where('created_at', EqualsDate(DateTime(2025, 5, 1)));
+// DATE(created_at) = '2025-05-01'
+```
+
+`BetweenDate` is inclusive:
+
+```dart
+where('created_at', BetweenDate(
+  DateTime(2025, 5, 1),
+  DateTime(2025, 5, 31),
+));
+```
+
+<Info>
+  `EqualsDate` wraps the column in `DATE(...)`, which can prevent a database
+  index from being used. For large tables, prefer a range with `GreaterThanOrEqual`
+  and `LessThan` on the raw timestamp.
+</Info>
+
+## Pattern matching
+
+```dart
+where('name', Like('A%'));   // starts with A
+where('name', Like('%son')); // ends with son
+where('name', Like('%da%')); // contains da
+```
+
+MySQL's default collations are often case-insensitive; PostgreSQL's `LIKE` is
+case-sensitive. For case-insensitive matching on PostgreSQL, use a raw
+condition with `ILIKE`:
+
+```dart
+db.select('users').whereRaw("name ILIKE 'ada%'");
+```
+
+<Warning>
+  `whereRaw()` and `Like()` do not escape pattern characters. Never build a raw
+  condition from untrusted input. Prefer matchers and bound parameters.
+</Warning>
+
+## Raw conditions
+
+`whereRaw()` inserts a SQL expression as-is:
+
+```dart
+await db.select('users').whereRaw('deleted_at IS NULL').fetch();
+```
+
+Raw conditions do not bind parameters. If the expression must include user
+input, write a prepared query with `executePrepared()` instead of
+`whereRaw()`:
+
+```dart
+await db.executePrepared(
+  'SELECT * FROM users WHERE LOWER(email) = LOWER(?)',
+  ['ADA@EXAMPLE.COM'],
+);
+```
+
+## Grouping and precedence
+
+Queryflow combines conditions linearly; it does not add parentheses. SQL
+evaluates `AND` before `OR`, so this query:
+
+```dart
+where('a', Equals(1), type: WhereMatcherType.or)
+where('b', Equals(2))
+where('c', Equals(3))
+```
+
+produces:
+
+```sql
+WHERE a = ? OR b = ? AND c = ?
+```
+
+which is `a OR (b AND c)`. If you need explicit grouping, use `whereRaw()`:
+
+```dart
+.whereRaw('(a = 1 OR b = 2) AND c = 3')
+```
+
+## Field names
+
+Field names are inserted as written. Qualified names such as `users.id` work,
+and PostgreSQL users can reference mixed-case columns with quotes:
+
+```dart
+where('users.created_at', GreaterThan(cutoff));
+where('"DisplayName"', Equals('Ada'));
+```
+
+## Next
+
+- [JOINs](/queries/joins)
+- [UPDATE](/queries/update)
+- [DELETE](/queries/delete)

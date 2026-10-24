@@ -1,0 +1,151 @@
+---
+title: Type adapters
+description: Map database rows to Dart models with TypeAdapter and QueryTypeAdapter.
+---
+
+# Type adapters
+
+Queryflow can convert rows into your own classes. Register adapters when you
+create the `Queryflow` instance.
+
+There are two adapter types:
+
+| Adapter | What it does | Used by |
+| --- | --- | --- |
+| `TypeAdapter<T>` | Converts a row to `T`. | `fetchAs<T>()`, `fetchAsOne<T>()` |
+| `QueryTypeAdapter<T>` | Converts a row to `T` **and** describes the table and primary key. | `selectModel<T>()`, `insertModel()`, `updateModel()`, `deleteModel()` |
+
+`QueryTypeAdapter<T>` extends `TypeAdapter<T>`, so it can be used anywhere the
+basic adapter is accepted.
+
+## Define a model
+
+```dart
+class User {
+  final int? id;
+  final String name;
+  final DateTime createdAt;
+
+  User({required this.name, required this.createdAt, this.id});
+
+  Map<String, dynamic> toMap() {
+    return {
+      if (id != null) 'id': id,
+      'name': name,
+      'created_at': createdAt.toIso8601String(),
+    };
+  }
+
+  factory User.fromMap(Map<String, dynamic> map) {
+    return User(
+      id: map['id'] as int?,
+      name: map['name'] as String,
+      createdAt: map['created_at'] as DateTime,
+    );
+  }
+}
+```
+
+<Info>
+  `mysql_dart` and `postgres` return `DateTime` for date/time columns. If your
+  adapter may receive a string (for example from a custom SQL cast), handle both
+  cases with a helper.
+</Info>
+
+## Full adapter
+
+```dart
+final userAdapter = QueryTypeAdapter<User>(
+  table: 'users',
+  primaryKeyColumn: 'id',
+  toMap: (user) => user.toMap(),
+  fromMap: User.fromMap,
+);
+```
+
+Register it with the connection:
+
+```dart
+final db = Queryflow.postgresql(
+  host: 'localhost',
+  port: 5432,
+  userName: 'postgres',
+  password: 'secret',
+  databaseName: 'app',
+  typeAdapters: [userAdapter],
+);
+```
+
+You can register as many adapters as you need:
+
+```dart
+typeAdapters: [
+  userAdapter,
+  productAdapter,
+  orderAdapter,
+],
+```
+
+## Read-only adapter
+
+If you only need `fetchAs<T>()`, define a `TypeAdapter<T>`:
+
+```dart
+final productRowAdapter = TypeAdapter<Product>(
+  fromMap: Product.fromMap,
+);
+```
+
+```dart
+final products = await db
+    .select('products', ['id', 'name', 'price'])
+    .fetchAs<Product>();
+```
+
+## Custom primary keys
+
+`primaryKeyColumn` is used by `selectModel`, `insertModel`, `updateModel`, and
+`deleteModel`:
+
+```dart
+final productAdapter = QueryTypeAdapter<Product>(
+  table: 'products',
+  primaryKeyColumn: 'code',
+  toMap: (product) => product.toMap(),
+  fromMap: Product.fromMap,
+);
+```
+
+For inserts performed through the raw builder, pass the same key explicitly:
+
+```dart
+await db.insert('products', {'name': 'Widget'}, primaryKey: 'code').execute();
+```
+
+## toMap and null keys
+
+For auto-increment keys, omit the key when it is `null`:
+
+```dart
+Map<String, dynamic> toMap() {
+  return {
+    if (id != null) 'id': id,
+    'name': name,
+  };
+}
+```
+
+If you always include `'id': null`, the insert sends `NULL` explicitly and the
+database will not generate a value on PostgreSQL.
+
+## Dates and booleans
+
+- Convert `DateTime` to an ISO 8601 string in `toMap()`.
+- `mysql_dart` and `postgres` return `DateTime` for date/time columns.
+- MySQL stores booleans as `TINYINT(1)` but the driver returns `bool` for those
+  columns in typed results. PostgreSQL returns `bool` directly.
+
+## Next
+
+- [Model CRUD](/models/crud)
+- [Fetching typed results](/models/fetching)

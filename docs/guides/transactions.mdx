@@ -1,0 +1,105 @@
+---
+title: Transactions
+description: Run multiple operations atomically with commit and rollback.
+---
+
+# Transactions
+
+`executeTransaction()` runs a callback inside a database transaction. If the
+callback completes, the transaction is committed. If it throws, the transaction
+is rolled back.
+
+```dart
+final userId = await db.executeTransaction((tx) async {
+  final id = await tx.insertModel(
+    User(name: 'Ada', createdAt: DateTime.now()),
+  );
+
+  // Profile is another model with a registered adapter.
+  await tx.insertModel(
+    Profile(userId: id, bio: 'Mathematician'),
+  );
+
+  return id;
+});
+
+print(userId);
+```
+
+The callback receives a `QueryflowMethods` object, not the original `Queryflow`.
+It exposes queries, model helpers, and events, but not `close()` or
+`synchronize()`.
+
+<Info>
+  `executeTransation()` is a deprecated alias kept for backwards compatibility.
+  Use `executeTransaction()` in new code.
+</Info>
+
+## Commit and rollback
+
+```dart
+try {
+  await db.executeTransaction((tx) async {
+    await tx.update('accounts', {'balance': 900})
+        .where('id', Equals(1))
+        .execute();
+
+    await tx.update('accounts', {'balance': 1100})
+        .where('id', Equals(2))
+        .execute();
+  });
+} on Exception catch (error) {
+  // The transaction was rolled back by the driver.
+  print('Transfer failed: $error');
+}
+```
+
+If the second update throws, the first one is rolled back as well.
+
+## Models inside transactions
+
+Adapters are preserved in the transaction scope, so these work normally:
+
+```dart
+await db.executeTransaction((tx) async {
+  await tx.insertModel(
+    User(name: 'Grace', createdAt: DateTime.now()),
+  );
+
+  final users = await tx.selectModel<User>().fetch();
+  print(users.length);
+});
+```
+
+`insertModel()` runs the insert and reads the generated key on the transaction
+connection, so it does not open a nested transaction.
+
+## Returning a value
+
+The generic type is inferred from the callback:
+
+```dart
+final total = await db.executeTransaction<int>((tx) async {
+  final rows = await tx.execute('SELECT COUNT(*) AS total FROM users');
+  return rows.first['total'] as int;
+});
+```
+
+## Nested transactions
+
+Nested transactions are not supported. The `tx` argument is a
+`QueryflowMethods`, so it does not expose `executeTransaction()`. Starting a
+second transaction on the outer `Queryflow` while one is already open is also
+not supported; the driver throws an error.
+
+If you need savepoints, use raw SQL inside the transaction.
+
+## Connection lifecycle
+
+Do not call `close()` on the outer `Queryflow` while a transaction is running.
+The transaction owns the connection until the callback returns.
+
+## Next
+
+- [Connection pooling](/guides/pooling)
+- [Raw SQL](/queries/raw-sql)

@@ -1,0 +1,100 @@
+---
+title: Introduction
+description: Queryflow is a lightweight, type-safe SQL query builder and schema manager for MySQL and PostgreSQL in Dart.
+---
+
+# Queryflow
+
+**Write SQL in Dart, not strings.** Queryflow is a fluent query builder and schema manager for MySQL and PostgreSQL. It generates parameterized SQL, maps rows to typed models, and keeps table definitions next to your code.
+
+```dart
+final users = await db
+    .select('users', ['id', 'name', 'email'])
+    .where('active', Equals(true))
+    .orderBy(['name'], OrderByType.asc)
+    .limit(20)
+    .fetch();
+```
+
+<CardGroup cols={2}>
+  <Card title="Fluent query builder" icon="code">
+    Compose `SELECT`, `INSERT`, `UPDATE`, and `DELETE` statements with a chainable API. Every value is sent as a bound parameter.
+  </Card>
+  <Card title="Typed models" icon="layer-group">
+    Register a `QueryTypeAdapter` once and use `selectModel`, `insertModel`, `updateModel`, and `deleteModel`.
+  </Card>
+  <Card title="Schema as code" icon="table">
+    Define tables with `TableModel`, then call `synchronize()` to create missing tables and columns.
+  </Card>
+  <Card title="Two databases" icon="database">
+    The same API targets MySQL and PostgreSQL, with dialect-aware quoting, placeholders, and type mapping.
+  </Card>
+  <Card title="Transactions" icon="arrows-rotate">
+    Run multiple operations atomically with `executeTransaction`. Any thrown error rolls the transaction back.
+  </Card>
+  <Card title="Views & events" icon="eye">
+    Manage database views on both databases and MySQL scheduled events from Dart.
+  </Card>
+</CardGroup>
+
+## Install
+
+```bash
+dart pub add queryflow
+```
+
+Requires Dart `>= 3.0.0 < 4.0.0`. Queryflow uses `dart:io` and TCP sockets, so it runs on the Dart VM and on Flutter mobile/desktop — not on Flutter web.
+
+## Connect
+
+<Tabs groupId="database">
+  <TabItem label="MySQL" value="mysql">
+    ```dart
+    import 'package:queryflow/queryflow.dart';
+
+    final db = Queryflow.mysql(
+      host: '127.0.0.1',
+      port: 3306,
+      userName: 'root',
+      password: 'secret',
+      databaseName: 'app',
+    );
+    ```
+  </TabItem>
+  <TabItem label="PostgreSQL" value="postgresql">
+    ```dart
+    import 'package:queryflow/queryflow.dart';
+
+    final db = Queryflow.postgresql(
+      host: '127.0.0.1',
+      port: 5432,
+      userName: 'postgres',
+      password: 'secret',
+      databaseName: 'app',
+    );
+    ```
+  </TabItem>
+</Tabs>
+
+Do not forget to close the connection when your application shuts down:
+
+```dart
+await db.close();
+```
+
+## What makes it different
+
+- **Parameterized by default.** Values become `?` placeholders on MySQL and `$1, $2, ...` on PostgreSQL. Raw queries can use either style on PostgreSQL.
+- **Dialect-aware.** Identifier quoting, auto increment, `RETURNING`, enum handling, and type mapping are generated per database.
+- **No code generation.** Define adapters by hand and keep full control over how your models map to columns.
+- **Explicit schema management.** `synchronize()` creates tables and adds missing columns; destructive changes are opt-in.
+
+<Info>
+  This documentation tracks the `main` branch. The latest feature release is `0.6.0`.
+</Info>
+
+## Next steps
+
+- [Install Queryflow](/installation) and connect to a database.
+- Follow the [quick start](/quick-start) for a complete CRUD example.
+- Browse the [query builder](/queries/select) and [schema management](/schema/table-model) guides.

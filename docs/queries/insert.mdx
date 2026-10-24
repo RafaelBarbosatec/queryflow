@@ -1,0 +1,113 @@
+---
+title: INSERT
+description: Insert rows and read the generated primary key on MySQL and PostgreSQL.
+---
+
+# INSERT
+
+`insert()` builds an `INSERT` statement from a map of column names to values:
+
+```dart
+final id = await db.insert('users', {
+  'name': 'Ada',
+  'email': 'ada@example.com',
+  'created_at': DateTime.now().toIso8601String(),
+}).execute();
+
+print(id); // generated primary key
+```
+
+Column names and the table name are quoted with the database dialect. Values
+are bound parameters.
+
+## Reading the generated id
+
+`execute()` returns the inserted primary key:
+
+- **PostgreSQL** uses `INSERT ... RETURNING *` and reads the key from the
+  returned row.
+- **MySQL** uses `LAST_INSERT_ID()` when the database generated the key.
+- If you provide the primary key explicitly, Queryflow returns it on both
+  databases.
+
+```dart
+final id = await db.insert('users', {
+  'id': 999,
+  'name': 'Explicit key',
+}).execute();
+
+print(id); // 999
+```
+
+## Custom primary key names
+
+The default key column is `id`. For other names, pass `primaryKey`:
+
+```dart
+final code = await db.insert(
+  'products',
+  {'name': 'Widget'},
+  primaryKey: 'code',
+).execute();
+```
+
+<Info>
+  `InsertBuilder.execute()` returns `Future<int>`. For non-integer primary keys
+  (UUID, string), the insert still succeeds, but `execute()` throws
+  `UnsupportedError` when it cannot parse the key as an integer. Use
+  `executePrepared()` with a `RETURNING` clause if you need the raw value.
+</Info>
+
+## Inserting a model
+
+Register a `QueryTypeAdapter<T>` and use `insertModel()`:
+
+```dart
+final id = await db.insertModel(
+  User(name: 'Ada', createdAt: DateTime.now()),
+);
+```
+
+`insertModel()` reads `adapter.primaryKeyColumn` and passes it to the insert,
+so custom key names work automatically.
+
+## Inspecting the SQL
+
+```dart
+final sql = db.insert('users', {'name': 'Ada'}).toSql();
+print(sql);
+// INSERT INTO "users" ("name") VALUES ($1)   (PostgreSQL)
+// INSERT INTO `users` (`name`) VALUES (?)    (MySQL)
+```
+
+`toSql()` is for debugging. `execute()` adds `RETURNING` on PostgreSQL and
+pins a connection on MySQL for `LAST_INSERT_ID()`.
+
+## Empty fields
+
+An empty map throws `ArgumentError`:
+
+```dart
+await db.insert('users', {}).execute(); // ArgumentError
+```
+
+## Bulk inserts and upserts
+
+Bulk inserts and `ON CONFLICT` / `ON DUPLICATE KEY` are not exposed by the
+builder yet. Use a prepared query:
+
+```dart
+await db.executePrepared(
+  'INSERT INTO users (name, email) VALUES (?, ?), (?, ?)',
+  ['Ada', 'ada@example.com', 'Grace', 'grace@example.com'],
+);
+```
+
+On PostgreSQL, `?` is converted to `$1, $2, ...` automatically. Use
+`execute()` and native `$n` placeholders if the statement contains the JSON
+`?` operator.
+
+## Next
+
+- [UPDATE](/queries/update)
+- [Model CRUD](/models/crud)

@@ -1,0 +1,93 @@
+---
+title: Fetching typed results
+description: Choose between selectModel, fetchAs, fetchOne, and fetchAsOne.
+---
+
+# Fetching typed results
+
+There are two ways to get typed objects back from a query:
+
+- `selectModel<T>()` when the table and primary key come from a
+  `QueryTypeAdapter<T>`.
+- `fetchAs<T>()` on any `select()` when you only need a `TypeAdapter<T>` (or a
+  `QueryTypeAdapter<T>`).
+
+## selectModel
+
+```dart
+final users = await db
+    .selectModel<User>()
+    .where('active', Equals(true))
+    .orderBy(['name'], OrderByType.asc)
+    .fetch();
+```
+
+`selectModel<User>()` reads the table from the adapter, so you do not pass it
+again. You can still pass a field list:
+
+```dart
+final users = await db
+    .selectModel<User>(['id', 'name', 'created_at'])
+    .fetch();
+```
+
+`fromMap` receives exactly the selected columns, so include every field it
+needs.
+
+## fetchAs
+
+```dart
+final users = await db
+    .select('users', ['id', 'name', 'created_at'])
+    .where('name', Like('A%'))
+    .fetchAs<User>();
+```
+
+`fetchAs<T>()` keeps the table and field list explicit. It is a good fit for
+joins and custom projections:
+
+```dart
+final rows = await db
+    .select('users', [
+      'users.id AS id',
+      'users.name AS name',
+      'users.created_at AS created_at',
+    ])
+    .join('orders', InnerJoin('id', 'user_id'))
+    .fetchAs<User>();
+```
+
+## One row
+
+```dart
+final user = await db
+    .selectModel<User>()
+    .where('id', Equals(1))
+    .limit(1)
+    .fetchOne();
+
+final product = await db
+    .select('products', ['id', 'name', 'price'])
+    .where('id', Equals(1))
+    .limit(1)
+    .fetchAsOne<Product>();
+```
+
+Both return `null` when there are no rows. They return the first row when there
+are several; add `limit(1)` when you want the database to stop early.
+
+## Mapping errors
+
+If a row cannot be converted, the exception from your `fromMap` propagates.
+Common causes:
+
+- The selected fields are missing a required key.
+- A column is `null` but the model expects a non-nullable value.
+- A date/time column is cast to a string in custom SQL.
+
+Make `fromMap` defensive when the query shape can vary.
+
+## Next
+
+- [Type adapters](/models/type-adapters)
+- [SELECT](/queries/select)

@@ -1,6 +1,5 @@
 import 'package:mocktail/mocktail.dart';
 import 'package:queryflow/queryflow.dart';
-import 'package:queryflow/src/executor/executor.dart';
 import 'package:queryflow/src/type/query_type_retriver.dart';
 import 'package:test/test.dart';
 

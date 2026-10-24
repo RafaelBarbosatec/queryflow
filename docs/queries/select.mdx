@@ -1,0 +1,141 @@
+---
+title: SELECT
+description: Build SELECT queries, choose fields, and fetch rows as maps or typed models.
+---
+
+# SELECT
+
+`select()` starts a `SELECT` statement. It accepts a table name and an optional
+list of fields. Without fields, Queryflow selects everything (`*`).
+
+```dart
+final rows = await db.select('users', ['id', 'name', 'email']).fetch();
+// [{'id': 1, 'name': 'Ada', 'email': 'ada@example.com'}]
+```
+
+All values are sent as bound parameters, so the generated SQL is safe from
+value-based injection. Table names are quoted with the active dialect.
+
+## Fetching rows
+
+| Method | Returns | When to use |
+| --- | --- | --- |
+| `fetch()` | `Future<List<Map<String, dynamic>>>` | You want raw rows. |
+| `fetchOne()` | `Future<Map<String, dynamic>?>` | You expect at most one row. |
+| `fetchAs<T>()` | `Future<List<T>>` | You registered a `TypeAdapter<T>`. |
+| `fetchAsOne<T>()` | `Future<T?>` | Same, but at most one row. |
+
+`fetchOne()` and `fetchAsOne()` read the first row from the result; they do not
+append `LIMIT 1` automatically. Add `.limit(1)` when performance matters.
+
+```dart
+final user = await db.select('users', ['id', 'name'])
+    .where('id', Equals(42))
+    .fetchOne();
+```
+
+## Selecting specific fields
+
+```dart
+final rows = await db.select('users', ['id', 'name']).fetch();
+```
+
+Field names are inserted **as written**, so you can select expressions or
+qualified columns:
+
+```dart
+final rows = await db.select('users', [
+  'users.id',
+  'users.name',
+  'LOWER(users.email) AS normalized_email',
+]).fetch();
+```
+
+<Info>
+  Table names passed to `select()` are quoted. Field names are not, because
+  Queryflow cannot tell an identifier from an expression. Use the exact
+  database identifier (including quotes for mixed-case columns) when needed.
+</Info>
+
+## Filtering
+
+`where()`, `notWhere()`, and `whereRaw()` add conditions. See
+[WHERE conditions](/queries/where) for the complete matcher list.
+
+```dart
+final rows = await db.select('users')
+    .where('active', Equals(true))
+    .where('age', GreaterThanOrEqual(18))
+    .fetch();
+```
+
+## Joins
+
+```dart
+final rows = await db.select('users', ['users.id', 'users.name', 'orders.total'])
+    .join('orders', InnerJoin('id', 'user_id'))
+    .where('orders.total', GreaterThan(100))
+    .fetch();
+```
+
+See [JOINs](/queries/joins) for aliases and raw joins.
+
+## Ordering, grouping, and paging
+
+```dart
+final rows = await db.select('users', ['id', 'name'])
+    .orderBy(['name'], OrderByType.asc)
+    .limit(20, 40) // 20 rows, skipping the first 40
+    .fetch();
+```
+
+Chain order matters at the type level. The usual order is:
+
+```text
+join → where → groupBy → orderBy → limit → fetch
+```
+
+See [Sorting, grouping & paging](/queries/sorting-and-paging).
+
+## Typed results
+
+With a `TypeAdapter<T>` registered:
+
+```dart
+final users = await db.select('users', ['id', 'name'])
+    .where('name', Like('A%'))
+    .fetchAs<User>();
+```
+
+For `selectModel<T>()`, the table and primary key come from a
+`QueryTypeAdapter<T>`. See [Type adapters](/models/type-adapters).
+
+## Aggregations
+
+```dart
+final total = await db.select('users').count();
+final oldest = await db.select('users', ['age']).max();
+```
+
+See [Aggregations](/queries/aggregations).
+
+## Inspecting the SQL
+
+`toSql()` returns the final SQL with values interpolated. It is useful for
+logging and for building view definitions; do not use it to execute a query.
+
+```dart
+print(
+  db.select('users', ['id'])
+      .where('id', Equals(1))
+      .toSql(),
+);
+// SELECT id FROM "users" WHERE id = 1   (PostgreSQL)
+// SELECT id FROM `users` WHERE id = 1   (MySQL)
+```
+
+## Next
+
+- [WHERE conditions](/queries/where)
+- [JOINs](/queries/joins)
+- [Aggregations](/queries/aggregations)

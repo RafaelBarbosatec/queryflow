@@ -1,0 +1,103 @@
+---
+title: Raw SQL
+description: Execute raw queries and parameterized prepared statements on MySQL and PostgreSQL.
+---
+
+# Raw SQL
+
+For queries that the builder does not cover, use `execute()` or
+`executePrepared()`. Both return a list of maps.
+
+## `execute`
+
+```dart
+final rows = await db.execute(
+  'SELECT id, name FROM users WHERE active = 1',
+);
+```
+
+Use it for DDL and statements that do not need parameters:
+
+```dart
+await db.execute('CREATE INDEX idx_users_email ON users (email)');
+```
+
+Statements without a result set return an empty list.
+
+## `executePrepared`
+
+`executePrepared()` binds values and avoids string interpolation:
+
+```dart
+final rows = await db.executePrepared(
+  'SELECT id, name FROM users WHERE email = ? AND active = ?',
+  ['ada@example.com', true],
+);
+```
+
+On PostgreSQL, `?` placeholders are converted to `$1, $2, ...` automatically.
+Question marks inside single-quoted strings, quoted identifiers, and
+dollar-quoted blocks are preserved:
+
+```dart
+await db.executePrepared(
+  "SELECT * FROM users WHERE note = ? AND kind <> 'why?'",
+  ['question?'],
+);
+```
+
+<Warning>
+  PostgreSQL uses `?` as a JSON operator. `executePrepared()` cannot distinguish
+  a JSON operator from a placeholder. For JSON queries, use `execute()` with a
+  literal value or use native `$1` placeholders instead of `?`.
+</Warning>
+
+## Result shape
+
+Rows are returned as `Map<String, dynamic>`. If two selected columns have the
+same name, the last one wins. Alias columns to keep both:
+
+```dart
+final rows = await db.executePrepared(
+  '''
+  SELECT
+    users.id AS user_id,
+    orders.id AS order_id,
+    orders.total
+  FROM users
+  INNER JOIN orders ON orders.user_id = users.id
+  WHERE users.id = ?
+  ''',
+  [1],
+);
+```
+
+## Identifiers are not escaped
+
+`execute()` and `executePrepared()` send the SQL as written. Bind **values**,
+never identifiers:
+
+```dart
+// Do not do this:
+await db.execute("SELECT * FROM users WHERE name = '$input'");
+
+// Do this:
+await db.executePrepared(
+  'SELECT * FROM users WHERE name = ?',
+  [input],
+);
+```
+
+For dynamic table or column names, validate the value against an allow-list
+before inserting it into the SQL string.
+
+## Multiple statements
+
+Run one statement per call. Multiple statements in a single string are not
+supported consistently by the drivers.
+
+## Next
+
+- [Transactions](/guides/transactions)
+- [Logging & debugging](/guides/logging)
+- [Troubleshooting](/guides/troubleshooting)

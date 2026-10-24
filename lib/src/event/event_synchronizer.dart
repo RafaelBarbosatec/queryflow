@@ -2,8 +2,6 @@ import 'dart:typed_data';
 
 import 'package:queryflow/queryflow.dart';
 import 'package:queryflow/src/dialect/mysql_dialect.dart';
-import 'package:queryflow/src/dialect/sql_dialect.dart';
-import 'package:queryflow/src/logger/query_logger.dart';
 
 class EventSynchronizer {
   final List<EventModel> events;

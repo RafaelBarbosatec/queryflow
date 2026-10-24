@@ -1,0 +1,103 @@
+---
+title: Model CRUD
+description: Insert, update, and delete models through QueryTypeAdapter.
+---
+
+# Model CRUD
+
+`QueryTypeAdapter<T>` enables the model helpers on `Queryflow`:
+
+| Method | Returns | Description |
+| --- | --- | --- |
+| `insertModel(model)` | `Future<int>` | Inserts the row and returns the primary key. |
+| `updateModel(model)` | `Future<void>` | Updates the row identified by the model's primary key. |
+| `deleteModel(model)` | `Future<void>` | Deletes the row identified by the model's primary key. |
+
+All three use `adapter.table`, `adapter.primaryKeyColumn`, and
+`adapter.toMap(model)`.
+
+## Insert
+
+```dart
+final id = await db.insertModel(
+  User(name: 'Ada', createdAt: DateTime.now()),
+);
+```
+
+The primary key is returned as an `int`. On PostgreSQL this uses
+`INSERT ... RETURNING *`; on MySQL it uses `LAST_INSERT_ID()` when the key is
+generated.
+
+<Info>
+  If your primary key is a UUID or another non-integer value, the insert still
+  succeeds but `insertModel()` throws `UnsupportedError` when it cannot parse
+  the key as an integer. Insert with `executePrepared()` and read the value
+  yourself in that case.
+</Info>
+
+## Update
+
+```dart
+await db.updateModel(
+  User(id: 1, name: 'Ada Lovelace', createdAt: DateTime.now()),
+);
+```
+
+- The primary key must be present; otherwise `ArgumentError` is thrown.
+- The primary key is removed from the `SET` clause and used in the `WHERE`
+  clause.
+- If the model has no fields other than the primary key, the update throws
+  `ArgumentError`.
+
+## Delete
+
+```dart
+await db.deleteModel(
+  User(id: 1, name: 'Ada', createdAt: DateTime.now()),
+);
+```
+
+A missing primary key throws `ArgumentError` instead of deleting nothing
+silently.
+
+## Explicit transaction
+
+Model helpers work inside a transaction. The transaction receives a
+`QueryflowMethods` object with the same adapters:
+
+```dart
+await db.executeTransaction((tx) async {
+  final userId = await tx.insertModel(
+    User(name: 'Ada', createdAt: DateTime.now()),
+  );
+
+  // Profile is another model with a registered adapter.
+  await tx.insertModel(
+    Profile(userId: userId, bio: 'Mathematician'),
+  );
+});
+```
+
+If any operation throws, the whole transaction is rolled back. See
+[Transactions](/guides/transactions).
+
+## Batch operations
+
+There is no `insertModels`/`updateModels` helper yet. For batches, use a
+prepared statement inside a transaction:
+
+```dart
+await db.executeTransaction((tx) async {
+  for (final user in users) {
+    await tx.executePrepared(
+      'INSERT INTO users (name, created_at) VALUES (?, ?)',
+      [user.name, user.createdAt.toIso8601String()],
+    );
+  }
+});
+```
+
+## Next
+
+- [Fetching typed results](/models/fetching)
+- [Transactions](/guides/transactions)

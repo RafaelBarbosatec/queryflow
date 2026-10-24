@@ -1,0 +1,89 @@
+---
+title: Changelog
+description: Release highlights and a link to the full Queryflow changelog.
+---
+
+# Changelog
+
+The full history lives in
+[CHANGELOG.md](https://github.com/RafaelBarbosatec/queryflow/blob/main/CHANGELOG.md).
+
+## 0.6.0
+
+This release focuses on correctness, PostgreSQL parity, and safer defaults.
+
+### Query builder
+
+- `UPDATE` now applies **every** `WHERE` condition. Previously only the first
+  one was used.
+- `DELETE` now joins conditions with `AND`/`OR` and preserves `OR`.
+- `notWhere()` negates every matcher (`NOT`, `NOT LIKE`, `NOT IN`,
+  `NOT BETWEEN`, `IS NOT NULL`, ...).
+- `Equals(null)` and `Different(null)` are translated to `IS NULL` /
+  `IS NOT NULL`.
+- `In` accepts any value type and rejects empty lists.
+- `UPDATE` no longer treats `id` as a special column.
+- `INSERT` quotes column names and uses dialect placeholders.
+
+### Transactions
+
+- `executeTransaction()` keeps type adapters and schema definitions, so model
+  helpers work inside transactions.
+- MySQL transactions no longer require a previous query.
+- Nested transactions throw a clear `UnsupportedError`.
+- `insertModel()` runs directly on the transaction connection.
+
+### Schema management
+
+- PostgreSQL schema synchronization reads `INFORMATION_SCHEMA` case-insensitively.
+- Foreign keys added during synchronization are created correctly.
+- `initalData` works on PostgreSQL and respects auto-increment columns.
+- `TypeEnum` uses `TEXT` + `CHECK` on PostgreSQL.
+- Synchronization errors are thrown instead of silently logged.
+- Views are dropped before their tables when `dropTable` is used.
+- View synchronization uses the correct PostgreSQL schema.
+- `dropObsoleteColumns` is opt-in.
+- Added columns keep nullability, defaults, unique, and enum constraints.
+
+### Connections and placeholders
+
+- PostgreSQL accepts `?` placeholders on pooled connections and inside
+  transactions. Quoted strings and dollar-quoted blocks are preserved.
+- MySQL pooled prepared statements run on the connection that prepared them.
+- `close()` is idempotent and connections can be reused after closing.
+- PostgreSQL no longer sends `SELECT 1` before every query.
+
+### Inserts
+
+- `insert()` returns the inserted primary key: `RETURNING` on PostgreSQL,
+  explicit keys honored on both databases, and a `primaryKey` parameter for
+  custom key names.
+
+### API and tooling
+
+- Added `synchronize()` and `executeTransaction()`; the old spellings are
+  deprecated aliases.
+- Logging is silent by default; pass `debug: true` to enable it.
+- `lints` replaces `flutter_lints`; `test` is pinned; CI runs on the Dart SDK.
+
+## 0.5.2
+
+- Fix quoted fields.
+
+## 0.5.1
+
+- Improve foreign key constraint name generation.
+- Add `isUnique` to column types.
+
+## 0.5.0
+
+- Add PostgreSQL support.
+- BREAKING: use `Queryflow.mysql()` or `Queryflow.postgresql()`.
+- Simplify `executeTransaction`.
+
+## 0.4.0
+
+- Add the event synchronizer.
+
+See the [full changelog](https://github.com/RafaelBarbosatec/queryflow/blob/main/CHANGELOG.md)
+for older releases.

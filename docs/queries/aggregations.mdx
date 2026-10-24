@@ -1,0 +1,83 @@
+---
+title: Aggregations
+description: Use COUNT, MAX, MIN, SUM, and AVG with the fluent query builder.
+---
+
+# Aggregations
+
+The select builder exposes five aggregate helpers:
+
+| Method | SQL | Return |
+| --- | --- | --- |
+| `count()` | `COUNT(...)` | `Future<int>` |
+| `max()` | `MAX(field)` | `Future<num>` |
+| `min()` | `MIN(field)` | `Future<num>` |
+| `sum()` | `SUM(field)` | `Future<num>` |
+| `avg()` | `AVG(field)` | `Future<num>` |
+
+## COUNT
+
+`count()` accepts the selected fields, or `*` when no fields are given:
+
+```dart
+final total = await db.select('users').count();
+
+final active = await db
+    .select('users', ['id'])
+    .where('active', Equals(true))
+    .count();
+```
+
+With a join, `COUNT(*)` counts the joined rows. Use `COUNT(DISTINCT ...)` via a
+raw query if you need to count unique entities:
+
+```dart
+final rows = await db.execute(
+  'SELECT COUNT(DISTINCT user_id) AS total FROM orders',
+);
+```
+
+## MAX, MIN, SUM, AVG
+
+These helpers require exactly one field, and the field cannot be `*`:
+
+```dart
+final oldest = await db.select('users', ['age']).max();
+final youngest = await db.select('users', ['age']).min();
+final revenue = await db.select('orders', ['total']).sum();
+final average = await db.select('orders', ['total']).avg();
+```
+
+They can be combined with filters:
+
+```dart
+final revenue = await db
+    .select('orders', ['total'])
+    .where('status', Equals('paid'))
+    .sum();
+```
+
+<Info>
+  `SUM`, `MAX`, `MIN`, and `AVG` return `null` for an empty result set. The
+  helpers normalize that to `0` for `sum`, `min`, `max`, and `avg`. If you need
+  to distinguish “no rows” from “zero”, run a raw query.
+</Info>
+
+## Aggregations with GROUP BY
+
+`count()` and the other helpers return the **first row** of the result. When a
+`GROUP BY` produces multiple groups, this is probably not what you want. Fetch
+the grouped rows and aggregate in Dart, or use a raw query:
+
+```dart
+final rows = await db
+    .select('orders', ['customer_id', 'SUM(total) AS revenue'])
+    .groupBy(['customer_id'])
+    .orderBy(['revenue'])
+    .fetch();
+```
+
+## Next
+
+- [SELECT](/queries/select)
+- [Sorting, grouping & paging](/queries/sorting-and-paging)

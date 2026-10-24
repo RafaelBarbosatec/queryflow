@@ -1,0 +1,232 @@
+---
+title: Quick start
+description: Build a table, synchronize the schema, and run CRUD operations with Queryflow in a few minutes.
+---
+
+# Quick start
+
+This guide creates a `users` table, inserts rows, queries them, updates a row,
+and deletes it. The same code works with MySQL and PostgreSQL; only the
+connection factory changes.
+
+## 1. Define the model and table
+
+```dart
+import 'package:queryflow/queryflow.dart';
+
+class User {
+  final int? id;
+  final String name;
+  final DateTime createdAt;
+
+  User({required this.name, required this.createdAt, this.id});
+
+  Map<String, dynamic> toMap() {
+    return {
+      if (id != null) 'id': id,
+      'name': name,
+      'created_at': createdAt.toIso8601String(),
+    };
+  }
+
+  factory User.fromMap(Map<String, dynamic> map) {
+    return User(
+      id: map['id'] as int?,
+      name: map['name'] as String,
+      createdAt: map['created_at'] as DateTime,
+    );
+  }
+
+  static final table = TableModel(
+    name: 'users',
+    columns: {
+      'id': TypeInt(isPrimaryKey: true, isAutoIncrement: true),
+      'name': TypeVarchar(length: 120),
+      'created_at': TypeDateTime(),
+    },
+  );
+
+  static final adapter = QueryTypeAdapter<User>(
+    table: table.name,
+    primaryKeyColumn: table.primaryKeyColumn,
+    toMap: (user) => user.toMap(),
+    fromMap: User.fromMap,
+  );
+}
+```
+
+`TableModel` describes the table for schema synchronization. `QueryTypeAdapter`
+tells Queryflow how to convert a `User` to a row and back.
+
+## 2. Connect
+
+<Tabs groupId="database">
+  <TabItem label="MySQL" value="mysql">
+    ```dart
+    final db = Queryflow.mysql(
+      host: '127.0.0.1',
+      port: 3306,
+      userName: 'root',
+      password: 'secret',
+      databaseName: 'app',
+      typeAdapters: [User.adapter],
+      tables: [User.table],
+    );
+    ```
+  </TabItem>
+  <TabItem label="PostgreSQL" value="postgresql">
+    ```dart
+    final db = Queryflow.postgresql(
+      host: '127.0.0.1',
+      port: 5432,
+      userName: 'postgres',
+      password: 'secret',
+      databaseName: 'app',
+      typeAdapters: [User.adapter],
+      tables: [User.table],
+    );
+    ```
+  </TabItem>
+</Tabs>
+
+## 3. Create the schema
+
+```dart
+await db.synchronize();
+```
+
+This creates any missing table or column. In production, prefer explicit
+migrations; see [Synchronization](/schema/synchronization).
+
+## 4. Insert
+
+```dart
+final id = await db.insertModel(
+  User(name: 'Ada', createdAt: DateTime.now()),
+);
+
+print('Inserted user with id $id');
+```
+
+`insertModel` returns the generated primary key. If you insert with the raw
+builder, the same value is returned:
+
+```dart
+final id = await db.insert('users', {
+  'name': 'Grace',
+  'created_at': DateTime.now().toIso8601String(),
+}).execute();
+```
+
+For tables whose primary key is not named `id`, pass it explicitly:
+
+```dart
+final code = await db.insert(
+  'products',
+  {'name': 'Widget'},
+  primaryKey: 'code',
+).execute();
+```
+
+## 5. Query
+
+```dart
+final users = await db.selectModel<User>()
+    .where('name', Like('A%'))
+    .orderBy(['name'], OrderByType.asc)
+    .limit(20)
+    .fetch();
+
+for (final user in users) {
+  print('${user.id}: ${user.name}');
+}
+```
+
+Use `fetchOne()` (or `fetchAsOne<User>()`) when you expect at most one row:
+
+```dart
+final user = await db.selectModel<User>()
+    .where('id', Equals(id))
+    .fetchOne();
+```
+
+## 6. Update
+
+```dart
+await db.updateModel(
+  User(id: id, name: 'Ada Lovelace', createdAt: DateTime.now()),
+);
+```
+
+Or with the fluent builder:
+
+```dart
+await db.update('users', {'name': 'Ada Lovelace'})
+    .where('id', Equals(id))
+    .execute();
+```
+
+## 7. Delete
+
+```dart
+await db.deleteModel(User(id: id, name: 'Ada', createdAt: DateTime.now()));
+```
+
+Or:
+
+```dart
+await db.delete('users').where('id', Equals(id)).execute();
+```
+
+<Warning>
+  `update()` and `delete()` execute for every row that matches the `WHERE`
+  clause. Always include a condition when you do not intend to modify the whole
+  table.
+</Warning>
+
+## 8. Close
+
+```dart
+await db.close();
+```
+
+## Complete example
+
+```dart
+Future<void> main() async {
+  final db = Queryflow.mysql(
+    host: '127.0.0.1',
+    port: 3306,
+    userName: 'root',
+    password: 'secret',
+    databaseName: 'app',
+    typeAdapters: [User.adapter],
+    tables: [User.table],
+  );
+
+  try {
+    await db.synchronize();
+
+    final id = await db.insertModel(
+      User(name: 'Ada', createdAt: DateTime.now()),
+    );
+
+    final users = await db.selectModel<User>().fetch();
+    print(users.length);
+
+    await db.updateModel(
+      User(id: id, name: 'Ada Lovelace', createdAt: DateTime.now()),
+    );
+
+    await db.delete('users').where('id', Equals(id)).execute();
+  } finally {
+    await db.close();
+  }
+}
+```
+
+## Next
+
+- Learn every matcher in [WHERE conditions](/queries/where).
+- Work with typed models in [Type adapters](/models/type-adapters).
+- Manage tables, views, and events in [Schema management](/schema/table-model).

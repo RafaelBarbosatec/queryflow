@@ -1,0 +1,67 @@
+---
+title: DELETE
+description: Delete rows safely with WHERE conditions, or delete models by primary key.
+---
+
+# DELETE
+
+`delete()` starts a `DELETE` statement:
+
+```dart
+await db.delete('users').where('id', Equals(1)).execute();
+```
+
+All `WHERE` matchers, `notWhere()`, and `whereRaw()` are supported:
+
+```dart
+await db.delete('sessions')
+    .where('expires_at', LessThan(DateTime.now()))
+    .where('revoked', Equals(true), type: WhereMatcherType.or)
+    .execute();
+```
+
+<Warning>
+  Without a `WHERE` clause, `DELETE` removes every row in the table. Include a
+  condition unless you intend to truncate the table.
+</Warning>
+
+## Deleting models
+
+`deleteModel()` uses the adapter's primary key:
+
+```dart
+await db.deleteModel(
+  User(id: 1, name: 'Ada', createdAt: DateTime.now()),
+);
+```
+
+If the primary key is missing, Queryflow throws `ArgumentError` instead of
+silently deleting nothing.
+
+## Soft deletes
+
+Queryflow does not add soft-delete columns automatically. Use an update
+instead:
+
+```dart
+await db.update('users', {'deleted_at': DateTime.now().toIso8601String()})
+    .where('id', Equals(1))
+    .execute();
+```
+
+Then filter deleted rows in your selects:
+
+```dart
+await db.select('users').where('deleted_at', IsNull()).fetch();
+```
+
+## Foreign keys and cascades
+
+`DELETE` is executed by the database, so foreign key rules apply. If a
+constraint rejects the delete, the driver exception is rethrown. Configure
+`ON DELETE CASCADE` in your schema or delete child rows first.
+
+## Next
+
+- [Raw SQL](/queries/raw-sql)
+- [Model CRUD](/models/crud)

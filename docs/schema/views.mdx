@@ -1,0 +1,115 @@
+---
+title: Views
+description: Define and synchronize database views with ViewModel.
+---
+
+# Views
+
+`ViewModel` defines a database view. Register views on the `Queryflow` instance
+and call `synchronize()` to create or update them.
+
+## Raw views
+
+```dart
+final userSummary = ViewModel.raw(
+  name: 'user_summary',
+  query: '''
+    SELECT
+      users.id,
+      users.name,
+      profiles.bio
+    FROM users
+    LEFT JOIN profiles ON profiles.user_id = users.id
+  ''',
+);
+```
+
+Raw views are ideal for complex joins, database-specific syntax, and
+materialized-view-like queries.
+
+## Builder views
+
+```dart
+final activeUsers = ViewModel.builder(
+  name: 'active_users',
+  query: (builder) {
+    return builder(
+      table: 'users',
+      fields: ['id', 'name', 'created_at'],
+    ).where('active', Equals(true));
+  },
+);
+```
+
+<Info>
+  Builder views are converted to SQL with `toSql()` when the view is
+  synchronized, so values are embedded in the definition. Use raw views when
+  the query needs parameters, complex expressions, or database-specific syntax.
+</Info>
+
+## Register and synchronize
+
+```dart
+final db = Queryflow.postgresql(
+  host: 'localhost',
+  port: 5432,
+  userName: 'postgres',
+  password: 'secret',
+  databaseName: 'app',
+  tables: [users, profiles],
+  views: [userSummary, activeUsers],
+);
+
+await db.synchronize();
+```
+
+Views are created with `CREATE OR REPLACE VIEW`. On subsequent runs, Queryflow
+compares the view's column list with the columns produced by the current
+definition and recreates the view when they differ.
+
+When `synchronize(dropTable: true)` is used, configured views are dropped before
+the tables they depend on.
+
+## Query a view
+
+Views are queried like tables:
+
+```dart
+final rows = await db
+    .select('user_summary', ['id', 'name', 'bio'])
+    .where('bio', IsNotNull())
+    .orderBy(['name'], OrderByType.asc)
+    .fetch();
+```
+
+Typed models work too, as long as the adapter's `table` points to the view:
+
+```dart
+final userSummaryAdapter = QueryTypeAdapter<UserSummary>(
+  table: 'user_summary',
+  primaryKeyColumn: 'id',
+  toMap: (summary) => summary.toMap(),
+  fromMap: UserSummary.fromMap,
+);
+
+final db = Queryflow.postgresql(
+  // ...
+  typeAdapters: [userSummaryAdapter],
+  views: [userSummary],
+);
+```
+
+## Limitations
+
+- Views must be created in the schema Queryflow checks (`public` on PostgreSQL,
+  `databaseName` on MySQL).
+- Only the selected column names are compared; changes that keep the same
+  columns may not trigger a recreate.
+- Materialized views and view ownership/privileges are not managed.
+- `ViewModel.builder` uses the same chain rules as `select()`; the `toSql()`
+  output is embedded in the view definition.
+
+## Next
+
+- [Synchronization](/schema/synchronization)
+- [Events (MySQL)](/schema/events)

@@ -1,0 +1,201 @@
+---
+title: Tables & columns
+description: Define tables, column types, keys, defaults, foreign keys, and initial data with TableModel.
+---
+
+# Tables & columns
+
+`TableModel` describes a table in Dart. Register models with the connection and
+call `synchronize()` to create the table.
+
+```dart
+final users = TableModel(
+  name: 'users',
+  columns: {
+    'id': TypeInt(isPrimaryKey: true, isAutoIncrement: true),
+    'name': TypeVarchar(length: 120),
+    'email': TypeVarchar(length: 255, isUnique: true),
+    'active': TypeBool(isNotNull: true, defaultValue: true),
+    'created_at': TypeDateTime(defaultValue: 'CURRENT_TIMESTAMP'),
+  },
+);
+```
+
+```dart
+final db = Queryflow.mysql(
+  host: 'localhost',
+  port: 3306,
+  userName: 'root',
+  password: 'secret',
+  databaseName: 'app',
+  tables: [users],
+);
+
+await db.synchronize();
+```
+
+## Column options
+
+Every column type supports:
+
+| Option | Description |
+| --- | --- |
+| `isPrimaryKey` | Adds the column to the primary key. |
+| `isAutoIncrement` | Generates values. Requires `isPrimaryKey`. |
+| `isNotNull` | Adds `NOT NULL`. Primary keys are always `NOT NULL`. |
+| `isUnique` | Adds `UNIQUE` (ignored for primary keys). |
+| `defaultValue` | Adds a `DEFAULT`. Strings are quoted automatically. |
+| `onUpdate` | Adds `ON UPDATE` on MySQL only. |
+| `foreignKey` | Adds a foreign key constraint. |
+
+## Defining a primary key
+
+```dart
+'id': TypeInt(isPrimaryKey: true, isAutoIncrement: true),
+```
+
+Composite primary keys are supported by marking several columns:
+
+```dart
+'order_id': TypeInt(isPrimaryKey: true),
+'line_id': TypeInt(isPrimaryKey: true),
+```
+
+Auto increment is only valid on a single integer primary key.
+
+## Column types
+
+| Dart type | MySQL | PostgreSQL |
+| --- | --- | --- |
+| `TypeInt(length: 4)` | `INT` (length maps to `TINYINT`, `SMALLINT`, `MEDIUMINT`, or `INT(n)`) | `SMALLINT`, `INTEGER`, or `BIGINT` |
+| `TypeVarchar(length: 255)` | `VARCHAR(n)` | `VARCHAR(n)` |
+| `TypeText()` | `TEXT` | `TEXT` |
+| `TypeBool()` | `TINYINT(1)` | `BOOLEAN` |
+| `TypeDouble()` | `DOUBLE` | `DOUBLE PRECISION` |
+| `TypeFloat(precision: n)` | `FLOAT(n)` | `REAL` |
+| `TypeDateTime()` | `DATETIME` | `TIMESTAMPTZ` |
+| `TypeTimestamp()` | `TIMESTAMP` | `TIMESTAMPTZ` |
+| `TypeDate()` | `DATE` | `DATE` |
+| `TypeTime()` | `TIME` | `TIME` |
+| `TypeYear()` | `YEAR` | `INTEGER` |
+| `TypeBlob()` | `BLOB` | `BYTEA` |
+| `TypeEnum(values: [...])` | `ENUM(...)` | `TEXT` + `CHECK` |
+
+<Info>
+  PostgreSQL auto increment is generated with `SERIAL`, `BIGSERIAL`, or
+  `SMALLSERIAL` depending on the integer size. MySQL uses `AUTO_INCREMENT`.
+</Info>
+
+## Length constraints
+
+- `TypeVarchar` accepts lengths from `1` to `255`.
+- `TypeInt` accepts lengths from `1` to `11`.
+
+If you need larger text or numeric values, use `TypeText`, `TypeDouble`, or a raw
+`ALTER TABLE` statement.
+
+## Defaults
+
+```dart
+'active': TypeBool(defaultValue: true),
+'created_at': TypeDateTime(defaultValue: 'CURRENT_TIMESTAMP'),
+'retry_count': TypeInt(defaultValue: 0),
+'status': TypeVarchar(defaultValue: 'pending'),
+```
+
+String-like values are quoted automatically. Known SQL expressions such as
+`CURRENT_TIMESTAMP`, `CURRENT_DATE`, `CURRENT_TIME`, `LOCALTIME`, and
+`LOCALTIMESTAMP` are inserted without quotes.
+
+## Foreign keys
+
+```dart
+final profiles = TableModel(
+  name: 'profiles',
+  columns: {
+    'id': TypeInt(isPrimaryKey: true, isAutoIncrement: true),
+    'user_id': TypeInt(
+      foreignKey: ForeignKey(table: 'users', column: 'id'),
+    ),
+    'bio': TypeText(),
+  },
+);
+```
+
+The constraint name is generated from the tables and columns. To choose your
+own name, pass `keyName`:
+
+```dart
+ForeignKey(
+  table: 'users',
+  column: 'id',
+  keyName: 'fk_profiles_user',
+)
+```
+
+<Info>
+  In the current release, `foreignKey` is available on `TypeInt`,
+  `TypeVarchar`, and `TypeText`. For other column types, create the constraint
+  with a raw `ALTER TABLE`.
+</Info>
+
+## Initial data
+
+`initalData` inserts rows when the table is created. Each row lists values in
+the same order as the `columns` map:
+
+```dart
+final roles = TableModel(
+  name: 'roles',
+  columns: {
+    'id': TypeInt(isPrimaryKey: true, isAutoIncrement: true),
+    'name': TypeVarchar(),
+  },
+  initalData: [
+    [null, 'admin'],   // id is generated
+    [10, 'editor'],    // explicit id
+  ],
+);
+```
+
+<Info>
+  `initalData` is an existing public API name and is intentionally kept for
+  compatibility. It only runs when the table is created, not on every
+  `synchronize()` call.
+</Info>
+
+## Table options
+
+| Option | Default | Applies to |
+| --- | --- | --- |
+| `engine` | `InnoDB` | MySQL |
+| `charset` | `utf8mb4` | MySQL |
+| `outomaticIncrement` | `1` | MySQL |
+
+These options are ignored on PostgreSQL.
+
+## Generated SQL
+
+Use `toCreateSql()` and `toInsertSql()` to inspect the generated statements:
+
+```dart
+print(users.toCreateSql());
+print(users.toInsertSql());
+```
+
+You can also build a single column definition with
+`users.columnDefinition('email', dialect)` when composing custom DDL.
+
+## Limitations
+
+- `TableModel` creates tables and columns; it does not alter existing column
+  types, defaults, or nullability yet.
+- Indexes, `ON DELETE` actions, and check constraints other than enum checks are
+  not exposed by the builder. Use raw SQL for those.
+- `synchronize()` does not rename tables or columns.
+
+## Next
+
+- [Synchronization](/schema/synchronization)
+- [Views](/schema/views)
+- [Events](/schema/events)

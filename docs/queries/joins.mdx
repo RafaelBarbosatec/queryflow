@@ -1,0 +1,123 @@
+---
+title: JOINs
+description: Combine tables with INNER, LEFT, RIGHT, FULL OUTER, and raw joins.
+---
+
+# JOINs
+
+`join()` adds a join to a `SELECT` statement. It takes the joined table and a
+matcher that describes the condition:
+
+```dart
+final rows = await db
+    .select('users', ['users.id', 'users.name', 'orders.total'])
+    .join('orders', InnerJoin('id', 'user_id'))
+    .fetch();
+```
+
+The matcher arguments are read as:
+
+```text
+InnerJoin(<column from the base table>, <column from the joined table>)
+```
+
+In the example above, the condition is `users.id = orders.user_id`.
+
+<Info>
+  Pass plain column names to join matchers, not qualified names such as
+  `users.id`. The table names are quoted and prefixed by the builder.
+</Info>
+
+## Join types
+
+| Matcher | SQL | Notes |
+| --- | --- | --- |
+| `InnerJoin(first, second)` | `INNER JOIN` | Only matching rows. |
+| `LeftJoin(first, second)` | `LEFT JOIN` | All rows from the base table. |
+| `RightJoin(first, second)` | `RIGHT JOIN` | All rows from the joined table. |
+| `FullOuterJoin(first, second)` | `FULL OUTER JOIN` | PostgreSQL only. MySQL does not support it. |
+
+<Warning>
+  MySQL does not support `FULL OUTER JOIN`. Use a `UNION` of `LEFT` and
+  `RIGHT` joins through `execute()` if you need the same result.
+</Warning>
+
+## Aliases
+
+Use `alias` to shorten field references:
+
+```dart
+final rows = await db
+    .select('users', ['users.id', 'users.name', 'o.total'])
+    .join('orders', InnerJoin('id', 'user_id'), alias: 'o')
+    .where('o.total', GreaterThan(100))
+    .fetch();
+```
+
+Aliases must be simple identifiers. The generated `ON` clause uses the alias
+for the joined table and the base table for the first field.
+
+## Multiple joins
+
+```dart
+final rows = await db
+    .select('users', ['users.name', 'p.bio', 'o.total'])
+    .join('profiles', LeftJoin('id', 'user_id'), alias: 'p')
+    .join('orders', LeftJoin('id', 'user_id'), alias: 'o')
+    .fetch();
+```
+
+## Raw joins
+
+For self-joins, `USING`, or database-specific join syntax, use `joinRaw()`:
+
+```dart
+final rows = await db
+    .select('users', ['users.name', 'manager.name AS manager_name'])
+    .joinRaw(
+      'LEFT JOIN users AS manager ON manager.id = users.manager_id',
+    )
+    .fetch();
+```
+
+<Warning>
+  `joinRaw()` inserts the string as-is. Do not build it from untrusted input.
+</Warning>
+
+## Selecting joined columns
+
+When both tables have columns with the same name, the last column wins in the
+result map because both are stored under the same key. Alias the columns in the
+select list:
+
+```dart
+final rows = await db
+    .select('users', [
+      'users.id AS user_id',
+      'users.name AS user_name',
+      'orders.id AS order_id',
+      'orders.total',
+    ])
+    .join('orders', LeftJoin('id', 'user_id'))
+    .fetch();
+```
+
+## Joins with models
+
+`selectModel<T>()` maps the result to `T`. The adapter's `fromMap` receives all
+selected columns, so include the fields it expects:
+
+```dart
+final users = await db
+    .selectModel<User>()
+    .join('orders', InnerJoin('id', 'user_id'))
+    .fetch();
+```
+
+If the join changes the result shape, use `fetchAs<T>()` on a normal `select()`
+instead.
+
+## Next
+
+- [Sorting, grouping & paging](/queries/sorting-and-paging)
+- [Aggregations](/queries/aggregations)
