@@ -22,10 +22,10 @@ class UpdateBuilderImpl extends UpdateBuilderBase with UpdateWhereMixin {
 
   UpdateBuilderImpl(
     this.executor,
-    String table,
-    Map<String, dynamic> fields, {
-    SqlDialect? dialect,
-  }) : super(table, fields, dialect: dialect);
+    super.table,
+    super.fields, {
+    super.dialect,
+  });
 
   final List<dynamic> _params = [];
 

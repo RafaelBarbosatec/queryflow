@@ -53,9 +53,9 @@ class DeleteBuilderImpl extends DeleteBuilderBase with DeleteWhereMixin {
 
   DeleteBuilderImpl(
     this.executor,
-    String table, {
-    SqlDialect? dialect,
-  }) : super(table, dialect: dialect);
+    super.table, {
+    super.dialect,
+  });
 
   final List<dynamic> _params = [];
 
