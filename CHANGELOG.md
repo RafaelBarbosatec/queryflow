@@ -1,3 +1,26 @@
+## Unreleased
+* Fix `UPDATE` ignoring every `WHERE` condition after the first one
+* Fix `DELETE` concatenating conditions without `AND`/`OR` and losing `OR`
+* Implement `notWhere` negation for every `WhereMatcher`
+* Translate `Equals(null)`/`Different(null)` to `IS NULL`/`IS NOT NULL`
+* `In` now accepts any value type and rejects empty lists
+* `UPDATE` no longer hardcodes the `id` column as the primary key
+* `INSERT` now quotes column names and uses dialect placeholders
+* `executeTransation` keeps type adapters, schema definitions and logger
+* `MySqlExecutor.executeTransation` no longer requires a previous query
+* Nested transactions now fail with a clear `UnsupportedError`
+* `insertModel` can run inside a transaction without opening a nested one
+* Fix schema synchronization on PostgreSQL (`INFORMATION_SCHEMA` casing)
+* Fix foreign key constraints when adding columns during synchronization
+* Fix `initalData` inserts on PostgreSQL (auto increment and placeholders)
+* `TypeEnum` uses `TEXT` + `CHECK` on PostgreSQL instead of an invalid `ENUM`
+* Synchronization errors are no longer swallowed
+* Views are dropped before their tables when `dropTable` is used
+* View synchronization uses the correct schema on PostgreSQL
+* `dropObsoleteColumns` is now opt-in to avoid accidental data loss
+* `columnDefinition` now preserves nullability, defaults and constraints when
+  adding columns
+
 ## 0.5.2
 * Fix quotedFields
 

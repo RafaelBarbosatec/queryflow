@@ -140,7 +140,7 @@ class PostgreSqlExecutor implements Executor {
   }
 }
 
-class PostgreSqlExecutorTransaction implements Executor {
+class PostgreSqlExecutorTransaction implements Executor, TransactionExecutor {
   final TxSession connection;
   final bool debug;
   final QueryLogger _logger;
@@ -209,7 +209,7 @@ class PostgreSqlExecutorTransaction implements Executor {
   Future<T> executeTransation<T>(
     Future<T> Function(Executor executor) transaction,
   ) {
-    return Future.value(null);
+    throw UnsupportedError('Nested transactions are not supported.');
   }
 
   void _log(Object? message) {

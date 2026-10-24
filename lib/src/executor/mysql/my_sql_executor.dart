@@ -100,19 +100,16 @@ class MySqlExecutor implements Executor {
   Future<T> executeTransation<T>(
     Future<T> Function(Executor executor) transaction,
   ) async {
-    if (_conn != null) {
-      return await _conn!.transactional((conn) async {
-        return transaction(
-          MySqlExecutorTransation(
-            conn: conn,
-            debug: debug,
-            logger: _logger,
-          ),
-        );
-      });
-    } else {
-      throw Exception("Connection is not initialized.");
-    }
+    await connect();
+    return _conn!.transactional((conn) async {
+      return transaction(
+        MySqlExecutorTransation(
+          conn: conn,
+          debug: debug,
+          logger: _logger,
+        ),
+      );
+    });
   }
 
   void _log(Object? message) {
@@ -122,7 +119,7 @@ class MySqlExecutor implements Executor {
   }
 }
 
-class MySqlExecutorTransation implements Executor {
+class MySqlExecutorTransation implements Executor, TransactionExecutor {
   final MySQLConnection conn;
   final bool debug;
   final QueryLogger _logger;
@@ -177,7 +174,7 @@ class MySqlExecutorTransation implements Executor {
   Future<T> executeTransation<T>(
     Future<T> Function(Executor executor) transaction,
   ) {
-    return Future.value(null);
+    throw UnsupportedError('Nested transactions are not supported.');
   }
 
   void _log(Object? message) {

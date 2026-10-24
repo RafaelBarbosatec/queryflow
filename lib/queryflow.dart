@@ -76,6 +76,7 @@ class Queryflow implements QueryflowMethods, QueryflowExecuteTransation {
   final bool debug;
   final QueryLogger _logger;
   final DatabaseType databaseType;
+  final String _databaseName;
 
   /// Creates a new Queryflow instance for database operations.
   ///
@@ -110,7 +111,8 @@ class Queryflow implements QueryflowMethods, QueryflowExecuteTransation {
     int maxConnections = 1,
     this.debug = false,
     QueryLogger? logger,
-  }) : _logger = logger ?? QueryLoggerDefault() {
+  })  : _logger = logger ?? QueryLoggerDefault(),
+        _databaseName = databaseName ?? '' {
     _queryTypeRetriver = QueryTypeRetriver(typeAdapters ?? []);
     _dialect = SqlDialect.create(databaseType);
 
@@ -135,7 +137,7 @@ class Queryflow implements QueryflowMethods, QueryflowExecuteTransation {
     }
     _tableSyncronizer = TableSyncronizer(
       executor: _executor,
-      databaseName: databaseName ?? '',
+      databaseName: _databaseName,
       tables: tables,
       dialect: _dialect,
       logger: _logger,
@@ -143,14 +145,15 @@ class Queryflow implements QueryflowMethods, QueryflowExecuteTransation {
 
     _viewSyncronizer = ViewSyncronizer(
       queryflow: this,
-      databaseName: databaseName ?? '',
+      databaseName: _databaseName,
       views: views,
+      dialect: _dialect,
       logger: _logger,
     );
 
     _eventSynchronizer = EventSynchronizer(
       events: events,
-      databaseName: databaseName ?? '',
+      databaseName: _databaseName,
       queryflow: this,
       logger: _logger,
       dialect: _dialect,
@@ -313,6 +316,9 @@ class Queryflow implements QueryflowMethods, QueryflowExecuteTransation {
   /// Parameters:
   /// - [dropTable]: If `true`, all tables will be dropped before synchronization.
   ///   Defaults to `false`.
+  /// - [dropObsoleteColumns]: If `true`, columns that exist in the database but
+  ///   are not declared in the corresponding [TableModel] are removed. Defaults
+  ///   to `false` to avoid accidental data loss.
   ///
   /// Example:
   /// ```dart
@@ -326,9 +332,16 @@ class Queryflow implements QueryflowMethods, QueryflowExecuteTransation {
   /// in the existing tables.
   Future<void> syncronize({
     bool dropTable = false,
+    bool dropObsoleteColumns = false,
   }) async {
+    // Views must be dropped before their underlying tables, otherwise
+    // PostgreSQL refuses to drop the tables they depend on.
+    if (dropTable) {
+      await _viewSyncronizer.dropAllViews();
+    }
     await _tableSyncronizer.syncronize(
       dropTable: dropTable,
+      dropObsoleteColumns: dropObsoleteColumns,
     );
     await _viewSyncronizer.syncronize();
     await _eventSynchronizer.synchronize();
@@ -493,16 +506,27 @@ class Queryflow implements QueryflowMethods, QueryflowExecuteTransation {
     Future<T> Function(QueryflowMethods) queryflow,
   ) {
     return _executor.executeTransation<T>(
-      (executor) => queryflow(
-        Queryflow._internal(
-          executor: executor,
-          databaseType: databaseType,
-          host: 'null',
-          port: 0,
-          userName: '',
-          password: '',
-        ),
-      ),
+      (executor) => queryflow(_forExecution(executor)),
+    );
+  }
+
+  /// Creates a Queryflow bound to [executor] that keeps the same configuration
+  /// (type adapters, schema definitions, logger, etc.) as this instance.
+  Queryflow _forExecution(Executor executor) {
+    return Queryflow._internal(
+      executor: executor,
+      databaseType: databaseType,
+      host: 'localhost',
+      port: 0,
+      userName: '',
+      password: '',
+      databaseName: _databaseName,
+      debug: debug,
+      logger: _logger,
+      typeAdapters: _queryTypeRetriver.adapters,
+      tables: _tableSyncronizer.tables,
+      views: _viewSyncronizer.views,
+      events: _eventSynchronizer.events,
     );
   }
 
@@ -533,10 +557,18 @@ class Queryflow implements QueryflowMethods, QueryflowExecuteTransation {
     final adapter = _queryTypeRetriver.getQueryType<T>();
     final data = adapter.toMap(model);
     final primaryKeyColumn = adapter.primaryKeyColumn;
+    final primaryKeyValue = data[primaryKeyColumn];
+    if (primaryKeyValue == null) {
+      throw ArgumentError.value(
+        model,
+        'model',
+        'The primary key "$primaryKeyColumn" is required to delete a model',
+      );
+    }
     return delete(adapter.table)
         .where(
           primaryKeyColumn,
-          Equals(data[primaryKeyColumn]),
+          Equals(primaryKeyValue),
         )
         .execute();
   }
@@ -565,10 +597,24 @@ class Queryflow implements QueryflowMethods, QueryflowExecuteTransation {
     // Get the primary key field and value
     final pkColumn = adapter.primaryKeyColumn;
     final pkValue = data[pkColumn];
+    if (pkValue == null) {
+      throw ArgumentError.value(
+        model,
+        'model',
+        'The primary key "$pkColumn" is required to update a model',
+      );
+    }
 
     // Create a map without the primary key for the SET clause
     final updateFields = Map<String, dynamic>.from(data);
     updateFields.remove(pkColumn);
+    if (updateFields.isEmpty) {
+      throw ArgumentError.value(
+        model,
+        'model',
+        'No fields to update for model $T',
+      );
+    }
 
     return update(adapter.table, updateFields)
         .where(

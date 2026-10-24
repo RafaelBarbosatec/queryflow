@@ -59,39 +59,55 @@ class InsertBuilderImpl extends InsertBuilderBase {
   });
 
   /// List of parameter values for the prepared statement.
-  List _params = [];
+  final List<dynamic> _params = [];
 
   @override
   String toSql() {
-    _params.clear();
+    if (fields.isEmpty) {
+      throw ArgumentError('Insert fields cannot be empty');
+    }
 
-    // Use dialect to quote identifiers if available
+    _params
+      ..clear()
+      ..addAll(fields.values);
+
     final tableName = dialect?.quoteIdentifier(table) ?? table;
-    final columnNames = fields.keys.join(', ');
-
-    _params = fields.values.toList();
-    String queryParams = List.generate(
-            _params.length, (i) => dialect?.getPlaceholder(i + 1) ?? '?')
+    final columnNames = fields.keys
+        .map((key) => dialect?.quoteIdentifier(key) ?? key)
         .join(', ');
+    final queryParams = List.generate(
+      _params.length,
+      (index) => dialect?.getPlaceholder(index + 1) ?? '?',
+    ).join(', ');
     return 'INSERT INTO $tableName ($columnNames) VALUES ($queryParams)';
   }
 
+  Future<int> _insertAndReadId(Executor target) async {
+    final query = toSql();
+    await target.executePrepared(query, _params);
+
+    // Use different syntax for getting last inserted ID based on dialect
+    final lastIdQuery = dialect?.getLastInsertIdQuery() ?? '';
+    final id = await target.execute(lastIdQuery);
+
+    if (id.isNotEmpty) {
+      return int.parse(id.first['id'].toString());
+    }
+    return 0;
+  }
+
   @override
-  Future<int> execute() async {
+  Future<int> execute() {
+    // When we are already inside a transaction, run the insert and the id
+    // lookup directly on it instead of trying to open a nested transaction.
+    if (executor is TransactionExecutor) {
+      return _insertAndReadId(executor);
+    }
+
+    // Pin a single connection so LAST_INSERT_ID()/lastval() belong to the same
+    // session that performed the insert (required for pooled connections).
     return executor.executeTransation<int>(
-      (executor) async {
-        final query = toSql();
-        await executor.executePrepared(query, _params);
-
-        // Use different syntax for getting last inserted ID based on dialect
-        final lastIdQuery = dialect?.getLastInsertIdQuery() ?? '';
-        final id = await executor.execute(lastIdQuery);
-
-        if (id.isNotEmpty) {
-          return int.parse(id.first['id'].toString());
-        }
-        return 0;
-      },
+      (transactionExecutor) => _insertAndReadId(transactionExecutor),
     );
   }
 }
