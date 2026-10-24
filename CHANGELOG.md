@@ -19,7 +19,23 @@
 * View synchronization uses the correct schema on PostgreSQL
 * `dropObsoleteColumns` is now opt-in to avoid accidental data loss
 * `columnDefinition` now preserves nullability, defaults and constraints when
+* `columnDefinition` now preserves nullability, defaults and constraints when
   adding columns
+* PostgreSQL executors accept `?` placeholders in pooled connections and inside
+  transactions; the conversion skips quoted strings and dollar-quoted blocks
+* MySQL pooled prepared statements now run on the same connection that prepared
+  them
+* `close()` is idempotent and connections/pools can be reused after closing
+* PostgreSQL no longer runs `SELECT 1` before every query when reusing a healthy
+  connection
+* `insert()` now returns the inserted primary key: uses `INSERT ... RETURNING`
+  on PostgreSQL, honors explicitly provided keys and accepts a `primaryKey`
+  parameter for tables whose key is not `id`
+* Add `executeTransaction` and `synchronize`; `executeTransation`/`syncronize`
+  are deprecated aliases
+* Logging is silent by default; pass `debug: true` to enable query logs
+* Use `lints` instead of `flutter_lints`, pin the `test` dependency and update
+  CI to run with the Dart SDK
 
 ## 0.5.2
 * Fix quotedFields

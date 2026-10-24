@@ -17,6 +17,7 @@ class MySqlExecutor implements Executor {
   final QueryLogger _logger;
 
   MySQLConnection? _conn;
+  Future<void>? _connecting;
 
   MySqlExecutor({
     required dynamic host,
@@ -37,45 +38,74 @@ class MySqlExecutor implements Executor {
         _collation = collation,
         _securityContext = securityContext,
         _secure = secure,
-        _logger = logger ?? QueryLoggerDefault();
+        _logger = logger ??
+            (debug ? QueryLoggerDefault() : const QueryLoggerSilent());
 
   @override
-  Future<List<Map<String, dynamic>>> execute(String query) async {
-    await connect();
-    _log("Query: $query");
-    final result = await _conn!.execute(query);
-
-    final data = result.rows.map((e) {
-      return e.typedAssoc();
-    }).toList();
-
-    _log("Result: $data");
-    return data;
+  Future<List<Map<String, dynamic>>> execute(String query) {
+    return _run((connection) {
+      _log("Query: $query");
+      return connection.execute(query);
+    });
   }
 
   @override
   Future<List<Map<String, dynamic>>> executePrepared(
     String query,
     List<dynamic> params,
+  ) {
+    return _run((connection) async {
+      _log("Query: $query\nParams: $params");
+      final prepare = await connection.prepare(query);
+      try {
+        return await prepare.execute(params);
+      } finally {
+        await prepare.deallocate();
+      }
+    });
+  }
+
+  Future<List<Map<String, dynamic>>> _run(
+    Future<IResultSet> Function(MySQLConnection connection) action,
   ) async {
     await connect();
-    _log("Query: $query\nParams: $params");
-    final prepare = await _conn!.prepare(query);
+    final connection = _conn!;
     try {
-      final result = await prepare.execute(params);
-      final data = result.rows.map((e) {
-        return e.typedAssoc();
-      }).toList();
+      final result = await action(connection);
+      final data = result.rows.map((e) => e.typedAssoc()).toList();
       _log("Result: $data");
       return data;
-    } finally {
-      await prepare.deallocate();
+    } catch (_) {
+      // Drop the reference so the next call reconnects instead of reusing a
+      // broken connection.
+      if (!connection.connected) {
+        _conn = null;
+      }
+      rethrow;
     }
   }
 
   @override
-  Future<void> connect() async {
-    _conn ??= await MySQLConnection.createConnection(
+  Future<void> connect() {
+    final connection = _conn;
+    if (connection != null && connection.connected) {
+      return Future.value();
+    }
+    return _connecting ??= _connect().whenComplete(() => _connecting = null);
+  }
+
+  Future<void> _connect() async {
+    final previous = _conn;
+    _conn = null;
+    if (previous != null) {
+      try {
+        await previous.close();
+      } catch (_) {
+        // The previous connection is already unusable; nothing else to do.
+      }
+    }
+
+    final connection = await MySQLConnection.createConnection(
       host: _host,
       port: _port,
       userName: _userName,
@@ -86,14 +116,31 @@ class MySqlExecutor implements Executor {
       securityContext: _securityContext,
     );
 
-    if (!_conn!.connected) {
-      await _conn!.connect();
+    try {
+      await connection.connect();
+    } catch (_) {
+      try {
+        await connection.close();
+      } catch (_) {
+        // Ignore errors while discarding a connection that failed to open.
+      }
+      rethrow;
     }
+
+    _conn = connection;
   }
 
   @override
   Future<void> close() async {
-    return _conn?.close() ?? Future.value();
+    final connection = _conn;
+    _conn = null;
+    if (connection != null) {
+      try {
+        await connection.close();
+      } catch (_) {
+        // Closing an already closed connection is a no-op.
+      }
+    }
   }
 
   @override
@@ -128,7 +175,8 @@ class MySqlExecutorTransation implements Executor, TransactionExecutor {
     required this.conn,
     this.debug = false,
     QueryLogger? logger,
-  }) : _logger = logger ?? QueryLoggerDefault();
+  }) : _logger = logger ??
+            (debug ? QueryLoggerDefault() : const QueryLoggerSilent());
 
   @override
   Future<List<Map<String, dynamic>>> execute(String query) async {

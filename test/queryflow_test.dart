@@ -38,7 +38,7 @@ WHERE age < 100
           )
         ],
       );
-      await queryflow.syncronize(dropTable: true);
+      await queryflow.synchronize(dropTable: true);
       initilized = true;
     }
   });
@@ -309,7 +309,7 @@ WHERE age < 100
 
   group('transactions', () {
     test('insertModel works inside a transaction', () async {
-      await queryflow.executeTransation((tx) async {
+      await queryflow.executeTransaction((tx) async {
         await tx.insertModel(
           UserModel(name: 'Transaction User', date: DateTime.now()),
         );
@@ -327,7 +327,7 @@ WHERE age < 100
       final countBefore = await queryflow.selectModel<UserModel>().count();
 
       await expectLater(
-        queryflow.executeTransation((tx) async {
+        queryflow.executeTransaction((tx) async {
           await tx.insertModel(
             UserModel(name: 'Rolled Back User', date: DateTime.now()),
           );

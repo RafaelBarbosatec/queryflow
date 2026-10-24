@@ -122,6 +122,9 @@ class PostgreSqlDialect extends SqlDialect {
   }
 
   @override
+  bool get supportsInsertReturning => true;
+
+  @override
   String getCastExpression(String expression, String type) {
     return 'CAST($expression AS $type)';
   }

@@ -34,7 +34,7 @@ void main() {
           ),
         ],
       );
-      await queryflow.syncronize();
+      await queryflow.synchronize();
       initilized = true;
     }
   });

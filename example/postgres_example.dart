@@ -73,7 +73,7 @@ void main() async {
   try {
     // Test connection and synchronization
     print('🔧 Synchronizing database schema...');
-    await postgresDb.syncronize(dropTable: true);
+    await postgresDb.synchronize(dropTable: true);
     print('✅ Schema synchronized successfully');
 
     // Insert some test data

@@ -91,7 +91,7 @@ void main() {
         ]);
 
         await _reset(queryflow);
-        await queryflow.syncronize(dropTable: true);
+        await queryflow.synchronize(dropTable: true);
 
         final rows = await queryflow
             .select('qf_sync_seed')
@@ -123,11 +123,11 @@ void main() {
 
         final first = _create(dialect, [v1]);
         await _reset(first);
-        await first.syncronize(dropTable: true);
+        await first.synchronize(dropTable: true);
         await first.close();
 
         final second = _create(dialect, [v2]);
-        await second.syncronize();
+        await second.synchronize();
 
         final columns = await _columns(second, dialect, 'qf_sync_evo');
         expect(columns, containsAll(['id', 'name', 'age', 'status']));
@@ -163,17 +163,17 @@ void main() {
 
         final first = _create(dialect, [v1]);
         await _reset(first);
-        await first.syncronize(dropTable: true);
+        await first.synchronize(dropTable: true);
         await first.close();
 
         final second = _create(dialect, [v2]);
-        await second.syncronize();
+        await second.synchronize();
         expect(
           await _columns(second, dialect, 'qf_sync_drop'),
           contains('obsolete'),
         );
 
-        await second.syncronize(dropObsoleteColumns: true);
+        await second.synchronize(dropObsoleteColumns: true);
         expect(
           await _columns(second, dialect, 'qf_sync_drop'),
           isNot(contains('obsolete')),
@@ -208,11 +208,11 @@ void main() {
 
         final first = _create(dialect, [parent, childV1]);
         await _reset(first);
-        await first.syncronize(dropTable: true);
+        await first.synchronize(dropTable: true);
         await first.close();
 
         final second = _create(dialect, [parent, childV2]);
-        await second.syncronize();
+        await second.synchronize();
 
         expect(
           await _columns(second, dialect, 'qf_sync_child'),
@@ -258,15 +258,15 @@ void main() {
 
         final queryflow = _create(dialect, [user, profile], views: [view]);
         await _reset(queryflow);
-        await queryflow.syncronize(dropTable: true);
+        await queryflow.synchronize(dropTable: true);
         expect(await queryflow.select('qf_sync_view').fetch(), isEmpty);
 
         // Dropping the tables while the view exists must not fail.
-        await queryflow.syncronize(dropTable: true);
+        await queryflow.synchronize(dropTable: true);
         expect(await queryflow.select('qf_sync_view').fetch(), isEmpty);
 
         // A plain resynchronization must also succeed.
-        await queryflow.syncronize();
+        await queryflow.synchronize();
 
         await queryflow.close();
       });
@@ -286,7 +286,7 @@ void main() {
 
         final queryflow = _create(dialect, [table]);
         await _reset(queryflow);
-        await queryflow.syncronize(dropTable: true);
+        await queryflow.synchronize(dropTable: true);
 
         final firstId =
             await queryflow.insert('qf_sync_bigid', {'name': 'a'}).execute();

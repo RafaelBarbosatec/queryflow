@@ -45,7 +45,7 @@ void main() {
       setUp(() async {
         queryflow = _create(dialect);
         await queryflow.execute('DROP TABLE IF EXISTS $_tableName;');
-        await queryflow.syncronize();
+        await queryflow.synchronize();
       });
 
       tearDown(() async {

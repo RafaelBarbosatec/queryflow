@@ -2,6 +2,7 @@
 enum DatabaseType {
   /// MySQL database
   mysql,
+
   /// PostgreSQL database
   postgresql;
 }

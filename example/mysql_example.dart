@@ -73,7 +73,7 @@ void main() async {
   try {
     // Test connection and synchronization
     print('🔧 Synchronizing database schema...');
-    await mysqlDb.syncronize(dropTable: true);
+    await mysqlDb.synchronize(dropTable: true);
     print('✅ Schema synchronized successfully');
 
     // Insert some test data

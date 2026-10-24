@@ -26,7 +26,7 @@ void main() {
           ProfileModel.table,
         ],
       );
-      await queryflow.syncronize(dropTable: true);
+      await queryflow.synchronize(dropTable: true);
       initilized = true;
     }
   });
@@ -297,7 +297,7 @@ void main() {
 
   group('transactions', () {
     test('insertModel works inside a transaction', () async {
-      await queryflow.executeTransation((tx) async {
+      await queryflow.executeTransaction((tx) async {
         await tx.insertModel(
           UserModel(name: 'Transaction User', date: DateTime.now()),
         );
@@ -315,7 +315,7 @@ void main() {
       final countBefore = await queryflow.selectModel<UserModel>().count();
 
       await expectLater(
-        queryflow.executeTransation((tx) async {
+        queryflow.executeTransaction((tx) async {
           await tx.insertModel(
             UserModel(name: 'Rolled Back User', date: DateTime.now()),
           );

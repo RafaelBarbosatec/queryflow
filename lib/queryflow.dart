@@ -111,7 +111,8 @@ class Queryflow implements QueryflowMethods, QueryflowExecuteTransation {
     int maxConnections = 1,
     this.debug = false,
     QueryLogger? logger,
-  })  : _logger = logger ?? QueryLoggerDefault(),
+  })  : _logger = logger ??
+            (debug ? QueryLoggerDefault() : const QueryLoggerSilent()),
         _databaseName = databaseName ?? '' {
     _queryTypeRetriver = QueryTypeRetriver(typeAdapters ?? []);
     _dialect = SqlDialect.create(databaseType);
@@ -322,7 +323,7 @@ class Queryflow implements QueryflowMethods, QueryflowExecuteTransation {
   ///
   /// Example:
   /// ```dart
-  /// await queryflow.syncronize(dropTable: true);
+  /// await queryflow.synchronize(dropTable: true);
   /// ```
   ///
   /// This will drop all existing tables and recreate them based on the table
@@ -330,7 +331,7 @@ class Queryflow implements QueryflowMethods, QueryflowExecuteTransation {
   ///
   /// Note: Use the `dropTable` option with caution, as it will delete all data
   /// in the existing tables.
-  Future<void> syncronize({
+  Future<void> synchronize({
     bool dropTable = false,
     bool dropObsoleteColumns = false,
   }) async {
@@ -345,6 +346,18 @@ class Queryflow implements QueryflowMethods, QueryflowExecuteTransation {
     );
     await _viewSyncronizer.syncronize();
     await _eventSynchronizer.synchronize();
+  }
+
+  /// Alias kept for backwards compatibility.
+  @Deprecated('Use synchronize() instead.')
+  Future<void> syncronize({
+    bool dropTable = false,
+    bool dropObsoleteColumns = false,
+  }) {
+    return synchronize(
+      dropTable: dropTable,
+      dropObsoleteColumns: dropObsoleteColumns,
+    );
   }
 
   /// Creates a SELECT query builder for the specified table.
@@ -395,6 +408,8 @@ class Queryflow implements QueryflowMethods, QueryflowExecuteTransation {
   /// Parameters:
   /// - [table]: Name of the table to insert into
   /// - [fields]: Map of column names to values for insertion
+  /// - [primaryKey]: Primary key column used by [InsertBuilder.execute] to read
+  ///   the generated id. Defaults to `id`.
   ///
   /// Returns an [InsertBuilder] that can be used to execute the query.
   ///
@@ -407,8 +422,18 @@ class Queryflow implements QueryflowMethods, QueryflowExecuteTransation {
   /// }).execute();
   /// ```
   @override
-  InsertBuilder insert(String table, Map<String, dynamic> fields) {
-    return InsertBuilderImpl(_executor, table, fields, dialect: _dialect);
+  InsertBuilder insert(
+    String table,
+    Map<String, dynamic> fields, {
+    String primaryKey = 'id',
+  }) {
+    return InsertBuilderImpl(
+      _executor,
+      table,
+      fields,
+      dialect: _dialect,
+      primaryKey: primaryKey,
+    );
   }
 
   /// Creates an UPDATE query builder for the specified table.
@@ -489,7 +514,7 @@ class Queryflow implements QueryflowMethods, QueryflowExecuteTransation {
   ///
   /// Example:
   /// ```dart
-  /// final results = await db.executeTransation((tx) async {
+  /// final results = await db.executeTransaction((tx) async {
   ///   final userId = await tx.insert('users', {'name': 'John'}).execute();
   ///   await tx.insert('user_profiles', {
   ///     'user_id': userId,
@@ -502,12 +527,21 @@ class Queryflow implements QueryflowMethods, QueryflowExecuteTransation {
   /// });
   /// ```
   @override
-  Future<T> executeTransation<T>(
+  Future<T> executeTransaction<T>(
     Future<T> Function(QueryflowMethods) queryflow,
   ) {
     return _executor.executeTransation<T>(
       (executor) => queryflow(_forExecution(executor)),
     );
+  }
+
+  /// Alias kept for backwards compatibility.
+  @Deprecated('Use executeTransaction() instead.')
+  @override
+  Future<T> executeTransation<T>(
+    Future<T> Function(QueryflowMethods) queryflow,
+  ) {
+    return executeTransaction(queryflow);
   }
 
   /// Creates a Queryflow bound to [executor] that keeps the same configuration
@@ -549,7 +583,11 @@ class Queryflow implements QueryflowMethods, QueryflowExecuteTransation {
   @override
   Future<int> insertModel<T>(T model) {
     final adapter = _queryTypeRetriver.getQueryType<T>();
-    return insert(adapter.table, adapter.toMap(model)).execute();
+    return insert(
+      adapter.table,
+      adapter.toMap(model),
+      primaryKey: adapter.primaryKeyColumn,
+    ).execute();
   }
 
   @override
@@ -646,6 +684,12 @@ abstract class QueryflowExecuteTransation {
   ///   a Future with the result of the transaction operations.
   ///
   /// Returns a Future that resolves to the result of the executed transaction.
+  Future<T> executeTransaction<T>(
+    Future<T> Function(QueryflowMethods) queryflow,
+  );
+
+  /// Alias kept for backwards compatibility.
+  @Deprecated('Use executeTransaction() instead.')
   Future<T> executeTransation<T>(
     Future<T> Function(QueryflowMethods) queryflow,
   );
@@ -698,6 +742,8 @@ abstract class QueryflowMethods {
   /// Parameters:
   /// - [table]: Name of the table to insert into
   /// - [fields]: Map of column names to values for insertion
+  /// - [primaryKey]: Primary key column used by [InsertBuilder.execute] to read
+  ///   the generated id. Defaults to `id`.
   ///
   /// Returns an [InsertBuilder] that can be used to execute the query.
   ///
@@ -709,7 +755,11 @@ abstract class QueryflowMethods {
   ///   'created_at': DateTime.now()
   /// }).execute();
   /// ```
-  InsertBuilder insert(String table, Map<String, dynamic> fields);
+  InsertBuilder insert(
+    String table,
+    Map<String, dynamic> fields, {
+    String primaryKey = 'id',
+  });
 
   Future<int> insertModel<T>(T model);
   Future<void> updateModel<T>(T model);

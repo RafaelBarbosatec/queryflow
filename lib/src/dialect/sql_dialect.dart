@@ -37,6 +37,13 @@ abstract class SqlDialect {
   /// Gets the query to retrieve the last inserted ID
   String getLastInsertIdQuery();
 
+  /// Whether the database supports `INSERT ... RETURNING`.
+  ///
+  /// When `true`, the insert builder can read the generated primary key from
+  /// the insert statement itself instead of relying on a session scoped
+  /// function such as `LAST_INSERT_ID()`.
+  bool get supportsInsertReturning => false;
+
   /// Gets the default schema name for the database
   String getDefaultSchema(String databaseName);
 

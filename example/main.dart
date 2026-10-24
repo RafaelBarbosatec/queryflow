@@ -19,9 +19,9 @@ void main() async {
     ],
     debug: true,
   );
-  await queryflow.syncronize(dropTable: true);
+  await queryflow.synchronize(dropTable: true);
 
-  await queryflow.executeTransation((queryflow) async {
+  await queryflow.executeTransaction((queryflow) async {
     await queryflow.insertModel<User>(
       User(
         name: 'Transaction User 1',
