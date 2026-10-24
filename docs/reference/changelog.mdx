@@ -8,6 +8,20 @@ description: Release highlights and a link to the full Queryflow changelog.
 The full history lives in
 [CHANGELOG.md](https://github.com/RafaelBarbosatec/queryflow/blob/main/CHANGELOG.md).
 
+## 0.7.0
+
+The MySQL driver was upgraded from `mysql_dart 1.2.1` to `3.0.3`.
+
+- **BREAKING:** Queryflow now requires Dart `>= 3.6.0`, the minimum supported by
+  `mysql_dart 3.x`.
+- MySQL 9 and `caching_sha2_password` authentication support.
+- JSON columns are decoded correctly.
+- Prepared statements are safer and the driver now serializes concurrent calls
+  on a single connection (FIFO).
+- Pooled prepared statements use the driver's `withConnection` flow.
+- Zero dates (`0000-00-00`) are returned as `null` by default.
+- No public Queryflow API changes.
+
 ## 0.6.0
 
 This release focuses on correctness, PostgreSQL parity, and safer defaults.

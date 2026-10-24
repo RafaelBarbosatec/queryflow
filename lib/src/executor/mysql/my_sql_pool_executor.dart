@@ -67,22 +67,17 @@ class MySqlPoolExecutor implements Executor {
     await connect();
     _log("Query: $query\nParams: $params");
 
-    // Keep the prepared statement and its connection bound together; the pool
-    // releases connections as soon as `prepare` returns, so `prepare.execute`
-    // must run inside `withConnection`.
-    return await _conn!.withConnection((connection) async {
-      final prepare = await connection.prepare(query);
-      try {
-        final result = await prepare.execute(params);
-        final data = result.rows.map((e) {
-          return e.typedAssoc();
-        }).toList();
+    // `withPrepared` pins a connection for the whole prepare/execute/deallocate
+    // cycle, which is required because prepared statements are bound to one
+    // physical connection.
+    return await _conn!.withPrepared(query, (prepared) async {
+      final result = await prepared.execute(params);
+      final data = result.rows.map((e) {
+        return e.typedAssoc();
+      }).toList();
 
-        _log("Result: $data");
-        return data;
-      } finally {
-        await prepare.deallocate();
-      }
+      _log("Result: $data");
+      return data;
     });
   }
 

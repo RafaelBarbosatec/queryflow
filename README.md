@@ -76,14 +76,14 @@ for the full compatibility matrix.
 
 ```yaml
 dependencies:
-  queryflow: ^0.6.0
+  queryflow: ^0.7.0
 ```
 
 ```bash
 dart pub get
 ```
 
-Requires Dart `>= 3.0.0 < 4.0.0`. Queryflow runs on the Dart VM and on Flutter
+Requires Dart `>= 3.6.0 < 4.0.0`. Queryflow runs on the Dart VM and on Flutter
 mobile/desktop; it is **not** compatible with Flutter web.
 
 ## Quick start
@@ -224,6 +224,9 @@ for the database setup.
 
 Issues and pull requests are welcome:
 [github.com/RafaelBarbosatec/queryflow](https://github.com/RafaelBarbosatec/queryflow).
+
+See [ROADMAP.md](https://github.com/RafaelBarbosatec/queryflow/blob/main/ROADMAP.md)
+for planned improvements and known limitations.
 
 ## License
 
