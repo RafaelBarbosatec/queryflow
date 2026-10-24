@@ -49,7 +49,7 @@ Future<void> testDatabase(String dbName, Queryflow queryflow) async {
 
   try {
     // Synchronize schema
-    await queryflow.syncronize(dropTable: true);
+    await queryflow.synchronize(dropTable: true);
     print('✅ Schema synchronized');
 
     // Insert test products

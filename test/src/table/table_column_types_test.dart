@@ -1,6 +1,6 @@
 import 'package:queryflow/src/dialect/mysql_dialect.dart';
 import 'package:queryflow/src/dialect/postgres_sql_dialect.dart';
-import 'package:queryflow/src/table/table_column_types.dart';
+import 'package:queryflow/src/table/table_model.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -169,11 +169,19 @@ void main() {
       expect(TypeBlob().getTypeName(postgress), equals('BYTEA'));
     });
 
-    test('TypeEnum should return correct ENUM string', () {
+    test('TypeEnum should use TEXT with a CHECK constraint', () {
       final enumType = TypeEnum(values: ['active', 'inactive', 'pending']);
+      expect(enumType.getTypeName(postgress), equals('TEXT'));
+
+      final table = TableModel(
+        name: 'items',
+        columns: {
+          'status': enumType,
+        },
+      );
       expect(
-        enumType.getTypeName(postgress),
-        equals("ENUM('active', 'inactive', 'pending')"),
+        table.columnDefinition('status', postgress),
+        '"status" TEXT CHECK ("status" IN (\'active\', \'inactive\', \'pending\'))',
       );
     });
 

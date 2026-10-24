@@ -22,12 +22,12 @@ class UpdateBuilderImpl extends UpdateBuilderBase with UpdateWhereMixin {
 
   UpdateBuilderImpl(
     this.executor,
-    String table,
-    Map<String, dynamic> fields, {
-    SqlDialect? dialect,
-  }) : super(table, fields, dialect: dialect);
+    super.table,
+    super.fields, {
+    super.dialect,
+  });
 
-  final List _params = [];
+  final List<dynamic> _params = [];
 
   @override
   Future<void> execute() async {
@@ -37,41 +37,39 @@ class UpdateBuilderImpl extends UpdateBuilderBase with UpdateWhereMixin {
 
   @override
   String toSql() {
+    if (fields.isEmpty) {
+      throw ArgumentError('Update fields cannot be empty');
+    }
+
     _params.clear();
 
     // Use dialect to quote identifiers if available
     final tableName = dialect?.quoteIdentifier(table) ?? table;
 
-    List<String> values = [];
-    List<dynamic> updateParams = [];
-    int paramIndex = 1;
+    final values = <String>[];
+    var paramIndex = 1;
 
-    // Process SET clause values, excluding id since it's typically used in WHERE
-    final fieldEntries =
-        fields.entries.where((entry) => entry.key != 'id').toList();
-
-    // First, process non-id fields for SET clause
-    for (var entry in fieldEntries) {
+    for (final entry in fields.entries) {
       final columnName = dialect?.quoteIdentifier(entry.key) ?? entry.key;
       final placeholder = dialect?.getPlaceholder(paramIndex++) ?? '?';
       values.add('$columnName = $placeholder');
-      updateParams.add(entry.value);
+      _params.add(entry.value);
     }
 
-    // Base query without WHERE clause
-    String query = 'UPDATE $tableName SET ${values.join(', ')}';
-    _params.addAll(updateParams);
+    var query = 'UPDATE $tableName SET ${values.join(', ')}';
 
-    // Process WHERE clause parameters if present
-    final whereList = matchers.whereType<WhereMatcher>();
-    if (whereList.isNotEmpty) {
-      final firstWhere = whereList.first;
-      firstWhere.type = WhereMatcherType.and;
-      firstWhere.setDialect(dialect);
-      firstWhere.setParamIndex(paramIndex); // Continue parameter sequence
-      final result = firstWhere.compose();
-      query = '$query WHERE ${result.query}';
+    // Compose every WHERE matcher, preserving the requested AND/OR operator.
+    final whereList = matchers.whereType<WhereMatcher>().toList();
+    for (var i = 0; i < whereList.length; i++) {
+      final where = whereList[i];
+      where.setDialect(dialect);
+      where.setParamIndex(paramIndex);
+      final result = where.compose();
+      query += i == 0
+          ? ' WHERE ${result.query}'
+          : ' ${where.type.value} ${result.query}';
       _params.addAll(result.params);
+      paramIndex += result.params.length;
     }
 
     return query;

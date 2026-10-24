@@ -44,6 +44,7 @@ class EventSynchronizer {
       }
     } catch (e) {
       logger?.e('Error synchronizing events: $e');
+      rethrow;
     }
     logger?.i('Finished synchronizing events');
   }

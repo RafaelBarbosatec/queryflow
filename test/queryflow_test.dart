@@ -38,7 +38,7 @@ WHERE age < 100
           )
         ],
       );
-      await queryflow.syncronize(dropTable: true);
+      await queryflow.synchronize(dropTable: true);
       initilized = true;
     }
   });
@@ -305,5 +305,39 @@ WHERE age < 100
         .execute();
     final countAfter = await queryflow.selectModel<UserModel>().count();
     expect(countAfter, 2);
+  });
+
+  group('transactions', () {
+    test('insertModel works inside a transaction', () async {
+      await queryflow.executeTransaction((tx) async {
+        await tx.insertModel(
+          UserModel(name: 'Transaction User', date: DateTime.now()),
+        );
+      });
+
+      final users = await queryflow
+          .selectModel<UserModel>()
+          .where('name', Equals('Transaction User'))
+          .fetch();
+      expect(users.length, 1);
+      expect(users.first.name, 'Transaction User');
+    });
+
+    test('rolls back when the callback throws', () async {
+      final countBefore = await queryflow.selectModel<UserModel>().count();
+
+      await expectLater(
+        queryflow.executeTransaction((tx) async {
+          await tx.insertModel(
+            UserModel(name: 'Rolled Back User', date: DateTime.now()),
+          );
+          throw Exception('force rollback');
+        }),
+        throwsA(isA<Exception>()),
+      );
+
+      final countAfter = await queryflow.selectModel<UserModel>().count();
+      expect(countAfter, countBefore);
+    });
   });
 }

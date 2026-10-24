@@ -1,6 +1,7 @@
 import 'package:postgres/postgres.dart';
 import 'package:queryflow/src/executor/executor.dart';
 import 'package:queryflow/src/logger/query_logger.dart';
+import 'package:queryflow/src/utils/placeholder_normalizer.dart';
 
 class PostgreSqlPoolExecutor implements Executor {
   final String _host;
@@ -32,7 +33,8 @@ class PostgreSqlPoolExecutor implements Executor {
         _databaseName = databaseName,
         _useSSL = useSSL,
         _maxConnections = maxConnections,
-        _logger = logger ?? QueryLoggerDefault();
+        _logger = logger ??
+            (debug ? QueryLoggerDefault() : const QueryLoggerSilent());
 
   @override
   Future<List<Map<String, dynamic>>> execute(String query) async {
@@ -41,15 +43,9 @@ class PostgreSqlPoolExecutor implements Executor {
 
     return await _pool!.withConnection((connection) async {
       final result = await connection.execute(query);
-
-      return result.map((row) {
-        final Map<String, dynamic> rowMap = {};
-        for (int i = 0; i < result.schema.columns.length; i++) {
-          final columnName = result.schema.columns[i].columnName ?? 'column_$i';
-          rowMap[columnName] = row[i];
-        }
-        return rowMap;
-      }).toList();
+      final data = _toRows(result);
+      _log("Result: $data");
+      return data;
     });
   }
 
@@ -59,23 +55,29 @@ class PostgreSqlPoolExecutor implements Executor {
     List<dynamic> params,
   ) async {
     await connect();
-    _log("Query: $query\nParams: $params");
+    final normalizedQuery = normalizePostgresPlaceholders(query);
+    _log("Query: $normalizedQuery\nParams: $params");
 
     return await _pool!.withConnection((connection) async {
       final result = await connection.execute(
-        query,
+        normalizedQuery,
         parameters: params,
       );
-
-      return result.map((row) {
-        final Map<String, dynamic> rowMap = {};
-        for (int i = 0; i < result.schema.columns.length; i++) {
-          final columnName = result.schema.columns[i].columnName ?? 'column_$i';
-          rowMap[columnName] = row[i];
-        }
-        return rowMap;
-      }).toList();
+      final data = _toRows(result);
+      _log("Result: $data");
+      return data;
     });
+  }
+
+  List<Map<String, dynamic>> _toRows(Result result) {
+    return result.map((row) {
+      final Map<String, dynamic> rowMap = {};
+      for (int i = 0; i < result.schema.columns.length; i++) {
+        final columnName = result.schema.columns[i].columnName ?? 'column_$i';
+        rowMap[columnName] = row[i];
+      }
+      return rowMap;
+    }).toList();
   }
 
   @override
@@ -103,8 +105,15 @@ class PostgreSqlPoolExecutor implements Executor {
 
   @override
   Future<void> close() async {
-    await _pool?.close();
+    final pool = _pool;
     _pool = null;
+    if (pool != null) {
+      try {
+        await pool.close();
+      } catch (_) {
+        // Closing an already closed pool is a no-op.
+      }
+    }
   }
 
   @override
@@ -133,7 +142,8 @@ class PostgreSqlPoolExecutor implements Executor {
   }
 }
 
-class PostgreSqlPoolExecutorTransaction implements Executor {
+class PostgreSqlPoolExecutorTransaction
+    implements Executor, TransactionExecutor {
   final TxSession connection;
   final bool debug;
   final QueryLogger _logger;
@@ -142,7 +152,8 @@ class PostgreSqlPoolExecutorTransaction implements Executor {
     required this.connection,
     this.debug = false,
     QueryLogger? logger,
-  }) : _logger = logger ?? QueryLoggerDefault();
+  }) : _logger = logger ??
+            (debug ? QueryLoggerDefault() : const QueryLoggerSilent());
 
   @override
   Future<List<Map<String, dynamic>>> execute(String query) async {
@@ -150,15 +161,7 @@ class PostgreSqlPoolExecutorTransaction implements Executor {
 
     final result = await connection.execute(query);
 
-    final data = result.map((row) {
-      final Map<String, dynamic> rowMap = {};
-      for (int i = 0; i < result.schema.columns.length; i++) {
-        final columnName = result.schema.columns[i].columnName ?? 'column_$i';
-        rowMap[columnName] = row[i];
-      }
-      return rowMap;
-    }).toList();
-
+    final data = _toRows(result);
     _log("Result: $data");
     return data;
   }
@@ -168,14 +171,21 @@ class PostgreSqlPoolExecutorTransaction implements Executor {
     String query,
     List params,
   ) async {
-    _log("Query: $query\nParams: $params");
+    final normalizedQuery = normalizePostgresPlaceholders(query);
+    _log("Query: $normalizedQuery\nParams: $params");
 
     final result = await connection.execute(
-      query,
+      normalizedQuery,
       parameters: params,
     );
 
-    final data = result.map((row) {
+    final data = _toRows(result);
+    _log("Result: $data");
+    return data;
+  }
+
+  List<Map<String, dynamic>> _toRows(Result result) {
+    return result.map((row) {
       final Map<String, dynamic> rowMap = {};
       for (int i = 0; i < result.schema.columns.length; i++) {
         final columnName = result.schema.columns[i].columnName ?? 'column_$i';
@@ -183,9 +193,6 @@ class PostgreSqlPoolExecutorTransaction implements Executor {
       }
       return rowMap;
     }).toList();
-
-    _log("Result: $data");
-    return data;
   }
 
   @override
@@ -202,7 +209,7 @@ class PostgreSqlPoolExecutorTransaction implements Executor {
   Future<T> executeTransation<T>(
     Future<T> Function(Executor executor) transaction,
   ) {
-    return Future.value(null);
+    throw UnsupportedError('Nested transactions are not supported.');
   }
 
   void _log(Object? message) {

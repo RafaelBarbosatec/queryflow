@@ -90,10 +90,14 @@ void main() {
       final sql = tableModel.toCreateSql();
       expect(sql, contains('CONSTRAINT `fk_comments_user_id_users_id`'));
       expect(
-          sql, contains('CONSTRAINT `fk_comments_user_id_users_id` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`)'));
+          sql,
+          contains(
+              'CONSTRAINT `fk_comments_user_id_users_id` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`)'));
       expect(sql, contains('CONSTRAINT `fk_comments_post_id_posts_id`'));
       expect(
-          sql, contains('CONSTRAINT `fk_comments_post_id_posts_id` FOREIGN KEY (`post_id`) REFERENCES `posts`(`id`)'));
+          sql,
+          contains(
+              'CONSTRAINT `fk_comments_post_id_posts_id` FOREIGN KEY (`post_id`) REFERENCES `posts`(`id`)'));
     });
 
     test('toCreateSql uses custom engine, charset and auto increment', () {

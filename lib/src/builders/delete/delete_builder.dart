@@ -53,11 +53,11 @@ class DeleteBuilderImpl extends DeleteBuilderBase with DeleteWhereMixin {
 
   DeleteBuilderImpl(
     this.executor,
-    String table, {
-    SqlDialect? dialect,
-  }) : super(table, dialect: dialect);
+    super.table, {
+    super.dialect,
+  });
 
-  final List _params = [];
+  final List<dynamic> _params = [];
 
   @override
   Future<void> execute() async {
@@ -68,29 +68,24 @@ class DeleteBuilderImpl extends DeleteBuilderBase with DeleteWhereMixin {
   @override
   String toSql() {
     _params.clear();
-    final whereList = matchers.whereType<WhereMatcher>();
+    final whereList = matchers.whereType<WhereMatcher>().toList();
 
     // Use dialect to quote table name if available
     final tableName = dialect?.quoteIdentifier(table) ?? table;
 
-    String query = 'DELETE FROM $tableName';
-    if (whereList.isNotEmpty) {
-      final firstWhere = whereList.first;
-      firstWhere.type = WhereMatcherType.and;
-      firstWhere.setDialect(dialect);
-      firstWhere.setParamIndex(1);
-      final result = firstWhere.compose();
-      query = '$query WHERE ${result.query}';
-      _params.addAll(result.params);
+    var query = 'DELETE FROM $tableName';
+    var paramIndex = 1;
 
-      for (var i = 1; i < whereList.length; i++) {
-        final w = whereList.elementAt(i);
-        w.setDialect(dialect);
-        w.setParamIndex(_params.length + 1);
-        final result = w.compose();
-        query = '$query ${result.query}';
-        _params.addAll(result.params);
-      }
+    for (var i = 0; i < whereList.length; i++) {
+      final where = whereList[i];
+      where.setDialect(dialect);
+      where.setParamIndex(paramIndex);
+      final result = where.compose();
+      query += i == 0
+          ? ' WHERE ${result.query}'
+          : ' ${where.type.value} ${result.query}';
+      _params.addAll(result.params);
+      paramIndex += result.params.length;
     }
     return query;
   }

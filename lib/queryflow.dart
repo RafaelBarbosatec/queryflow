@@ -76,6 +76,7 @@ class Queryflow implements QueryflowMethods, QueryflowExecuteTransation {
   final bool debug;
   final QueryLogger _logger;
   final DatabaseType databaseType;
+  final String _databaseName;
 
   /// Creates a new Queryflow instance for database operations.
   ///
@@ -110,7 +111,9 @@ class Queryflow implements QueryflowMethods, QueryflowExecuteTransation {
     int maxConnections = 1,
     this.debug = false,
     QueryLogger? logger,
-  }) : _logger = logger ?? QueryLoggerDefault() {
+  })  : _logger = logger ??
+            (debug ? QueryLoggerDefault() : const QueryLoggerSilent()),
+        _databaseName = databaseName ?? '' {
     _queryTypeRetriver = QueryTypeRetriver(typeAdapters ?? []);
     _dialect = SqlDialect.create(databaseType);
 
@@ -135,7 +138,7 @@ class Queryflow implements QueryflowMethods, QueryflowExecuteTransation {
     }
     _tableSyncronizer = TableSyncronizer(
       executor: _executor,
-      databaseName: databaseName ?? '',
+      databaseName: _databaseName,
       tables: tables,
       dialect: _dialect,
       logger: _logger,
@@ -143,14 +146,15 @@ class Queryflow implements QueryflowMethods, QueryflowExecuteTransation {
 
     _viewSyncronizer = ViewSyncronizer(
       queryflow: this,
-      databaseName: databaseName ?? '',
+      databaseName: _databaseName,
       views: views,
+      dialect: _dialect,
       logger: _logger,
     );
 
     _eventSynchronizer = EventSynchronizer(
       events: events,
-      databaseName: databaseName ?? '',
+      databaseName: _databaseName,
       queryflow: this,
       logger: _logger,
       dialect: _dialect,
@@ -313,10 +317,13 @@ class Queryflow implements QueryflowMethods, QueryflowExecuteTransation {
   /// Parameters:
   /// - [dropTable]: If `true`, all tables will be dropped before synchronization.
   ///   Defaults to `false`.
+  /// - [dropObsoleteColumns]: If `true`, columns that exist in the database but
+  ///   are not declared in the corresponding [TableModel] are removed. Defaults
+  ///   to `false` to avoid accidental data loss.
   ///
   /// Example:
   /// ```dart
-  /// await queryflow.syncronize(dropTable: true);
+  /// await queryflow.synchronize(dropTable: true);
   /// ```
   ///
   /// This will drop all existing tables and recreate them based on the table
@@ -324,14 +331,33 @@ class Queryflow implements QueryflowMethods, QueryflowExecuteTransation {
   ///
   /// Note: Use the `dropTable` option with caution, as it will delete all data
   /// in the existing tables.
-  Future<void> syncronize({
+  Future<void> synchronize({
     bool dropTable = false,
+    bool dropObsoleteColumns = false,
   }) async {
+    // Views must be dropped before their underlying tables, otherwise
+    // PostgreSQL refuses to drop the tables they depend on.
+    if (dropTable) {
+      await _viewSyncronizer.dropAllViews();
+    }
     await _tableSyncronizer.syncronize(
       dropTable: dropTable,
+      dropObsoleteColumns: dropObsoleteColumns,
     );
     await _viewSyncronizer.syncronize();
     await _eventSynchronizer.synchronize();
+  }
+
+  /// Alias kept for backwards compatibility.
+  @Deprecated('Use synchronize() instead.')
+  Future<void> syncronize({
+    bool dropTable = false,
+    bool dropObsoleteColumns = false,
+  }) {
+    return synchronize(
+      dropTable: dropTable,
+      dropObsoleteColumns: dropObsoleteColumns,
+    );
   }
 
   /// Creates a SELECT query builder for the specified table.
@@ -382,6 +408,8 @@ class Queryflow implements QueryflowMethods, QueryflowExecuteTransation {
   /// Parameters:
   /// - [table]: Name of the table to insert into
   /// - [fields]: Map of column names to values for insertion
+  /// - [primaryKey]: Primary key column used by [InsertBuilder.execute] to read
+  ///   the generated id. Defaults to `id`.
   ///
   /// Returns an [InsertBuilder] that can be used to execute the query.
   ///
@@ -394,8 +422,18 @@ class Queryflow implements QueryflowMethods, QueryflowExecuteTransation {
   /// }).execute();
   /// ```
   @override
-  InsertBuilder insert(String table, Map<String, dynamic> fields) {
-    return InsertBuilderImpl(_executor, table, fields, dialect: _dialect);
+  InsertBuilder insert(
+    String table,
+    Map<String, dynamic> fields, {
+    String primaryKey = 'id',
+  }) {
+    return InsertBuilderImpl(
+      _executor,
+      table,
+      fields,
+      dialect: _dialect,
+      primaryKey: primaryKey,
+    );
   }
 
   /// Creates an UPDATE query builder for the specified table.
@@ -476,7 +514,7 @@ class Queryflow implements QueryflowMethods, QueryflowExecuteTransation {
   ///
   /// Example:
   /// ```dart
-  /// final results = await db.executeTransation((tx) async {
+  /// final results = await db.executeTransaction((tx) async {
   ///   final userId = await tx.insert('users', {'name': 'John'}).execute();
   ///   await tx.insert('user_profiles', {
   ///     'user_id': userId,
@@ -489,20 +527,40 @@ class Queryflow implements QueryflowMethods, QueryflowExecuteTransation {
   /// });
   /// ```
   @override
-  Future<T> executeTransation<T>(
+  Future<T> executeTransaction<T>(
     Future<T> Function(QueryflowMethods) queryflow,
   ) {
     return _executor.executeTransation<T>(
-      (executor) => queryflow(
-        Queryflow._internal(
-          executor: executor,
-          databaseType: databaseType,
-          host: 'null',
-          port: 0,
-          userName: '',
-          password: '',
-        ),
-      ),
+      (executor) => queryflow(_forExecution(executor)),
+    );
+  }
+
+  /// Alias kept for backwards compatibility.
+  @Deprecated('Use executeTransaction() instead.')
+  @override
+  Future<T> executeTransation<T>(
+    Future<T> Function(QueryflowMethods) queryflow,
+  ) {
+    return executeTransaction(queryflow);
+  }
+
+  /// Creates a Queryflow bound to [executor] that keeps the same configuration
+  /// (type adapters, schema definitions, logger, etc.) as this instance.
+  Queryflow _forExecution(Executor executor) {
+    return Queryflow._internal(
+      executor: executor,
+      databaseType: databaseType,
+      host: 'localhost',
+      port: 0,
+      userName: '',
+      password: '',
+      databaseName: _databaseName,
+      debug: debug,
+      logger: _logger,
+      typeAdapters: _queryTypeRetriver.adapters,
+      tables: _tableSyncronizer.tables,
+      views: _viewSyncronizer.views,
+      events: _eventSynchronizer.events,
     );
   }
 
@@ -525,7 +583,11 @@ class Queryflow implements QueryflowMethods, QueryflowExecuteTransation {
   @override
   Future<int> insertModel<T>(T model) {
     final adapter = _queryTypeRetriver.getQueryType<T>();
-    return insert(adapter.table, adapter.toMap(model)).execute();
+    return insert(
+      adapter.table,
+      adapter.toMap(model),
+      primaryKey: adapter.primaryKeyColumn,
+    ).execute();
   }
 
   @override
@@ -533,10 +595,18 @@ class Queryflow implements QueryflowMethods, QueryflowExecuteTransation {
     final adapter = _queryTypeRetriver.getQueryType<T>();
     final data = adapter.toMap(model);
     final primaryKeyColumn = adapter.primaryKeyColumn;
+    final primaryKeyValue = data[primaryKeyColumn];
+    if (primaryKeyValue == null) {
+      throw ArgumentError.value(
+        model,
+        'model',
+        'The primary key "$primaryKeyColumn" is required to delete a model',
+      );
+    }
     return delete(adapter.table)
         .where(
           primaryKeyColumn,
-          Equals(data[primaryKeyColumn]),
+          Equals(primaryKeyValue),
         )
         .execute();
   }
@@ -565,10 +635,24 @@ class Queryflow implements QueryflowMethods, QueryflowExecuteTransation {
     // Get the primary key field and value
     final pkColumn = adapter.primaryKeyColumn;
     final pkValue = data[pkColumn];
+    if (pkValue == null) {
+      throw ArgumentError.value(
+        model,
+        'model',
+        'The primary key "$pkColumn" is required to update a model',
+      );
+    }
 
     // Create a map without the primary key for the SET clause
     final updateFields = Map<String, dynamic>.from(data);
     updateFields.remove(pkColumn);
+    if (updateFields.isEmpty) {
+      throw ArgumentError.value(
+        model,
+        'model',
+        'No fields to update for model $T',
+      );
+    }
 
     return update(adapter.table, updateFields)
         .where(
@@ -600,6 +684,12 @@ abstract class QueryflowExecuteTransation {
   ///   a Future with the result of the transaction operations.
   ///
   /// Returns a Future that resolves to the result of the executed transaction.
+  Future<T> executeTransaction<T>(
+    Future<T> Function(QueryflowMethods) queryflow,
+  );
+
+  /// Alias kept for backwards compatibility.
+  @Deprecated('Use executeTransaction() instead.')
   Future<T> executeTransation<T>(
     Future<T> Function(QueryflowMethods) queryflow,
   );
@@ -652,6 +742,8 @@ abstract class QueryflowMethods {
   /// Parameters:
   /// - [table]: Name of the table to insert into
   /// - [fields]: Map of column names to values for insertion
+  /// - [primaryKey]: Primary key column used by [InsertBuilder.execute] to read
+  ///   the generated id. Defaults to `id`.
   ///
   /// Returns an [InsertBuilder] that can be used to execute the query.
   ///
@@ -663,7 +755,11 @@ abstract class QueryflowMethods {
   ///   'created_at': DateTime.now()
   /// }).execute();
   /// ```
-  InsertBuilder insert(String table, Map<String, dynamic> fields);
+  InsertBuilder insert(
+    String table,
+    Map<String, dynamic> fields, {
+    String primaryKey = 'id',
+  });
 
   Future<int> insertModel<T>(T model);
   Future<void> updateModel<T>(T model);

@@ -59,9 +59,7 @@ class WhereRaw extends WhereMatcher {
 
   @override
   MatchResult compose() {
-    return MatchResult(
-      value,
-    );
+    return MatchResult(isNot ? 'NOT ($value)' : value);
   }
 }
 
@@ -83,15 +81,24 @@ class _ComparatorWhere extends WhereMatcher {
 
   @override
   MatchResult compose() {
-    List params = [];
+    // Comparing against NULL with = / != never matches in SQL. Translate those
+    // cases to the proper IS NULL / IS NOT NULL predicates instead.
+    if (value == null) {
+      if (comparator == '=') {
+        return MatchResult('$field IS ${isNot ? 'NOT ' : ''}NULL');
+      }
+      if (comparator == '!=') {
+        return MatchResult('$field IS ${isNot ? '' : 'NOT '}NULL');
+      }
+    }
 
-    // Generate the placeholder first, then add the parameter
     final placeholder = dialect?.getPlaceholder(paramStartIndex) ?? '?';
-    params.add(value); // Add parameter after getting the placeholder
-
     final condition = '$field $comparator $placeholder';
 
-    return MatchResult(condition, params);
+    return MatchResult(
+      isNot ? 'NOT ($condition)' : condition,
+      [value],
+    );
   }
 }
 
@@ -177,7 +184,7 @@ class Between extends WhereMatcher {
     final placeholder1 = dialect?.getPlaceholder(paramStartIndex) ?? '?';
     final placeholder2 = dialect?.getPlaceholder(paramStartIndex + 1) ?? '?';
     return MatchResult(
-      '$field BETWEEN $placeholder1 AND $placeholder2',
+      '$field ${isNot ? 'NOT ' : ''}BETWEEN $placeholder1 AND $placeholder2',
       params,
     );
   }
@@ -207,7 +214,7 @@ class BetweenDate extends WhereMatcher {
     final placeholder1 = dialect?.getPlaceholder(paramStartIndex) ?? '?';
     final placeholder2 = dialect?.getPlaceholder(paramStartIndex + 1) ?? '?';
     return MatchResult(
-      "$field BETWEEN $placeholder1 AND $placeholder2",
+      "$field ${isNot ? 'NOT ' : ''}BETWEEN $placeholder1 AND $placeholder2",
       params,
     );
   }
@@ -232,7 +239,7 @@ class EqualsDate extends WhereMatcher {
     final placeholder = dialect?.getPlaceholder(paramStartIndex) ?? '?';
 
     return MatchResult(
-      "DATE($field) = $placeholder",
+      isNot ? "DATE($field) <> $placeholder" : "DATE($field) = $placeholder",
       params,
     );
   }
@@ -260,7 +267,7 @@ class Like extends WhereMatcher {
     final params = [value];
     final placeholder = dialect?.getPlaceholder(paramStartIndex) ?? '?';
     return MatchResult(
-      '$field LIKE $placeholder',
+      '$field ${isNot ? 'NOT ' : ''}LIKE $placeholder',
       params,
     );
   }
@@ -271,23 +278,30 @@ class Like extends WhereMatcher {
 /// Example: `WHERE column IN ('value1', 'value2', 'value3')`
 class In extends WhereMatcher {
   /// The list of values to match against
-  final List<String> value;
+  final List<dynamic> value;
 
   /// Creates an IN condition
   ///
-  /// @param value The list of values to match against
+  /// @param value The list of values to match against. It must contain at
+  /// least one value.
   In(this.value);
 
   @override
   MatchResult compose() {
-    final params = value;
+    if (value.isEmpty) {
+      throw ArgumentError.value(
+        value,
+        'value',
+        'The In matcher requires at least one value',
+      );
+    }
     final placeholders = List.generate(
-      params.length,
+      value.length,
       (i) => dialect?.getPlaceholder(paramStartIndex + i) ?? '?',
     ).join(',');
     return MatchResult(
-      '$field IN ($placeholders)',
-      params,
+      '$field ${isNot ? 'NOT ' : ''}IN ($placeholders)',
+      value,
     );
   }
 }
@@ -296,7 +310,7 @@ class IsNull extends WhereMatcher {
   @override
   MatchResult compose() {
     return MatchResult(
-      '$field IS NULL',
+      '$field IS ${isNot ? 'NOT ' : ''}NULL',
     );
   }
 }
@@ -305,7 +319,7 @@ class IsNotNull extends WhereMatcher {
   @override
   MatchResult compose() {
     return MatchResult(
-      '$field IS NOT NULL',
+      '$field IS ${isNot ? '' : 'NOT '}NULL',
     );
   }
 }
