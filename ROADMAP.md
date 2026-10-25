@@ -17,8 +17,10 @@ items are enhancements, edge cases, and documented limitations.
 - Transactions: adapters preserved, rollback, no nested transactions,
   `insertModel()` inside a transaction, MySQL connect-on-demand.
 - Schema sync: PostgreSQL `INFORMATION_SCHEMA` casing, foreign keys, initial
-  data, PostgreSQL enums (`TEXT` + `CHECK`), view schema/drop order,
-  `dropObsoleteColumns` opt-in, column attributes preserved.
+  data, PostgreSQL enums (`TEXT` + `CHECK`), `TypeEnum` values reconciled on
+  existing columns (MySQL `MODIFY COLUMN`, PostgreSQL `CHECK` replacement),
+  view schema/drop order, `dropObsoleteColumns` opt-in, column attributes
+  preserved.
 - Executors: PostgreSQL `?` placeholders in pool/transactions, MySQL pooled
   prepared statements bound to one connection, idempotent `close()`, reconnect.
 - Inserts: `RETURNING` on PostgreSQL, explicit keys honored, `primaryKey`

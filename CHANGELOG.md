@@ -1,3 +1,16 @@
+## 0.8.0
+* Schema synchronization now reconciles `TypeEnum` values on existing columns
+  (adding a value to the model used to leave the database enum stale, because
+  sync only added/dropped columns)
+  * MySQL: compares `INFORMATION_SCHEMA.COLUMNS.COLUMN_TYPE` and runs
+    `ALTER TABLE ... MODIFY COLUMN` when the values differ
+  * PostgreSQL: replaces the generated `CHECK` constraint (enums are `TEXT`)
+  * New `synchronize(syncEnumValues: false)` opt-out for large tables where
+    the `ALTER` should be scheduled
+* `TableSyncronizer` now also reads `DATA_TYPE`/`COLUMN_TYPE` from
+  `INFORMATION_SCHEMA`
+* Unit tests for MySQL and PostgreSQL enum reconciliation (no database needed)
+
 ## 0.7.0
 * Upgrade `mysql_dart` from `1.2.1` to `3.0.3`
 * BREAKING: require Dart `>=3.6.0` (minimum supported by `mysql_dart 3.x`)

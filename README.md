@@ -46,8 +46,8 @@ final users = await db
   `selectModel`, `insertModel`, `updateModel`, and `deleteModel`.
 - **Schema as code** — `TableModel` definitions, column types, primary keys,
   unique constraints, foreign keys, defaults, and initial data.
-- **Schema synchronization** — create missing tables and columns, with
-  destructive changes opt-in.
+- **Schema synchronization** — create missing tables and columns, reconcile
+  `TypeEnum` values, with destructive changes opt-in.
 - **Views and MySQL events** — manage views on both databases and scheduled
   events on MySQL.
 - **Transactions** — `executeTransaction` with automatic rollback.
