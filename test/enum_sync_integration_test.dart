@@ -94,7 +94,9 @@ void main() {
         await second.insert(_table, {'status': 'VIP'}).execute();
 
         // ...and the previously stored row must survive the migration.
-        final rows = await second.select(_table).orderBy(['id']).fetch();
+        final rows = await second
+            .select(_table)
+            .orderBy(['id'], OrderByType.asc).fetch();
         expect(rows.length, 2);
         expect(rows.map((row) => row['status']), ['MONEY', 'VIP']);
 
