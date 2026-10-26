@@ -69,6 +69,19 @@ Future<String> _storedEnumDefinition(
   return (row['definition'] ?? row['DEFINITION']).toString();
 }
 
+/// Whether PostgreSQL still has a constraint with [name] on the test table.
+Future<bool> _constraintExists(Queryflow queryflow, String name) async {
+  final rows = await queryflow.executePrepared(
+    'SELECT 1 FROM pg_constraint con '
+    'INNER JOIN pg_class rel ON rel.oid = con.conrelid '
+    'INNER JOIN pg_namespace nsp ON nsp.oid = rel.relnamespace '
+    "WHERE nsp.nspname = 'public' AND rel.relname = \$1 "
+    'AND con.conname = \$2;',
+    [_table, name],
+  );
+  return rows.isNotEmpty;
+}
+
 void main() {
   for (final dialect in ['mysql', 'postgresql']) {
     group('enum synchronization ($dialect)', () {
@@ -152,6 +165,66 @@ void main() {
 
         await second.close();
       });
+
+      test('expands a single-value enum and stays idempotent', () async {
+        // PostgreSQL deparses a one-element IN list as scalar equality, which
+        // must still be recognized as the enum constraint.
+        final first = _create(dialect, [
+          _model(['MONEY']),
+        ]);
+        await _reset(first);
+        await first.synchronize(dropTable: true);
+        await first.insert(_table, {'status': 'MONEY'}).execute();
+        await first.close();
+
+        final second = _create(dialect, [
+          _model(['MONEY', 'VIP']),
+        ]);
+        await second.synchronize();
+        // A second pass must not try to add the constraint again.
+        await second.synchronize();
+
+        await second.insert(_table, {'status': 'VIP'}).execute();
+        final rows = await second
+            .select(_table)
+            .orderBy(['id'], OrderByType.asc).fetch();
+        expect(rows.map((row) => row['status']), ['MONEY', 'VIP']);
+
+        await second.close();
+      });
+
+      if (dialect == 'postgresql') {
+        test('keeps unrelated single-column CHECK constraints', () async {
+          const unrelated = '${_table}_status_len';
+          final first = _create(dialect, [
+            _model(['MONEY']),
+          ]);
+          await _reset(first);
+          await first.synchronize(dropTable: true);
+          await first.execute(
+            'ALTER TABLE $_table ADD CONSTRAINT $unrelated '
+            'CHECK (length(status) > 0);',
+          );
+          await first.insert(_table, {'status': 'MONEY'}).execute();
+          await first.close();
+
+          final second = _create(dialect, [
+            _model(['MONEY', 'VIP']),
+          ]);
+          await second.synchronize();
+
+          // The enum was expanded...
+          await second.insert(_table, {'status': 'VIP'}).execute();
+          // ...and the unrelated business rule survived the replacement.
+          expect(await _constraintExists(second, unrelated), isTrue);
+          await expectLater(
+            second.insert(_table, {'status': ''}).execute(),
+            throwsA(anything),
+          );
+
+          await second.close();
+        });
+      }
     });
   }
 }

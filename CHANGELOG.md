@@ -3,8 +3,14 @@
   (adding a value to the model used to leave the database enum stale, because
   sync only added/dropped columns)
   * MySQL: compares `INFORMATION_SCHEMA.COLUMNS.COLUMN_TYPE` and runs
-    `ALTER TABLE ... MODIFY COLUMN` when the values differ
-  * PostgreSQL: replaces the generated `CHECK` constraint (enums are `TEXT`)
+    `ALTER TABLE ... MODIFY COLUMN` when the values differ. Labels are compared
+    exactly, so a case-only difference is applied too (a case-sensitive
+    collation would otherwise keep rejecting the model spelling)
+  * PostgreSQL: replaces the generated `CHECK` constraint (enums are `TEXT`).
+    The constraint is matched through `pg_constraint.conkey`/`pg_attribute`
+    (never by text), only standalone single-column enum predicates are
+    replaced, and the drop/add happens in one `ALTER TABLE` statement so a
+    failing new `CHECK` leaves the old one in place
   * New `synchronize(syncEnumValues: false)` opt-out for large tables where
     the `ALTER` should be scheduled
 * `TableSyncronizer` now also reads `DATA_TYPE`/`COLUMN_TYPE` from

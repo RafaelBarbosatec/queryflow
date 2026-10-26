@@ -99,9 +99,17 @@ gained a value in the model would stay stale in an existing database. Since
   `ENUM(...)` generated from the model and, when they differ, runs
   `ALTER TABLE ... MODIFY COLUMN`. The `MODIFY` re-applies the column
   attributes declared in the model (`NOT NULL`, `DEFAULT`), because MySQL
-  requires the full definition.
+  requires the full definition. Labels are compared exactly: a case-only
+  difference triggers the `ALTER`, since a case-sensitive collation keeps the
+  stored spelling and would reject the new value.
 - **PostgreSQL** — enums are `TEXT` + `CHECK`, so the check constraint is
-  dropped and recreated with the new values.
+  dropped and recreated with the new values. The constraint is identified
+  through `pg_constraint.conkey`/`pg_attribute` (not by matching text in its
+  definition), and only standalone single-column enum predicates are replaced:
+  compound rules such as `CHECK (status IN (...) AND length(status) > 0)` are
+  left untouched and a separate constraint is added. The drop and add are a
+  single `ALTER TABLE ... DROP CONSTRAINT ..., ADD CONSTRAINT ...` statement,
+  so a new `CHECK` that rejects existing rows leaves the old one in place.
 
 ```dart
 // default: reconcile enum values

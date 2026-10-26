@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:queryflow/src/dialect/mysql_dialect.dart';
 import 'package:queryflow/src/dialect/postgres_sql_dialect.dart';
 import 'package:queryflow/src/dialect/sql_dialect.dart';
@@ -156,7 +158,7 @@ void main() {
       expect(executor.executed, isEmpty);
     });
 
-    test('ignores case and whitespace differences', () async {
+    test('updates the declared labels when only the case differs', () async {
       final executor = _FakeExecutor(columns: [
         _mysqlId(),
         _mysqlColumn(
@@ -170,7 +172,14 @@ void main() {
         dialect: _mysql,
       );
 
-      expect(executor.executed, isEmpty);
+      // A case-sensitive collation keeps the stored labels, so a model value
+      // spelled differently must be applied rather than treated as a match.
+      expect(executor.executed, hasLength(1));
+      expect(
+        executor.executed.single,
+        contains("ENUM('MONEY', 'TRAINING', 'ADS', 'AMETHYST_BOX', 'GOLD_BOX', "
+            "'VIP')"),
+      );
     });
 
     test('does not touch columns that are not enums', () async {
@@ -219,15 +228,26 @@ void main() {
   });
 
   group('PostgreSQL enum synchronization', () {
-    Map<String, dynamic> check(List<String> values) {
+    Map<String, dynamic> check(
+      List<String> values, {
+      String column = 'type',
+      int keyCount = 1,
+      String constraintName = 'store_cash_type_check',
+      String? definition,
+    }) {
       final array = values.map((v) => "'$v'::character varying").join(', ');
       return {
-        'constraint_name': 'store_cash_type_check',
-        'definition': 'CHECK (((type)::text = ANY ((ARRAY[$array])::text[])))',
+        'constraint_name': constraintName,
+        'definition': definition ??
+            'CHECK ((($column)::text = ANY '
+                '((ARRAY[$array])::text[])))',
+        'key_count': keyCount,
+        'column_name': column,
       };
     }
 
-    test('replaces the CHECK constraint when values change', () async {
+    test('replaces the CHECK constraint in a single atomic statement',
+        () async {
       final executor = _FakeExecutor(
         columns: [_mysqlId(), _postgresColumn()],
         checks: [
@@ -241,14 +261,12 @@ void main() {
         dialect: _postgres,
       );
 
-      expect(executor.executed, hasLength(2));
+      expect(executor.executed, hasLength(1));
       expect(
-        executor.executed[0],
-        'ALTER TABLE "store_cash" DROP CONSTRAINT "store_cash_type_check";',
-      );
-      expect(
-        executor.executed[1],
-        'ALTER TABLE "store_cash" ADD CONSTRAINT "store_cash_type_check" '
+        executor.executed.single,
+        'ALTER TABLE "store_cash" '
+        'DROP CONSTRAINT "store_cash_type_check", '
+        'ADD CONSTRAINT "store_cash_type_check" '
         "CHECK (\"type\" IN ('MONEY', 'TRAINING', 'ADS', 'AMETHYST_BOX', "
         "'GOLD_BOX', 'VIP'));",
       );
@@ -290,6 +308,174 @@ void main() {
         "CHECK (\"type\" IN ('MONEY', 'TRAINING', 'ADS', 'AMETHYST_BOX', "
         "'GOLD_BOX', 'VIP'));",
       );
+    });
+
+    test('expands a single-value CHECK deparsed as equality', () async {
+      // PostgreSQL turns `IN ('ONLY')` into `= 'ONLY'`, which a membership-only
+      // filter would miss and then try to add a duplicate constraint.
+      final executor = _FakeExecutor(
+        columns: [_mysqlId(), _postgresColumn()],
+        checks: [
+          check(
+            ['ONLY'],
+            definition: "CHECK (((type)::text = 'ONLY'::text))",
+          ),
+        ],
+      );
+
+      await _sync(
+        executor: executor,
+        table: _table(type: TypeEnum(values: ['ONLY', 'VIP'])),
+        dialect: _postgres,
+      );
+
+      expect(executor.executed, hasLength(1));
+      expect(
+        executor.executed.single,
+        contains("CHECK (\"type\" IN ('ONLY', 'VIP'))"),
+      );
+    });
+
+    test(
+        'repeated synchronization of an unchanged single-value CHECK is a no-op',
+        () async {
+      final executor = _FakeExecutor(
+        columns: [_mysqlId(), _postgresColumn()],
+        checks: [
+          check(
+            ['ONLY'],
+            definition: "CHECK (((type)::text = 'ONLY'::text))",
+          ),
+        ],
+      );
+
+      final syncronizer = TableSyncronizer(
+        executor: executor,
+        tables: [
+          _table(type: TypeEnum(values: ['ONLY']))
+        ],
+        databaseName: 'boleiro',
+        dialect: _postgres,
+      );
+      await syncronizer.syncronize();
+      await syncronizer.syncronize();
+
+      expect(executor.executed, isEmpty);
+    });
+
+    test('ignores CHECKs that are not standalone enum predicates', () async {
+      // Single-column, but a compound business rule: replacing it would drop
+      // the extra validation, so a separate enum constraint is added instead.
+      final executor = _FakeExecutor(
+        columns: [_mysqlId(), _postgresColumn()],
+        checks: [
+          check(
+            ['MONEY'],
+            constraintName: 'store_cash_type_positive',
+            definition: "CHECK (((type)::text = 'MONEY'::text AND id > 0))",
+          ),
+        ],
+      );
+
+      await _sync(
+        executor: executor,
+        table: _table(type: TypeEnum(values: ['MONEY', 'VIP'])),
+        dialect: _postgres,
+      );
+
+      expect(executor.executed, hasLength(1));
+      expect(executor.executed.single, contains('ADD CONSTRAINT'));
+      expect(executor.executed.single, isNot(contains('DROP CONSTRAINT')));
+      expect(executor.executed.single, isNot(contains('type_positive')));
+    });
+
+    test('ignores CHECKs that reference another column', () async {
+      final executor = _FakeExecutor(
+        columns: [
+          _mysqlId(),
+          _postgresColumn(),
+          {
+            'COLUMN_NAME': 'kind',
+            'DATA_TYPE': 'text',
+            'COLUMN_TYPE': 'text',
+          },
+        ],
+        checks: [
+          // Contains the word "type" as a string literal only.
+          check(
+            ["'type'", 'other'],
+            column: 'kind',
+            keyCount: 1,
+            constraintName: 'store_cash_kind_check',
+          ),
+        ],
+      );
+
+      await _sync(
+        executor: executor,
+        table: TableModel(
+          name: 'store_cash',
+          columns: {
+            'id': TypeInt(isPrimaryKey: true, isAutoIncrement: true),
+            'type': TypeEnum(values: ['MONEY', 'VIP']),
+            'kind': TypeText(),
+          },
+        ),
+        dialect: _postgres,
+      );
+
+      // Only the missing enum constraint on `type` is added; the constraint on
+      // `kind` is left untouched.
+      expect(executor.executed, hasLength(1));
+      expect(
+        executor.executed.single,
+        startsWith(
+          'ALTER TABLE "store_cash" ADD CONSTRAINT '
+          '"store_cash_type_enum_check"',
+        ),
+      );
+    });
+
+    test('generates distinct names bounded by the identifier byte limit',
+        () async {
+      final table = 't' * 62;
+      final executor = _FakeExecutor(columns: [
+        {
+          'COLUMN_NAME': 'status',
+          'DATA_TYPE': 'text',
+          'COLUMN_TYPE': 'text',
+        },
+        {
+          'COLUMN_NAME': 'kind',
+          'DATA_TYPE': 'text',
+          'COLUMN_TYPE': 'text',
+        },
+      ]);
+
+      await TableSyncronizer(
+        executor: executor,
+        tables: [
+          TableModel(
+            name: table,
+            columns: {
+              'status': TypeEnum(values: ['A', 'B']),
+              'kind': TypeEnum(values: ['A', 'B']),
+            },
+          ),
+        ],
+        databaseName: 'boleiro',
+        dialect: _postgres,
+      ).syncronize();
+
+      expect(executor.executed, hasLength(2));
+      final names = executor.executed
+          .map((sql) => RegExp(r'ADD CONSTRAINT "([^"]+)"').firstMatch(sql))
+          .map((match) => match!.group(1)!)
+          .toList();
+      expect(names.toSet(), hasLength(2));
+      for (final name in names) {
+        expect(utf8.encode(name).length, lessThanOrEqualTo(63));
+      }
     });
   });
 }
