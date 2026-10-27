@@ -338,6 +338,7 @@ class Queryflow implements QueryflowMethods, QueryflowExecuteTransation {
   Future<void> synchronize({
     bool dropTable = false,
     bool dropObsoleteColumns = false,
+    bool syncEnumValues = true,
   }) async {
     // Views must be dropped before their underlying tables, otherwise
     // PostgreSQL refuses to drop the tables they depend on.
@@ -347,6 +348,7 @@ class Queryflow implements QueryflowMethods, QueryflowExecuteTransation {
     await _tableSyncronizer.syncronize(
       dropTable: dropTable,
       dropObsoleteColumns: dropObsoleteColumns,
+      syncEnumValues: syncEnumValues,
     );
     await _viewSyncronizer.syncronize();
     await _eventSynchronizer.synchronize();

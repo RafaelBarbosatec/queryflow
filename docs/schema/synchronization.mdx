@@ -27,9 +27,11 @@ await db.synchronize();
 1. Optionally drops configured views and tables when `dropTable: true`.
 2. Creates tables that do not exist.
 3. Adds columns that exist in the `TableModel` but not in the database.
-4. Optionally removes columns that exist in the database but not in the model.
-5. Creates or updates configured views.
-6. Creates or updates MySQL events.
+4. Reconciles the allowed values of existing `TypeEnum` columns
+   (`syncEnumValues`, enabled by default).
+5. Optionally removes columns that exist in the database but not in the model.
+6. Creates or updates configured views.
+7. Creates or updates MySQL events.
 
 Every step is validated against `INFORMATION_SCHEMA` for the active database.
 
@@ -75,7 +77,8 @@ try {
 
 `synchronize()` is intentionally conservative. It does **not**:
 
-- change the type of an existing column;
+- change the type of an existing column (the only exception is the allowed
+  values of a `TypeEnum`, reconciled by `syncEnumValues` — see below);
 - change `NOT NULL`, `DEFAULT`, or `UNIQUE` on an existing column;
 - rename tables or columns;
 - create or drop indexes;
@@ -85,6 +88,42 @@ try {
 Use it to bootstrap local and test databases. For production, keep explicit
 migrations (SQL files, a migration package, or your deployment tooling) and
 apply them before deploying code that depends on the new schema.
+
+## Enum values
+
+Schema synchronization only knows how to add and drop columns, so an enum that
+gained a value in the model would stay stale in an existing database. Since
+`0.8.0`, `synchronize()` also reconciles `TypeEnum` columns:
+
+- **MySQL** — compares `INFORMATION_SCHEMA.COLUMNS.COLUMN_TYPE` with the
+  `ENUM(...)` generated from the model and, when they differ, runs
+  `ALTER TABLE ... MODIFY COLUMN`. The `MODIFY` re-applies the column
+  attributes declared in the model (`NOT NULL`, `DEFAULT`), because MySQL
+  requires the full definition. Labels are compared exactly: a case-only
+  difference triggers the `ALTER`, since a case-sensitive collation keeps the
+  stored spelling and would reject the new value.
+- **PostgreSQL** — enums are `TEXT` + `CHECK`, so the check constraint is
+  dropped and recreated with the new values. The constraint is identified
+  through `pg_constraint.conkey`/`pg_attribute` (not by matching text in its
+  definition), and only standalone single-column enum predicates are replaced:
+  compound rules such as `CHECK (status IN (...) AND length(status) > 0)` are
+  left untouched and a separate constraint is added. The drop and add are a
+  single `ALTER TABLE ... DROP CONSTRAINT ..., ADD CONSTRAINT ...` statement,
+  so a new `CHECK` that rejects existing rows leaves the old one in place.
+
+```dart
+// default: reconcile enum values
+await db.synchronize();
+
+// opt out (e.g. large tables where the ALTER must be scheduled)
+await db.synchronize(syncEnumValues: false);
+```
+
+<Warning>
+  Removing a value that is still used by existing rows makes the `ALTER` fail
+  (PostgreSQL rejects the new `CHECK`; MySQL errors or truncates depending on
+  the SQL mode). Clean the data first, then synchronize.
+</Warning>
 
 ## Initial data
 
@@ -97,6 +136,7 @@ re-applied on subsequent synchronizations. See
 | Step | MySQL | PostgreSQL |
 | --- | --- | --- |
 | Schema lookup | `databaseName` | `public` |
+| Enum values | `ALTER TABLE ... MODIFY COLUMN` | `TEXT` + `CHECK` replaced |
 | Identifier quoting | Backticks | Double quotes |
 | Drop dependent views | Views dropped first | Views dropped first, with `CASCADE` |
 | Events | Synchronized | Skipped |
